@@ -1,0 +1,166 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{45AD6607-A31B-4FF2-A4BF-D297923CFA57}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>MasterFudgeMk2</RootNamespace>
+    <AssemblyName>MasterFudgeMk2</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="NAudio, Version=1.8.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NAudio.1.8.0\lib\net35\NAudio.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Nini, Version=1.1.0.0, Culture=neutral, PublicKeyToken=691faec150a7fa7b, processorArchitecture=MSIL">
+      <HintPath>..\packages\Trove.Nini.1.1.0.0\lib\net20\Nini.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Common\AudioBackend\WavWriter.cs" />
+    <Compile Include="Common\BindableToolStripMenuItem.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Common\InterruptState.cs" />
+    <Compile Include="Common\TupleListExtensions.cs" />
+    <Compile Include="Common\UiStateBoolean.cs" />
+    <Compile Include="ConfigFile.cs" />
+    <Compile Include="Devices\Z80A.OpcodesPrefixCB.cs" />
+    <Compile Include="Devices\Z80A.CycleCounts.cs" />
+    <Compile Include="Devices\Z80A.Disassembly.cs" />
+    <Compile Include="Devices\Z80A.OpcodesNoPrefix.cs" />
+    <Compile Include="EmulatorConfiguration.cs" />
+    <Compile Include="Machines\Coleco\ColecoVision\Configuration.cs" />
+    <Compile Include="Machines\Coleco\ColecoVision\Manager.cs" />
+    <Compile Include="Media\MediaIdentity.cs" />
+    <Compile Include="Media\IMedia.cs" />
+    <Compile Include="Media\Sega\RomHeader.cs" />
+    <Compile Include="Media\MediaLoader.cs" />
+    <Compile Include="Media\Sega\RomOnlyCartridge.cs" />
+    <Compile Include="Media\Sega\StandardMapperCartridge.cs" />
+    <Compile Include="Devices\Z80A.Register.cs" />
+    <Compile Include="Common\Utilities.cs" />
+    <Compile Include="Common\XInput\Controller.cs" />
+    <Compile Include="Common\XInput\ControllerManager.cs" />
+    <Compile Include="Common\XInput\NativeMethods.cs" />
+    <Compile Include="Common\XInput\XInputCapabilities.cs" />
+    <Compile Include="Common\XInput\XInputGamepad.cs" />
+    <Compile Include="Common\XInput\XInputState.cs" />
+    <Compile Include="Common\XInput\XInputVibration.cs" />
+    <Compile Include="KeyConfigForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="KeyConfigForm.Designer.cs">
+      <DependentUpon>KeyConfigForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Common\DescriptionTypeConverter.cs" />
+    <Compile Include="Devices\Sega\SegaGGVDP.cs" />
+    <Compile Include="Devices\Sega\SegaSMS2VDP.cs" />
+    <Compile Include="Devices\Z80A.cs" />
+    <Compile Include="Devices\Z80A.OpcodesPrefixDDFDCB.cs" />
+    <Compile Include="Extensions.cs" />
+    <Compile Include="Machines\Sega\GameGear\Configuration.cs" />
+    <Compile Include="Machines\Sega\GameGear\Manager.cs" />
+    <Compile Include="Machines\MachineConfiguration.cs" />
+    <Compile Include="Machines\IMachineManager.cs" />
+    <Compile Include="Machines\MachineLoader.cs" />
+    <Compile Include="Machines\Sega\MasterSystem\Configuration.cs" />
+    <Compile Include="Machines\Sega\MasterSystem\Manager.cs" />
+    <Compile Include="Machines\Sega\SG1000\Configuration.cs" />
+    <Compile Include="MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Common\NativeMethods.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Devices\SN76489.cs" />
+    <Compile Include="Devices\TMS9918A.cs" />
+    <Compile Include="Media\Sega\RomRam32kCartridge.cs" />
+    <Compile Include="Machines\Sega\SG1000\Manager.cs" />
+    <Compile Include="Common\ScreenControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <EmbeddedResource Include="KeyConfigForm.resx">
+      <DependentUpon>KeyConfigForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="Devices\Z80A.OpcodesPrefixED.cs" />
+    <Compile Include="Devices\Z80A.OpcodesPrefixDDFD.cs" />
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
