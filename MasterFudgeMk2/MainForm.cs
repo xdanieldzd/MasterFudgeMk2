@@ -14,8 +14,8 @@ using System.Threading;
 using System.IO;
 using System.Globalization;
 
-using NAudio.Wave;
-
+using MasterFudgeMk2.Common.AudioBackend;
+using MasterFudgeMk2.Common.VideoBackend;
 using MasterFudgeMk2.Common.XInput;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Machines;
@@ -41,7 +41,7 @@ namespace MasterFudgeMk2
         IMachineManager machineManager;
         Rectangle outputViewport;
         Bitmap outputBitmap;
-        WaveOut waveOut;
+        ISoundOutput soundOutput;
 
         public bool LimitFps
         {
@@ -51,8 +51,8 @@ namespace MasterFudgeMk2
 
         public bool MuteSound
         {
-            get { return (emuConfig.MuteSound = (waveOut?.Volume == 0.0)); }
-            set { if (waveOut != null) waveOut.Volume = ((emuConfig.MuteSound = value) ? 0.0f : 1.0f); }
+            get { return (emuConfig.MuteSound = (soundOutput?.Volume == 0.0f)); }
+            set { if (soundOutput != null) soundOutput.Volume = ((emuConfig.MuteSound = value) ? 0.0f : 1.0f); }
         }
 
         public bool KeepAspectRatio
@@ -90,8 +90,12 @@ namespace MasterFudgeMk2
 
             emulationIsInitialized = new Common.UiStateBoolean(false);
 
-            waveOut = new WaveOut();
-            waveOut.Stop();
+            if (false)
+                soundOutput = new NAudioOutput(44100, 1);
+            else
+                soundOutput = new WavFileSoundOutput(44100, 1);
+
+            soundOutput.Stop();
 
             Application.Idle += (s, e) => { while (Common.NativeMethods.IsApplicationIdle()) { StepMachine(); } };
 
@@ -121,7 +125,7 @@ namespace MasterFudgeMk2
                 //LoadMedia(@"D:\ROMs\GG\Gunstar_Heroes_(J).gg");
                 //LoadMedia(@"D:\ROMs\GG\Sonic_the_Hedgehog_(JUE).gg");
                 //LoadMedia(@"D:\ROMs\GG\Coca Cola Kid (Japan).gg");
-                //LoadMedia(@"D:\ROMs\GG\Puyo_Puyo_2_(J)_[!].gg");
+                LoadMedia(@"D:\ROMs\GG\Puyo_Puyo_2_(J)_[!].gg");
                 //LoadMedia(@"D:\ROMs\GG\Puzlow_Kids_(Puyo_Puyo)_(J).gg");
                 //LoadMedia(@"D:\ROMs\GG\GG_Shinobi_(E)_[!].gg");
 
@@ -141,7 +145,14 @@ namespace MasterFudgeMk2
                 if (components != null) components.Dispose();
 
                 if (outputBitmap != null) outputBitmap.Dispose();
-                if (waveOut != null) waveOut.Dispose();
+                if (soundOutput != null)
+                {
+                    if (soundOutput is WavFileSoundOutput)
+                    {
+                        (soundOutput as WavFileSoundOutput).Save(@"E:\temp\sms\new\test.wav");
+                    }
+                    soundOutput.Dispose();
+                }
             }
 
             base.Dispose(disposing);
@@ -317,6 +328,7 @@ namespace MasterFudgeMk2
         public void StartMachine(Type machineType)
         {
             outputViewport = Rectangle.Empty;
+            soundOutput?.Stop();
 
             romFileInfo = null;
 
@@ -325,17 +337,18 @@ namespace MasterFudgeMk2
             machineManager.OnRenderScreen += MachineManager_OnRenderScreen;
             machineManager.OnScreenViewportChange += MachineManager_OnScreenViewportChange;
             machineManager.OnPollInput += MachineManager_OnPollInput;
+
+            machineManager.OnAddSampleData += MachineManager_OnAddSampleData; ;
+
             machineManager.Startup();
 
             emulationIsInitialized.IsTrue = (machineManager != null);
 
-            waveOut?.Stop();
-            waveOut?.Init(machineManager.WaveProvider);
-            waveOut?.Play();
-
             SetFormText();
 
             interval = (long)TimeSpan.FromSeconds(1.0 / machineManager.RefreshRate).TotalMilliseconds;
+
+            soundOutput?.Play();
         }
 
         public void LoadMedia(string filename)
@@ -458,7 +471,7 @@ namespace MasterFudgeMk2
             if (!pressed.Contains(Buttons.DPadUp) && controller?.LeftThumbstick.Y > XInputGamepad.LeftThumbDeadzone) pressed.Add(Buttons.DPadUp);
             e.Pressed = pressed;
 
-            if (false)
+            if (emuConfig.DebugMode)
             {
                 if (controller.IsConnected)
                 {
@@ -478,10 +491,15 @@ namespace MasterFudgeMk2
             }
         }
 
+        private void MachineManager_OnAddSampleData(object sender, AddSampleDataEventArgs e)
+        {
+            soundOutput.AddSampleData(e.Samples);
+        }
+
         private void openROMToolStripMenuItem_Click(object sender, EventArgs e)
         {
             machineManager?.Pause();
-            waveOut?.Stop();
+            soundOutput?.Stop();
 
             if (ofdOpenRom.ShowDialog() == DialogResult.OK)
             {
@@ -490,7 +508,7 @@ namespace MasterFudgeMk2
             else
             {
                 machineManager?.Unpause();
-                if (machineManager != null) waveOut?.Play();
+                if (machineManager != null) soundOutput?.Play();
             }
         }
 
@@ -566,66 +584,6 @@ namespace MasterFudgeMk2
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             MessageBox.Show(string.Format("{0} by {1}", Application.ProductName, Application.CompanyName), "About", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-    }
-
-    public delegate void RenderScreenHandler(object sender, RenderScreenEventArgs e);
-
-    public class RenderScreenEventArgs : EventArgs
-    {
-        public int Width { get; private set; }
-        public int Height { get; private set; }
-        public byte[] FrameData { get; private set; }
-
-        public RenderScreenEventArgs(int width, int height, byte[] data)
-        {
-            Width = width;
-            Height = height;
-            FrameData = data;
-        }
-    }
-
-    public delegate void ScreenResizeHandler(object sender, ScreenResizeEventArgs e);
-
-    public class ScreenResizeEventArgs : EventArgs
-    {
-        public int Width { get; private set; }
-        public int Height { get; private set; }
-
-        public ScreenResizeEventArgs(int width, int height)
-        {
-            Width = width;
-            Height = height;
-        }
-    }
-
-    public delegate void ScreenViewportChangeHandler(object sender, ScreenViewportChangeEventArgs e);
-
-    public class ScreenViewportChangeEventArgs : EventArgs
-    {
-        public int X { get; private set; }
-        public int Y { get; private set; }
-        public int Width { get; private set; }
-        public int Height { get; private set; }
-
-        public ScreenViewportChangeEventArgs(int x, int y, int width, int height)
-        {
-            X = x;
-            Y = y;
-            Width = width;
-            Height = height;
-        }
-    }
-
-    public delegate void PollInputHandler(object sender, PollInputEventArgs e);
-
-    public class PollInputEventArgs : EventArgs
-    {
-        public IEnumerable<Enum> Pressed { get; set; }
-
-        public PollInputEventArgs()
-        {
-            Pressed = null;
         }
     }
 }

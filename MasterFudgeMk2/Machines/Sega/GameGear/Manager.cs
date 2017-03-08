@@ -5,13 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
 
-using NAudio.Wave;
-
 using MasterFudgeMk2.Common;
+using MasterFudgeMk2.Common.AudioBackend;
+using MasterFudgeMk2.Common.VideoBackend;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Devices;
 using MasterFudgeMk2.Devices.Sega;
-using MasterFudgeMk2.Machines.Sega.SG1000;
 
 namespace MasterFudgeMk2.Machines.Sega.GameGear
 {
@@ -45,7 +44,6 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
         public double RefreshRate { get { return refreshRate; } }
         public bool SupportsBootingWithoutMedia { get { return false; } }
         public bool CanCurrentlyBootWithoutMedia { get { return false; } }
-        public IWaveProvider WaveProvider { get { return (psg as IWaveProvider); } }
         public MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
 
         public List<Tuple<string, Type, double>> DebugChipInformation
@@ -61,10 +59,11 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             }
         }
 
-        public event ScreenResizeHandler OnScreenResize;
-        public event RenderScreenHandler OnRenderScreen;
-        public event ScreenViewportChangeHandler OnScreenViewportChange;
-        public event PollInputHandler OnPollInput;
+        public event EventHandler<ScreenResizeEventArgs> OnScreenResize;
+        public event EventHandler<RenderScreenEventArgs> OnRenderScreen;
+        public event EventHandler<ScreenViewportChangeEventArgs> OnScreenViewportChange;
+        public event EventHandler<PollInputEventArgs> OnPollInput;
+        public event EventHandler<AddSampleDataEventArgs> OnAddSampleData;
 
         /* Constants */
         const double masterClock = 10738635;
@@ -145,7 +144,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             cpu = new Z80A(cpuClock, refreshRate, ReadMemory, WriteMemory, ReadPort, WritePort);
             wram = new byte[ramSize];
             vdp = new SegaGGVDP(vdpClock, refreshRate);
-            psg = new SN76489(psgClock, refreshRate, 44100);
+            psg = new SN76489(psgClock, refreshRate, (s, e) => { OnAddSampleData?.Invoke(s, e); });
         }
 
         public void Startup()

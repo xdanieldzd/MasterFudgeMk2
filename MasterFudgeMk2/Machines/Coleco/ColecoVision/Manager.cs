@@ -9,6 +9,8 @@ using System.IO;
 using NAudio.Wave;
 
 using MasterFudgeMk2.Common;
+using MasterFudgeMk2.Common.AudioBackend;
+using MasterFudgeMk2.Common.VideoBackend;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Devices;
 
@@ -85,10 +87,11 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
             }
         }
 
-        public event ScreenResizeHandler OnScreenResize;
-        public event RenderScreenHandler OnRenderScreen;
-        public event ScreenViewportChangeHandler OnScreenViewportChange;
-        public event PollInputHandler OnPollInput;
+        public event EventHandler<ScreenResizeEventArgs> OnScreenResize;
+        public event EventHandler<RenderScreenEventArgs> OnRenderScreen;
+        public event EventHandler<ScreenViewportChangeEventArgs> OnScreenViewportChange;
+        public event EventHandler<PollInputEventArgs> OnPollInput;
+        public event EventHandler<AddSampleDataEventArgs> OnAddSampleData;
 
         /* Constants */
         const double masterClock = 10738635;
@@ -175,7 +178,7 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
             cpu = new Z80A(cpuClock, refreshRate, ReadMemory, WriteMemory, ReadPort, WritePort);
             wram = new byte[ramSize];
             vdp = new TMS9918A(vdpClock, refreshRate, false);
-            psg = new SN76489(psgClock, refreshRate, 44100);
+            psg = new SN76489(psgClock, refreshRate, (s, e) => { OnAddSampleData?.Invoke(s, e); });
 
             bios = File.ReadAllBytes(configuration.BiosPath);
         }

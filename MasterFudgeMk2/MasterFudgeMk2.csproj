@@ -57,14 +57,23 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Common\AudioBackend\WavWriter.cs" />
+    <Compile Include="Common\AudioBackend\AddSampleDataEventArgs.cs" />
+    <Compile Include="Common\AudioBackend\NAudioOutput.cs" />
+    <Compile Include="Common\AudioBackend\ISoundOutput.cs" />
+    <Compile Include="Common\AudioBackend\WavFileSoundOutput.cs" />
     <Compile Include="Common\BindableToolStripMenuItem.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Common\InterruptState.cs" />
+    <Compile Include="Common\MustInitialize.cs" />
     <Compile Include="Common\TupleListExtensions.cs" />
     <Compile Include="Common\UiStateBoolean.cs" />
+    <Compile Include="Common\VideoBackend\PollInputEventArgs.cs" />
+    <Compile Include="Common\VideoBackend\RenderScreenEventArgs.cs" />
+    <Compile Include="Common\VideoBackend\ScreenResizeEventArgs.cs" />
+    <Compile Include="Common\VideoBackend\ScreenViewportChangeEventArgs.cs" />
     <Compile Include="ConfigFile.cs" />
+    <Compile Include="Devices\ISoundDevice.cs" />
     <Compile Include="Devices\Z80A.OpcodesPrefixCB.cs" />
     <Compile Include="Devices\Z80A.CycleCounts.cs" />
     <Compile Include="Devices\Z80A.Disassembly.cs" />

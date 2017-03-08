@@ -4,13 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using NAudio.Wave;
-
 using MasterFudgeMk2.Common;
+using MasterFudgeMk2.Common.AudioBackend;
 
 namespace MasterFudgeMk2.Devices
 {
-    public class SN76489 : WaveProvider16
+    public class SN76489 : MustInitialize<EventHandler<AddSampleDataEventArgs>>, ISoundDevice
     {
         /* http://www.smspower.org/Development/SN76489 */
         /* Differences in various system's PSGs: http://forums.nesdev.com/viewtopic.php?p=190216#p190216 */
@@ -23,6 +22,10 @@ namespace MasterFudgeMk2.Devices
         // TODO: eventually, when/if this gets less garbage, look into whatever the Game Gear has here in addition
 
         const int numChannels = 4;
+
+        /* Sample generation & event handling */
+        public event EventHandler<AddSampleDataEventArgs> OnAddSampleData;
+        List<short> sampleBuffer;
 
         /* Channel registers */
         ushort[] volumeRegisters;       /* Channels 0-3: 4 bits */
@@ -42,19 +45,14 @@ namespace MasterFudgeMk2.Devices
         int clockCyclesPerLine, cycleCount;
         double clockRate, refreshRate;
 
-        /* Variables for output */
-        int currentSamplePosition;
-
-        /* Generated samples */
-        short[] samples;
-
-        // TEMP: wavewriter
-        Common.AudioBackend.WavWriter wavWriter;
-
-        public SN76489(double clockRate, double refreshRate, int sampleRate)
+        public SN76489(double clockRate, double refreshRate, EventHandler<AddSampleDataEventArgs> addSampleDataEvent) : base(addSampleDataEvent)
         {
             this.clockRate = clockRate;
             this.refreshRate = refreshRate;
+
+            OnAddSampleData += addSampleDataEvent;
+
+            sampleBuffer = new List<short>(1024);
 
             volumeRegisters = new ushort[numChannels];
             toneRegisters = new ushort[numChannels];
@@ -68,26 +66,17 @@ namespace MasterFudgeMk2.Devices
                 volumeTable[i] = (ushort)(0x2000 * Math.Pow(2.0, i * -2.0 / 6.0) + 0.5);
             volumeTable[15] = 0;
 
-            /* For NAudio WaveProvider16 */
-            SetWaveFormat(sampleRate, 1);
-
-            clockCyclesPerLine = (int)(((clockRate / refreshRate) / TMS9918A.NumScanlinesNtsc) / 16.0);
-
-            samples = new short[65535];
+            clockCyclesPerLine = (int)(((clockRate / refreshRate) / TMS9918A.NumScanlinesNtsc) / 3.0);
         }
 
         public virtual void Startup()
         {
-            // TEMP
-            wavWriter = new Common.AudioBackend.WavWriter();
-
             Reset();
         }
 
         public virtual void Shutdown()
         {
-            // TEMP
-            wavWriter?.Save(@"E:\temp\sms\new\test.wav");
+            //
         }
 
         public virtual void Reset()
@@ -101,70 +90,60 @@ namespace MasterFudgeMk2.Devices
             }
 
             cycleCount = 0;
-            currentSamplePosition = 0;
         }
 
         public void Step(int clockCyclesInStep)
         {
-
-
             // TODO TIMING  go over what byuu's said again, figure out how to tick this damn thing at its correct rate (i.e not at 3.58mhz but that /16), etc, etcccccccc...zzzzzzz
 
-
-            int totalOutput = 0;
-
-            bool endofline = ((cycleCount + clockCyclesInStep) >= clockCyclesPerLine);
-            cycleCount = ((cycleCount + clockCyclesInStep) % clockCyclesPerLine);
-
-            if (endofline)
-            {
-                /* Process tone channels */
-                for (int ch = 0; ch < 3; ch++)
-                {
-                    /* Check for counter underflow */
-                    if ((channelCounters[ch] & 0x03FF) > 0)
-                        channelCounters[ch]--;
-                }
-            }
-
-            /* Process tone channels */
+            /* Tick tone channels */
             for (int ch = 0; ch < 3; ch++)
             {
-                /* Counter underflowed, reload and flip output bit */
-                if ((channelCounters[ch] & 0x03FF) == 0)
-                {
-                    channelCounters[ch] = (ushort)(toneRegisters[ch] & 0x3FF);
-                    channelOutput[ch] = !channelOutput[ch];
-
-                    if (channelOutput[ch])
-                        totalOutput += volumeTable[volumeRegisters[ch]];
-                }
+                /* Check for counter underflow */
+                if ((channelCounters[ch] & 0x03FF) > 0) channelCounters[ch]--;
             }
 
-            /* Process tone channel */
-            // TODO: noise channel here
-
-            /* Prepare output */
-            int speakerOutput = (totalOutput - 32768);
-
-            //if (totalOutput != 0)
+            cycleCount += clockCyclesInStep;
+            if (cycleCount >= clockCyclesPerLine)
             {
-                // TEMP
-                wavWriter.AddSampleData(new short[] { (short)totalOutput });
+                /* Generate tone channel output */
+                int totalOutput = 0;
+                for (int ch = 0; ch < 3; ch++)
+                {
+                    /* Counter underflowed, reload and flip output bit */
+                    if ((channelCounters[ch] & 0x03FF) == 0)
+                    {
+                        channelCounters[ch] = (ushort)(toneRegisters[ch] & 0x3FF);
+                        channelOutput[ch] = !channelOutput[ch];
 
+                        if (channelOutput[ch])
+                            totalOutput += volumeTable[volumeRegisters[ch]];
+                    }
+                }
 
-                if (currentSamplePosition < samples.Length)
-                    samples[currentSamplePosition] = (short)totalOutput;
-                currentSamplePosition++;
+                /* Generate noise channel output */
+                // TODO: noise channel here
+
+                /* Enqueue output */
+                short speakerOutput = (short)(totalOutput /*- 32768*/);
+
+                if (false)
+                {
+                    // TEMP crappy sinewave test thingy
+                    sineCount = ((sineCount + 1) % sineWave.Length);
+                    speakerOutput = (short)(sineWave[sineCount] << 6);
+                }
+
+                sampleBuffer.Add(speakerOutput);
+
+                if (sampleBuffer.Count == sampleBuffer.Capacity)
+                {
+                    OnAddSampleData?.Invoke(this, new AddSampleDataEventArgs(sampleBuffer.ToArray()));
+                    sampleBuffer.Clear();
+                }
+
+                cycleCount -= clockCyclesPerLine;
             }
-        }
-
-        /* For NAudio WaveProvider16 */
-        public override int Read(short[] buffer, int offset, int sampleCount)
-        {
-            Buffer.BlockCopy(samples, 0, buffer, 0, sampleCount * 2);
-            currentSamplePosition = 0;
-            return sampleCount;
         }
 
         public void WriteData(byte data)
@@ -221,5 +200,42 @@ namespace MasterFudgeMk2.Devices
                 }
             }
         }
+
+        static int sineCount = 0;
+        /* https://gist.github.com/funkfinger/965900 */
+        static short[] sineWave = new short[] {
+            0x80, 0x83, 0x86, 0x89, 0x8C, 0x90, 0x93, 0x96,
+            0x99, 0x9C, 0x9F, 0xA2, 0xA5, 0xA8, 0xAB, 0xAE,
+            0xB1, 0xB3, 0xB6, 0xB9, 0xBC, 0xBF, 0xC1, 0xC4,
+            0xC7, 0xC9, 0xCC, 0xCE, 0xD1, 0xD3, 0xD5, 0xD8,
+            0xDA, 0xDC, 0xDE, 0xE0, 0xE2, 0xE4, 0xE6, 0xE8,
+            0xEA, 0xEB, 0xED, 0xEF, 0xF0, 0xF1, 0xF3, 0xF4,
+            0xF5, 0xF6, 0xF8, 0xF9, 0xFA, 0xFA, 0xFB, 0xFC,
+            0xFD, 0xFD, 0xFE, 0xFE, 0xFE, 0xFF, 0xFF, 0xFF,
+            0xFF, 0xFF, 0xFF, 0xFF, 0xFE, 0xFE, 0xFE, 0xFD,
+            0xFD, 0xFC, 0xFB, 0xFA, 0xFA, 0xF9, 0xF8, 0xF6,
+            0xF5, 0xF4, 0xF3, 0xF1, 0xF0, 0xEF, 0xED, 0xEB,
+            0xEA, 0xE8, 0xE6, 0xE4, 0xE2, 0xE0, 0xDE, 0xDC,
+            0xDA, 0xD8, 0xD5, 0xD3, 0xD1, 0xCE, 0xCC, 0xC9,
+            0xC7, 0xC4, 0xC1, 0xBF, 0xBC, 0xB9, 0xB6, 0xB3,
+            0xB1, 0xAE, 0xAB, 0xA8, 0xA5, 0xA2, 0x9F, 0x9C,
+            0x99, 0x96, 0x93, 0x90, 0x8C, 0x89, 0x86, 0x83,
+            0x80, 0x7D, 0x7A, 0x77, 0x74, 0x70, 0x6D, 0x6A,
+            0x67, 0x64, 0x61, 0x5E, 0x5B, 0x58, 0x55, 0x52,
+            0x4F, 0x4D, 0x4A, 0x47, 0x44, 0x41, 0x3F, 0x3C,
+            0x39, 0x37, 0x34, 0x32, 0x2F, 0x2D, 0x2B, 0x28,
+            0x26, 0x24, 0x22, 0x20, 0x1E, 0x1C, 0x1A, 0x18,
+            0x16, 0x15, 0x13, 0x11, 0x10, 0x0F, 0x0D, 0x0C,
+            0x0B, 0x0A, 0x08, 0x07, 0x06, 0x06, 0x05, 0x04,
+            0x03, 0x03, 0x02, 0x02, 0x02, 0x01, 0x01, 0x01,
+            0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02, 0x03,
+            0x03, 0x04, 0x05, 0x06, 0x06, 0x07, 0x08, 0x0A,
+            0x0B, 0x0C, 0x0D, 0x0F, 0x10, 0x11, 0x13, 0x15,
+            0x16, 0x18, 0x1A, 0x1C, 0x1E, 0x20, 0x22, 0x24,
+            0x26, 0x28, 0x2B, 0x2D, 0x2F, 0x32, 0x34, 0x37,
+            0x39, 0x3C, 0x3F, 0x41, 0x44, 0x47, 0x4A, 0x4D,
+            0x4F, 0x52, 0x55, 0x58, 0x5B, 0x5E, 0x61, 0x64,
+            0x67, 0x6A, 0x6D, 0x70, 0x74, 0x77, 0x7A, 0x7D
+        };
     }
 }

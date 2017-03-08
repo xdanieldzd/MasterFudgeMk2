@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-using NAudio.Wave;
-
+using MasterFudgeMk2.Common.AudioBackend;
+using MasterFudgeMk2.Common.VideoBackend;
 using MasterFudgeMk2.Media;
 
 namespace MasterFudgeMk2.Machines
@@ -37,10 +34,6 @@ namespace MasterFudgeMk2.Machines
         /// </summary>
         bool CanCurrentlyBootWithoutMedia { get; }
         /// <summary>
-        /// Get WaveProvider for NAudio
-        /// </summary>
-        IWaveProvider WaveProvider { get; }
-        /// <summary>
         /// Get or set machine configuration data
         /// </summary>
         MachineConfiguration Configuration { get; set; }
@@ -53,19 +46,23 @@ namespace MasterFudgeMk2.Machines
         /// <summary>
         /// Event handler for screen resizing
         /// </summary>
-        event ScreenResizeHandler OnScreenResize;
+        event EventHandler<ScreenResizeEventArgs> OnScreenResize;
         /// <summary>
         /// Event handler for rendering
         /// </summary>
-        event RenderScreenHandler OnRenderScreen;
+        event EventHandler<RenderScreenEventArgs> OnRenderScreen;
         /// <summary>
         /// Event handler for viewport changes, ex. Game Gear's 160x144 viewport
         /// </summary>
-        event ScreenViewportChangeHandler OnScreenViewportChange;
+        event EventHandler<ScreenViewportChangeEventArgs> OnScreenViewportChange;
         /// <summary>
         /// Event handler for input polling
         /// </summary>
-        event PollInputHandler OnPollInput;
+        event EventHandler<PollInputEventArgs> OnPollInput;
+        /// <summary>
+        /// Event handler for adding sound samples
+        /// </summary>
+        event EventHandler<AddSampleDataEventArgs> OnAddSampleData;
 
         /// <summary>
         /// Start machine up

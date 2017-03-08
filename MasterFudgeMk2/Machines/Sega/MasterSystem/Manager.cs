@@ -9,10 +9,11 @@ using System.IO;
 using NAudio.Wave;
 
 using MasterFudgeMk2.Common;
+using MasterFudgeMk2.Common.AudioBackend;
+using MasterFudgeMk2.Common.VideoBackend;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Devices;
 using MasterFudgeMk2.Devices.Sega;
-using MasterFudgeMk2.Machines.Sega.SG1000;
 
 namespace MasterFudgeMk2.Machines.Sega.MasterSystem
 {
@@ -75,10 +76,11 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             }
         }
 
-        public event ScreenResizeHandler OnScreenResize;
-        public event RenderScreenHandler OnRenderScreen;
-        public event ScreenViewportChangeHandler OnScreenViewportChange;
-        public event PollInputHandler OnPollInput;
+        public event EventHandler<ScreenResizeEventArgs> OnScreenResize;
+        public event EventHandler<RenderScreenEventArgs> OnRenderScreen;
+        public event EventHandler<ScreenViewportChangeEventArgs> OnScreenViewportChange;
+        public event EventHandler<PollInputEventArgs> OnPollInput;
+        public event EventHandler<AddSampleDataEventArgs> OnAddSampleData;
 
         /* Constants */
         const double masterClockNtsc = 10738635;
@@ -175,7 +177,7 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             cpu = new Z80A(cpuClock, refreshRate, ReadMemory, WriteMemory, ReadPort, WritePort);
             wram = new byte[ramSize];
             vdp = new SegaSMS2VDP(vdpClock, refreshRate, configuration.IsPalSystem);
-            psg = new SN76489(psgClock, refreshRate, 44100);
+            psg = new SN76489(psgClock, refreshRate, (s, e) => { OnAddSampleData?.Invoke(s, e); });
         }
 
         public void Startup()
@@ -440,15 +442,7 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
 
                 case 0xC0:
                     /* No effect */
-                    if (false)
-                    {
-                        // hacky SDSC console output, mainly for zexdoc testing
-                        // http://www.smspower.org/Development/SDSCDebugConsoleSpecification
-                        if (value == 0x02)
-                            File.WriteAllText(@"E:\temp\sms\new\sdsc.txt", string.Empty);
-                        if (value >= 0xA)
-                            File.AppendAllText(@"E:\temp\sms\new\sdsc.txt", new string(new char[] { (char)value }));
-                    }
+                    // TODO: proper implementation of SDSC debug console - http://www.smspower.org/Development/SDSCDebugConsoleSpecification
                     break;
 
                 default:

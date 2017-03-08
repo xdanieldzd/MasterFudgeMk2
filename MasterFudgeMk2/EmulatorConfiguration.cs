@@ -42,6 +42,12 @@ namespace MasterFudgeMk2
             set { SettingsConfig.Set(nameof(AutoResize), value); }
         }
 
+        public bool DebugMode
+        {
+            get { return SettingsConfig.GetBoolean(nameof(DebugMode), false); }
+            set { SettingsConfig.Set(nameof(DebugMode), value); }
+        }
+
         public string[] RecentFiles
         {
             get { return SettingsConfig.GetString(nameof(RecentFiles), string.Empty).Split('|'); }

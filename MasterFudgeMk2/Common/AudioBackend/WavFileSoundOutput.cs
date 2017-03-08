@@ -2,37 +2,41 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 
 namespace MasterFudgeMk2.Common.AudioBackend
 {
     /* http://www.codeguru.com/columns/dotnet/making-sounds-with-waves-using-c.html */
-    public class WavWriter
+    public class WavFileSoundOutput : MustInitialize<int>, ISoundOutput
     {
         WaveHeader waveHeader;
         FormatChunk formatChunk;
         DataChunk dataChunk;
 
-        public WavWriter()
+        public WavFileSoundOutput(int sampleRate, int numChannels) : base(sampleRate, numChannels)
         {
             waveHeader = new WaveHeader();
-            formatChunk = new FormatChunk();
+            formatChunk = new FormatChunk(sampleRate, numChannels);
             dataChunk = new DataChunk();
 
             waveHeader.FileLength += formatChunk.Length();
         }
 
-        public void AddSampleData(short[] leftBuffer, short[] rightBuffer)
+        public void Dispose()
         {
-            dataChunk.AddSampleData(leftBuffer, rightBuffer);
-            waveHeader.FileLength += (uint)(leftBuffer.Length + rightBuffer.Length);
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
-        public void AddSampleData(short[] stereoBuffer)
+        protected virtual void Dispose(bool disposing)
         {
-            dataChunk.AddSampleData(stereoBuffer);
-            waveHeader.FileLength += (uint)stereoBuffer.Length;
+            if (disposing) { }
+        }
+
+        public void AddSampleData(short[] samples)
+        {
+            dataChunk.AddSampleData(samples);
+            waveHeader.FileLength += (uint)samples.Length;
         }
 
         public void Save(string filename)
@@ -44,6 +48,11 @@ namespace MasterFudgeMk2.Common.AudioBackend
                 file.Write(dataChunk.GetBytes(), 0, (int)dataChunk.Length());
             }
         }
+
+        /* Stubs, this is a .wav file writer after all! */
+        public float Volume { get; set; }
+        public void Play() { }
+        public void Stop() { }
     }
 
     class WaveHeader
@@ -122,6 +131,13 @@ namespace MasterFudgeMk2.Common.AudioBackend
             RecalcBlockSizes();
         }
 
+        public FormatChunk(int frequency, int channels) : this()
+        {
+            Channels = (ushort)channels;
+            Frequency = (ushort)frequency;
+            RecalcBlockSizes();
+        }
+
         private void RecalcBlockSizes()
         {
             BlockAlign = (ushort)(channels * (bitsPerSample / 8));
@@ -181,22 +197,6 @@ namespace MasterFudgeMk2.Common.AudioBackend
         public uint Length()
         {
             return (uint)GetBytes().Length;
-        }
-
-        public void AddSampleData(short[] leftBuffer, short[] rightBuffer)
-        {
-            short[] newWaveData = new short[leftBuffer.Length + rightBuffer.Length];
-
-            int bufferOffset = 0;
-            for (int index = 0; index < newWaveData.Length; index += 2)
-            {
-                newWaveData[index] = leftBuffer[bufferOffset];
-                newWaveData[index + 1] = rightBuffer[bufferOffset];
-                bufferOffset++;
-            }
-            WaveData.AddRange(newWaveData);
-
-            ChunkSize += (uint)(newWaveData.Length * 2);
         }
 
         public void AddSampleData(short[] stereoBuffer)
