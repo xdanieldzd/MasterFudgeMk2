@@ -15,17 +15,14 @@ namespace MasterFudgeMk2.Devices
         /* Differences in various system's PSGs: http://forums.nesdev.com/viewtopic.php?p=190216#p190216 */
 
         // TODO: compare to Cydrak's code for higan! https://gitlab.com/higan/higan/tree/master/higan/ms/psg
-        // TODO: better audio backend stuff! similar to https://github.com/fredericmeyer/nanoboy/tree/master/nanoboy/nanoboy/Core/Audio/Backend ??
+        // TODO: eventually, when/if this gets less garbage, look into whatever the Game Gear has here in addition (stereo?)
 
-        // (old TODOs)
-        // TODO: sample generation and output is pretty garbage, probably timing and shit too
-        // TODO: eventually, when/if this gets less garbage, look into whatever the Game Gear has here in addition
-
-        const int numChannels = 4;
+        const int numChannels = 4, numToneChannels = 3, noiseChannelIndex = 3;
 
         /* Sample generation & event handling */
         public event EventHandler<AddSampleDataEventArgs> OnAddSampleData;
         List<short> sampleBuffer;
+        short[] channelSamples;
 
         /* Channel registers */
         ushort[] volumeRegisters;       /* Channels 0-3: 4 bits */
@@ -41,9 +38,12 @@ namespace MasterFudgeMk2.Devices
         /* Latched channel/type */
         byte latchedChannel, latchedType;
 
+        /* Linear-feedback shift register, for noise generation */
+        ushort noiseLfsr;               /* 15 or 16 bits, depending on chip version; TODO! */
+
         /* Clock & refresh rates */
-        int clockCyclesPerLine, cycleCount;
         double clockRate, refreshRate;
+        double cycleCount;
 
         public SN76489(double clockRate, double refreshRate, EventHandler<AddSampleDataEventArgs> addSampleDataEvent) : base(addSampleDataEvent)
         {
@@ -52,7 +52,8 @@ namespace MasterFudgeMk2.Devices
 
             OnAddSampleData += addSampleDataEvent;
 
-            sampleBuffer = new List<short>(1024);
+            sampleBuffer = new List<short>(4096);
+            channelSamples = new short[numChannels];
 
             volumeRegisters = new ushort[numChannels];
             toneRegisters = new ushort[numChannels];
@@ -65,8 +66,6 @@ namespace MasterFudgeMk2.Devices
             for (int i = 0; i < volumeTable.Length; i++)
                 volumeTable[i] = (ushort)(0x2000 * Math.Pow(2.0, i * -2.0 / 6.0) + 0.5);
             volumeTable[15] = 0;
-
-            clockCyclesPerLine = (int)(((clockRate / refreshRate) / TMS9918A.NumScanlinesNtsc) / 3.0);
         }
 
         public virtual void Startup()
@@ -81,7 +80,10 @@ namespace MasterFudgeMk2.Devices
 
         public virtual void Reset()
         {
+            sampleBuffer.Clear();
+
             latchedChannel = latchedType = 0x00;
+            noiseLfsr = 0x8000;
 
             for (int i = 0; i < numChannels; i++)
             {
@@ -89,61 +91,103 @@ namespace MasterFudgeMk2.Devices
                 toneRegisters[i] = 0x0000;
             }
 
-            cycleCount = 0;
+            cycleCount = 0.0;
         }
 
         public void Step(int clockCyclesInStep)
         {
             // TODO TIMING  go over what byuu's said again, figure out how to tick this damn thing at its correct rate (i.e not at 3.58mhz but that /16), etc, etcccccccc...zzzzzzz
 
-            /* Tick tone channels */
-            for (int ch = 0; ch < 3; ch++)
+            // TODO, mar 09: uh sounds better but still bad? naudio seems fine, the test sinewave thingy isn't scratchy and shit ... have i ever mentioned i hate sound emulation?
+
+            double psgCycles = (clockCyclesInStep / 16.0);
+            cycleCount += psgCycles;
+            ushort counterDecrement = (ushort)(psgCycles < 1.0 ? 1.0 : psgCycles);
+
+            /* Tick tone channels & generate output */
+            for (int ch = 0; ch < numToneChannels; ch++)
             {
                 /* Check for counter underflow */
-                if ((channelCounters[ch] & 0x03FF) > 0) channelCounters[ch]--;
+                if ((channelCounters[ch] & 0x03FF) > 0)
+                    channelCounters[ch] -= counterDecrement;
+
+                /* Counter underflowed, reload and flip output bit, then generate sample */
+                if ((channelCounters[ch] & 0x03FF) == 0)
+                {
+                    channelCounters[ch] = (ushort)(toneRegisters[ch] & 0x03FF);
+                    channelOutput[ch] = !channelOutput[ch];
+                    channelSamples[ch] = (short)(volumeTable[volumeRegisters[ch]] * (channelOutput[ch] ? 1 : 0));
+                }
             }
 
-            cycleCount += clockCyclesInStep;
-            if (cycleCount >= clockCyclesPerLine)
+            /* Tick noise channel & generate output */
+            int chN = noiseChannelIndex;
             {
-                /* Generate tone channel output */
-                int totalOutput = 0;
-                for (int ch = 0; ch < 3; ch++)
-                {
-                    /* Counter underflowed, reload and flip output bit */
-                    if ((channelCounters[ch] & 0x03FF) == 0)
-                    {
-                        channelCounters[ch] = (ushort)(toneRegisters[ch] & 0x3FF);
-                        channelOutput[ch] = !channelOutput[ch];
+                /* Check for counter underflow */
+                if ((channelCounters[chN] & 0x03FF) > 0)
+                    channelCounters[chN] -= counterDecrement;
 
-                        if (channelOutput[ch])
-                            totalOutput += volumeTable[volumeRegisters[ch]];
+                /* Counter underflowed, reload and flip output bit */
+                if ((channelCounters[chN] & 0x03FF) == 0)
+                {
+                    switch (toneRegisters[chN] & 0x3)
+                    {
+                        case 0x0: channelCounters[chN] = 0x10; break;
+                        case 0x1: channelCounters[chN] = 0x20; break;
+                        case 0x2: channelCounters[chN] = 0x40; break;
+                        case 0x3: channelCounters[chN] = (ushort)(toneRegisters[2] & 0x03FF); break;
+                    }
+                    channelOutput[chN] = !channelOutput[chN];
+
+                    if (channelOutput[chN])
+                    {
+                        /* Check noise type, then generate sample */
+                        bool isWhiteNoise = (((toneRegisters[chN] >> 2) & 0x1) == 0x1);
+
+                        // TODO: SMS/GG == bits 0 and 3 (0009) into 15; SG-1000/CV == bits 0 and 1 (0003) into 14!
+                        ushort tappedBits = (true ? 0x0009 : 0x0003);
+                        ushort newLfsrBit = (ushort)((isWhiteNoise ? CheckParity((ushort)(noiseLfsr & tappedBits)) : (noiseLfsr & 0x01)) << 15);
+
+                        noiseLfsr = (ushort)(newLfsrBit | (noiseLfsr >> 1));
+                        channelSamples[chN] = (short)(volumeTable[volumeRegisters[chN]] * (noiseLfsr & 0x1));
                     }
                 }
+            }
 
-                /* Generate noise channel output */
-                // TODO: noise channel here
+            /* Check if time for output */
+            double maxCycles = ((clockRate / 16.0) / ((44100 / sampleBuffer.Capacity) + 1)) / sampleBuffer.Capacity;    // TODO: bah, magic numbers, kinda from codeslinger.co.uk emu, understand then fixme
+            if (cycleCount >= maxCycles)
+            {
+                cycleCount -= maxCycles;
 
-                /* Enqueue output */
-                short speakerOutput = (short)(totalOutput /*- 32768*/);
+                /* Mix output together, then enqueue */
+                short mixed = 0;
+                for (int ch = 0; ch < numChannels; ch++)
+                    mixed += channelSamples[ch];
 
                 if (false)
                 {
                     // TEMP crappy sinewave test thingy
                     sineCount = ((sineCount + 1) % sineWave.Length);
-                    speakerOutput = (short)(sineWave[sineCount] << 6);
+                    mixed = (short)(sineWave[sineCount] << 6);
                 }
 
-                sampleBuffer.Add(speakerOutput);
-
+                sampleBuffer.Add(mixed);
                 if (sampleBuffer.Count == sampleBuffer.Capacity)
                 {
                     OnAddSampleData?.Invoke(this, new AddSampleDataEventArgs(sampleBuffer.ToArray()));
                     sampleBuffer.Clear();
                 }
-
-                cycleCount -= clockCyclesPerLine;
             }
+        }
+
+        private ushort CheckParity(ushort val)
+        {
+            val ^= (ushort)(val >> 8);
+            val ^= (ushort)(val >> 4);
+            val ^= (ushort)(val >> 2);
+            val ^= (ushort)(val >> 1);
+            return (ushort)(val & 0x1);
         }
 
         public void WriteData(byte data)

@@ -53,6 +53,7 @@ namespace MasterFudgeMk2.Common.AudioBackend
         public float Volume { get; set; }
         public void Play() { }
         public void Stop() { }
+        public void Reset() { }
     }
 
     class WaveHeader

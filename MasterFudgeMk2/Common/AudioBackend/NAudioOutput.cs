@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-using NAudio;
 using NAudio.Wave;
 
 namespace MasterFudgeMk2.Common.AudioBackend
@@ -64,6 +60,11 @@ namespace MasterFudgeMk2.Common.AudioBackend
         {
             waveOutDevice?.Stop();
         }
+
+        public void Reset()
+        {
+            waveProvider?.ClearSampleData();
+        }
     }
 
     class EmulatorWaveProvider : WaveProvider16
@@ -81,6 +82,11 @@ namespace MasterFudgeMk2.Common.AudioBackend
         {
             foreach (short sample in samples)
                 this.samples.Enqueue(sample);
+        }
+
+        public void ClearSampleData()
+        {
+            samples.Clear();
         }
 
         public override int Read(short[] buffer, int offset, int sampleCount)

@@ -8,6 +8,7 @@ namespace MasterFudgeMk2.Common.AudioBackend
 
         void Play();
         void Stop();
+        void Reset();
 
         float Volume { get; set; }
     }

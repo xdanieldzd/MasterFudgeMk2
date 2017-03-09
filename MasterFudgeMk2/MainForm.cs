@@ -90,10 +90,8 @@ namespace MasterFudgeMk2
 
             emulationIsInitialized = new Common.UiStateBoolean(false);
 
-            if (false)
-                soundOutput = new NAudioOutput(44100, 1);
-            else
-                soundOutput = new WavFileSoundOutput(44100, 1);
+            soundOutput = new NAudioOutput(44100, 1);
+            soundOutput = new WavFileSoundOutput(44100, 1);
 
             soundOutput.Stop();
 
@@ -104,6 +102,8 @@ namespace MasterFudgeMk2
             // DEBUG SHORTCUTS HO
             if (Environment.MachineName == "NANAMI-X")
             {
+                StartMachine(typeof(Machines.Sega.MasterSystem.Manager));
+
                 //LoadMedia(@"D:\ROMs\SG1000\Bank Panic (Japan).sg");
                 //LoadMedia(@"D:\ROMs\SG1000\Othello (Japan).sg");
                 //LoadMedia(@"D:\ROMs\SG1000\Castle, The (Japan).sg");
@@ -123,9 +123,9 @@ namespace MasterFudgeMk2
 
                 //LoadMedia(@"D:\ROMs\GG\Fantasy_Zone_Gear_(JUE).gg");
                 //LoadMedia(@"D:\ROMs\GG\Gunstar_Heroes_(J).gg");
-                //LoadMedia(@"D:\ROMs\GG\Sonic_the_Hedgehog_(JUE).gg");
+                LoadMedia(@"D:\ROMs\GG\Sonic_the_Hedgehog_(JUE).gg");
                 //LoadMedia(@"D:\ROMs\GG\Coca Cola Kid (Japan).gg");
-                LoadMedia(@"D:\ROMs\GG\Puyo_Puyo_2_(J)_[!].gg");
+                //LoadMedia(@"D:\ROMs\GG\Puyo_Puyo_2_(J)_[!].gg");
                 //LoadMedia(@"D:\ROMs\GG\Puzlow_Kids_(Puyo_Puyo)_(J).gg");
                 //LoadMedia(@"D:\ROMs\GG\GG_Shinobi_(E)_[!].gg");
 
@@ -338,7 +338,7 @@ namespace MasterFudgeMk2
             machineManager.OnScreenViewportChange += MachineManager_OnScreenViewportChange;
             machineManager.OnPollInput += MachineManager_OnPollInput;
 
-            machineManager.OnAddSampleData += MachineManager_OnAddSampleData; ;
+            machineManager.OnAddSampleData += MachineManager_OnAddSampleData;
 
             machineManager.Startup();
 
@@ -363,6 +363,8 @@ namespace MasterFudgeMk2
             IMedia media = MediaLoader.LoadMedia(machineManager, fileInfo);
             machineManager.LoadMedia(media);
             machineManager.Reset();
+
+            soundOutput?.Reset();
 
             romFileInfo = fileInfo;
 
@@ -540,6 +542,7 @@ namespace MasterFudgeMk2
         private void resetToolStripMenuItem_Click(object sender, EventArgs e)
         {
             machineManager?.Reset();
+            soundOutput?.Reset();
         }
 
         private void infoToolStripMenuItem_Click(object sender, EventArgs e)
