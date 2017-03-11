@@ -79,7 +79,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
         byte[] wram;
         Z80A cpu;
         SegaGGVDP vdp;
-        SN76489 psg;    // TODO: derive stereo-capable GG PSG when/if we get more accurate
+        SegaSMS2PSG psg;    // TODO: derive stereo-capable GG PSG when/if we get more accurate
 
         [Flags]
         enum PortIoABButtons : byte
@@ -144,7 +144,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             cpu = new Z80A(cpuClock, refreshRate, ReadMemory, WriteMemory, ReadPort, WritePort);
             wram = new byte[ramSize];
             vdp = new SegaGGVDP(vdpClock, refreshRate);
-            psg = new SN76489(psgClock, refreshRate, (s, e) => { OnAddSampleData?.Invoke(s, e); });
+            psg = new SegaSMS2PSG(psgClock, refreshRate, (s, e) => { OnAddSampleData?.Invoke(s, e); });
         }
 
         public void Startup()

@@ -97,7 +97,7 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
         byte[] wram;
         Z80A cpu;
         SegaSMS2VDP vdp;
-        SN76489 psg;
+        SegaSMS2PSG psg;
 
         [Flags]
         enum PortIoABButtons : byte
@@ -177,7 +177,7 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             cpu = new Z80A(cpuClock, refreshRate, ReadMemory, WriteMemory, ReadPort, WritePort);
             wram = new byte[ramSize];
             vdp = new SegaSMS2VDP(vdpClock, refreshRate, configuration.IsPalSystem);
-            psg = new SN76489(psgClock, refreshRate, (s, e) => { OnAddSampleData?.Invoke(s, e); });
+            psg = new SegaSMS2PSG(psgClock, refreshRate, (s, e) => { OnAddSampleData?.Invoke(s, e); });
         }
 
         public void Startup()

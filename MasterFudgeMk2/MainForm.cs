@@ -113,7 +113,7 @@ namespace MasterFudgeMk2
 
                 //LoadMedia(@"D:\ROMs\SMS\F16_Fighting_Falcon_(UE)_[!].sms");
                 //LoadMedia(@"D:\ROMs\SMS\Dr._Robotnik's_Mean_Bean_Machine_(UE)_[!].sms");
-                //LoadMedia(@"D:\ROMs\SMS\Sonic_the_Hedgehog_(UE)_[!].sms");
+                LoadMedia(@"D:\ROMs\SMS\Sonic_the_Hedgehog_(UE)_[!].sms");
                 //LoadMedia(@"D:\ROMs\SMS\VDPTEST.sms");
                 //LoadMedia(@"D:\ROMs\SMS\zexdoc.sms");
                 //LoadMedia(@"D:\ROMs\SMS\zexdoc_sdsc.sms");
@@ -123,7 +123,7 @@ namespace MasterFudgeMk2
 
                 //LoadMedia(@"D:\ROMs\GG\Fantasy_Zone_Gear_(JUE).gg");
                 //LoadMedia(@"D:\ROMs\GG\Gunstar_Heroes_(J).gg");
-                LoadMedia(@"D:\ROMs\GG\Sonic_the_Hedgehog_(JUE).gg");
+                //LoadMedia(@"D:\ROMs\GG\Sonic_the_Hedgehog_(JUE).gg");
                 //LoadMedia(@"D:\ROMs\GG\Coca Cola Kid (Japan).gg");
                 //LoadMedia(@"D:\ROMs\GG\Puyo_Puyo_2_(J)_[!].gg");
                 //LoadMedia(@"D:\ROMs\GG\Puzlow_Kids_(Puyo_Puyo)_(J).gg");
@@ -467,10 +467,10 @@ namespace MasterFudgeMk2
             List<Enum> pressed = new List<Enum>();
             pressed.AddRange(Enum.GetValues(typeof(Keys)).Cast<Keys>().Where(x => (x != Keys.None) && keysPressed.Contains(x)).Cast<Enum>());
             pressed.AddRange(Enum.GetValues(typeof(Buttons)).Cast<Buttons>().Where(x => (x != Buttons.None) && (controller?.Buttons & x) == x).Cast<Enum>());
-            if (!pressed.Contains(Buttons.DPadLeft) && controller?.LeftThumbstick.X < -XInputGamepad.LeftThumbDeadzone) pressed.Add(Buttons.DPadLeft);
-            if (!pressed.Contains(Buttons.DPadDown) && controller?.LeftThumbstick.Y < -XInputGamepad.LeftThumbDeadzone) pressed.Add(Buttons.DPadDown);
-            if (!pressed.Contains(Buttons.DPadRight) && controller?.LeftThumbstick.X > XInputGamepad.LeftThumbDeadzone) pressed.Add(Buttons.DPadRight);
-            if (!pressed.Contains(Buttons.DPadUp) && controller?.LeftThumbstick.Y > XInputGamepad.LeftThumbDeadzone) pressed.Add(Buttons.DPadUp);
+            if (!pressed.Contains(Buttons.DPadLeft) && controller?.LeftThumbstick?.X < -XInputGamepad.LeftThumbDeadzone) pressed.Add(Buttons.DPadLeft);
+            if (!pressed.Contains(Buttons.DPadDown) && controller?.LeftThumbstick?.Y < -XInputGamepad.LeftThumbDeadzone) pressed.Add(Buttons.DPadDown);
+            if (!pressed.Contains(Buttons.DPadRight) && controller?.LeftThumbstick?.X > XInputGamepad.LeftThumbDeadzone) pressed.Add(Buttons.DPadRight);
+            if (!pressed.Contains(Buttons.DPadUp) && controller?.LeftThumbstick?.Y > XInputGamepad.LeftThumbDeadzone) pressed.Add(Buttons.DPadUp);
             e.Pressed = pressed;
 
             if (emuConfig.DebugMode)

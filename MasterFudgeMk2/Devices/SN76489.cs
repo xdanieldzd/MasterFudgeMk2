@@ -19,6 +19,11 @@ namespace MasterFudgeMk2.Devices
 
         const int numChannels = 4, numToneChannels = 3, noiseChannelIndex = 3;
 
+        /* Noise generation constants */
+        protected virtual ushort noiseLfsrMask => 0x7FFF;
+        protected virtual ushort noiseTappedBits => 0x0003;     /* Bits 0 and 1 */
+        protected virtual int noiseBitShift => 14;
+
         /* Sample generation & event handling */
         public event EventHandler<AddSampleDataEventArgs> OnAddSampleData;
         List<short> sampleBuffer;
@@ -39,7 +44,7 @@ namespace MasterFudgeMk2.Devices
         byte latchedChannel, latchedType;
 
         /* Linear-feedback shift register, for noise generation */
-        ushort noiseLfsr;               /* 15 or 16 bits, depending on chip version; TODO! */
+        protected ushort noiseLfsr;     /* 15-bit */
 
         /* Clock & refresh rates */
         double clockRate, refreshRate;
@@ -83,7 +88,7 @@ namespace MasterFudgeMk2.Devices
             sampleBuffer.Clear();
 
             latchedChannel = latchedType = 0x00;
-            noiseLfsr = 0x8000;
+            noiseLfsr = 0x4000;
 
             for (int i = 0; i < numChannels; i++)
             {
@@ -102,7 +107,7 @@ namespace MasterFudgeMk2.Devices
 
             double psgCycles = (clockCyclesInStep / 16.0);
             cycleCount += psgCycles;
-            ushort counterDecrement = (ushort)(psgCycles < 1.0 ? 1.0 : psgCycles);
+            ushort counterDecrement = (ushort)Math.Round(psgCycles, MidpointRounding.AwayFromZero);//(ushort)(psgCycles < 1.0 ? 1.0 : psgCycles);
 
             /* Tick tone channels & generate output */
             for (int ch = 0; ch < numToneChannels; ch++)
@@ -145,10 +150,9 @@ namespace MasterFudgeMk2.Devices
                         bool isWhiteNoise = (((toneRegisters[chN] >> 2) & 0x1) == 0x1);
 
                         // TODO: SMS/GG == bits 0 and 3 (0009) into 15; SG-1000/CV == bits 0 and 1 (0003) into 14!
-                        ushort tappedBits = (true ? 0x0009 : 0x0003);
-                        ushort newLfsrBit = (ushort)((isWhiteNoise ? CheckParity((ushort)(noiseLfsr & tappedBits)) : (noiseLfsr & 0x01)) << 15);
+                        ushort newLfsrBit = (ushort)((isWhiteNoise ? CheckParity((ushort)(noiseLfsr & noiseTappedBits)) : (noiseLfsr & 0x01)) << noiseBitShift);
 
-                        noiseLfsr = (ushort)(newLfsrBit | (noiseLfsr >> 1));
+                        noiseLfsr = (ushort)((newLfsrBit | (noiseLfsr >> 1)) & noiseLfsrMask);
                         channelSamples[chN] = (short)(volumeTable[volumeRegisters[chN]] * (noiseLfsr & 0x1));
                     }
                 }
