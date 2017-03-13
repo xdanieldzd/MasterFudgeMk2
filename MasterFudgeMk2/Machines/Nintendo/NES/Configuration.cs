@@ -8,7 +8,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
 {
     public sealed class Configuration : MachineConfiguration
     {
-        public override sealed string Filename { get { return "GameGear.xml"; } }
+        public override sealed string Filename { get { return "NES.xml"; } }
 
         /* Inputs */
         public Enum Up
