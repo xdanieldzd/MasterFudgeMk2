@@ -183,6 +183,12 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
             bios = File.ReadAllBytes(configuration.BiosPath);
         }
 
+        public bool CanLoadMedia(FileInfo mediaFile)
+        {
+            byte[] romData = File.ReadAllBytes(mediaFile.FullName);
+            return ((romData[0x00] == 0xAA && romData[0x01] == 0x55) || (romData[0x00] == 0x55 && romData[0x01] == 0xAA));
+        }
+
         public void Startup()
         {
             cartridge?.Startup();

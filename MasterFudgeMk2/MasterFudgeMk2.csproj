@@ -87,9 +87,10 @@
     <Compile Include="Machines\Nintendo\NES\Manager.cs" />
     <Compile Include="Media\MediaIdentity.cs" />
     <Compile Include="Media\IMedia.cs" />
-    <Compile Include="Media\Nintendo\INESHeader.cs" />
+    <Compile Include="Media\Nintendo\RomHeaderINES.cs" />
+    <Compile Include="Media\Nintendo\INESMedia.cs" />
     <Compile Include="Media\Nintendo\NROMCartridge.cs" />
-    <Compile Include="Media\Sega\RomHeader.cs" />
+    <Compile Include="Media\Sega\RomHeaderSMSGG.cs" />
     <Compile Include="Media\MediaLoader.cs" />
     <Compile Include="Media\Sega\RomOnlyCartridge.cs" />
     <Compile Include="Media\Sega\StandardMapperCartridge.cs" />

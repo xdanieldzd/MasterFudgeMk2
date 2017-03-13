@@ -12,6 +12,7 @@ using MasterFudgeMk2.Common;
 using MasterFudgeMk2.Common.AudioBackend;
 using MasterFudgeMk2.Common.VideoBackend;
 using MasterFudgeMk2.Media;
+using MasterFudgeMk2.Media.Sega;
 using MasterFudgeMk2.Devices;
 using MasterFudgeMk2.Devices.Sega;
 
@@ -178,6 +179,12 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             wram = new byte[ramSize];
             vdp = new SegaSMS2VDP(vdpClock, refreshRate, configuration.IsPalSystem);
             psg = new SegaSMS2PSG(psgClock, refreshRate, (s, e) => { OnAddSampleData?.Invoke(s, e); });
+        }
+
+        public bool CanLoadMedia(FileInfo mediaFile)
+        {
+            RomHeaderSMSGG romHeader = new RomHeaderSMSGG(File.ReadAllBytes(mediaFile.FullName));
+            return (romHeader.IsSEGAStringCorrect && !romHeader.IsGameGear);
         }
 
         public void Startup()

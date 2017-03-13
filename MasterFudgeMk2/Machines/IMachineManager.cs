@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 
 using MasterFudgeMk2.Common.AudioBackend;
 using MasterFudgeMk2.Common.VideoBackend;
@@ -72,6 +73,12 @@ namespace MasterFudgeMk2.Machines
         /// Reset machine
         /// </summary>
         void Reset();
+        /// <summary>
+        /// Determine if machine can load media file
+        /// </summary>
+        /// <param name="mediaFile">File info for media file</param>
+        /// <returns>True if machine can handle media</returns>
+        bool CanLoadMedia(FileInfo mediaFile);
         /// <summary>
         /// Load media into machine
         /// </summary>

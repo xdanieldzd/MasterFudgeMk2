@@ -8,7 +8,7 @@ namespace MasterFudgeMk2.Media.Sega
 {
     /* ROM header handler for Master System and Game Gear */
 
-    public class RomHeader
+    public class RomHeaderSMSGG
     {
         public static readonly Dictionary<byte, string> RegionNames = new Dictionary<byte, string>()
         {
@@ -60,7 +60,7 @@ namespace MasterFudgeMk2.Media.Sega
         public bool IsGameGear { get { return (Region == 0x05 || Region == 0x06 || Region == 0x07); } }
         public bool IsSEGAStringCorrect { get { return (TMRSEGAString == "TMR SEGA"); } }
 
-        public RomHeader(byte[] romData)
+        public RomHeaderSMSGG(byte[] romData)
         {
             int headerOffset = (romData.Length <= 0x8000 ? romData.Length - 0x10 : 0x7FF0);
 
