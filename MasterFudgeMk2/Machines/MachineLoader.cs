@@ -7,6 +7,7 @@ using System.IO;
 
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Media.Sega;
+using MasterFudgeMk2.Media.Nintendo;
 
 namespace MasterFudgeMk2.Machines
 {
@@ -16,8 +17,10 @@ namespace MasterFudgeMk2.Machines
 
         public static Type DetectMachine(FileInfo romFile)
         {
-            byte[] romData = MediaLoader.ReadSega8bitRomData(romFile.FullName);
+            byte[] romData = MediaLoader.ReadRomData(romFile.FullName);
+
             RomHeader romHeader = new RomHeader(romData);
+            INESHeader inesHeader = new INESHeader(romData);
 
             if (romHeader.IsSEGAStringCorrect)
             {
@@ -35,6 +38,10 @@ namespace MasterFudgeMk2.Machines
             {
                 // TODO: same as SG1000, a more reliable way?
                 return typeof(Coleco.ColecoVision.Manager);
+            }
+            else if (inesHeader.IsSignatureCorrect)
+            {
+                return typeof(Nintendo.NES.Manager);
             }
             else
             {

@@ -135,6 +135,8 @@ namespace MasterFudgeMk2
                 //LoadMedia(@"D:\ROMs\ColecoVision\Frogger (1982-83) (Parker Bros).col");
                 //LoadMedia(@"D:\ROMs\ColecoVision\Kevtris by Kevin Horton (1996) (PD).col");
                 //LoadMedia(@"D:\ROMs\ColecoVision\Smurf - Rescue in Gargamel's Castle (1982).col");
+
+                LoadMedia(@"D:\ROMs\NES\Super Mario Bros\Super Mario Bros. (JU) (PRG0) [!].nes");
             }
         }
 
@@ -563,7 +565,7 @@ namespace MasterFudgeMk2
             sb.AppendFormat(CultureInfo.InvariantCulture, "Refresh rate: {0:##.####} Hz\n", machineManager.RefreshRate);
             sb.AppendLine();
             foreach (Tuple<string, Type, double> chip in machineManager.DebugChipInformation)
-                sb.AppendFormat(CultureInfo.InvariantCulture, "{0}: {1} at {2:##.####} MHz\n", chip.Item1, chip.Item2.FullName, (chip.Item3 / 1000) / 1000);
+                sb.AppendFormat(CultureInfo.InvariantCulture, "{0}: {1} at {2:##.####} MHz\n", chip.Item1, chip.Item2?.FullName, (chip.Item3 / 1000) / 1000);
 
             MessageBox.Show(sb.ToString(), "System Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
