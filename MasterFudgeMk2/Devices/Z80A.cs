@@ -18,7 +18,7 @@ namespace MasterFudgeMk2.Devices
         {
             Carry = (1 << 0),               /* C */
             Subtract = (1 << 1),            /* N */
-            ParityOrOverflow = (1 << 2),    /* P */
+            ParityOrOverflow = (1 << 2),    /* P*/
             UnusedBit3 = (1 << 3),          /* - */
             HalfCarry = (1 << 4),           /* H */
             UnusedBit5 = (1 << 5),          /* - */

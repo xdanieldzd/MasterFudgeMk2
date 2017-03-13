@@ -7,14 +7,13 @@ using System.IO;
 
 using MasterFudgeMk2.Common;
 using MasterFudgeMk2.Media.Sega;
-using MasterFudgeMk2.Media.Nintendo;
 using MasterFudgeMk2.Machines;
 
 namespace MasterFudgeMk2.Media
 {
     public static class MediaLoader
     {
-        // TODO: de-Sega-ify, make everything more generic, better NES mapper identification, etc, etc!
+        // TODO: de-Sega-ify!
 
         static Dictionary<uint, MediaIdentity> mediaIdents = new Dictionary<uint, MediaIdentity>()
         {
@@ -24,7 +23,7 @@ namespace MasterFudgeMk2.Media
 
         public static IMedia LoadMedia(IMachineManager machineManager, FileInfo fileInfo)
         {
-            byte[] romData = ReadRomData(fileInfo.FullName);
+            byte[] romData = ReadSega8bitRomData(fileInfo.FullName);
             uint crc = Utilities.CalculateCrc32(romData);
 
             IMedia media = null;
@@ -52,48 +51,31 @@ namespace MasterFudgeMk2.Media
             {
                 media = (new RomOnlyCartridge() as IMedia);
             }
-            else if (machineManager is Machines.Nintendo.NES.Manager)
+            else
             {
-                // TODO: the stupid mapper crap! prg & chr rom pages, etc...
-
-
-                /*INESHeader inesHeader = new INESHeader(romData);
-
-                byte[] headerlessRom = new byte[romData.Length - 0x10];
-                Buffer.BlockCopy(romData, 0x10, headerlessRom, 0, headerlessRom.Length);
-                romData = headerlessRom;
-
-                if (inesHeader.MapperNumber == 0x00)
-                    media = (new NROMCartridge() as IMedia);*/
+                throw new Exception("Could not identify cartridge");
             }
-
-            if (media == null)
-                throw new Exception("Could not identify media");
 
             media?.Load(romData);
 
             return media;
         }
 
-        public static byte[] ReadRomData(string filename)
+        // TODO: make more generic, i.e. the copier header stuff?
+        public static byte[] ReadSega8bitRomData(string filename)
         {
             using (FileStream file = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 byte[] data;
                 if ((file.Length % 0x4000) == 0x200)
                 {
-                    /* Sega ROM w/ copier header */
+                    /* Copier header */
                     data = new byte[file.Length - (file.Length % 0x4000)];
                     file.Seek(file.Length % 0x4000, SeekOrigin.Begin);
                 }
-                else if ((file.Length % 0x2000) == 0x10)
-                {
-                    /* NES ROM */
-                    data = new byte[file.Length];
-                }
                 else
                 {
-                    /* Raw ROM data */
+                    /* Normal ROM */
                     data = new byte[file.Length];
                 }
                 file.Read(data, 0, data.Length);

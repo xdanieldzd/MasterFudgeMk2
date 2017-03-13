@@ -74,7 +74,6 @@
     <Compile Include="Common\VideoBackend\ScreenViewportChangeEventArgs.cs" />
     <Compile Include="ConfigFile.cs" />
     <Compile Include="Devices\ISoundDevice.cs" />
-    <Compile Include="Devices\MOS6502.cs" />
     <Compile Include="Devices\Sega\SegaSMS2PSG.cs" />
     <Compile Include="Devices\Z80A.OpcodesPrefixCB.cs" />
     <Compile Include="Devices\Z80A.CycleCounts.cs" />
@@ -83,12 +82,8 @@
     <Compile Include="EmulatorConfiguration.cs" />
     <Compile Include="Machines\Coleco\ColecoVision\Configuration.cs" />
     <Compile Include="Machines\Coleco\ColecoVision\Manager.cs" />
-    <Compile Include="Machines\Nintendo\NES\Configuration.cs" />
-    <Compile Include="Machines\Nintendo\NES\Manager.cs" />
     <Compile Include="Media\MediaIdentity.cs" />
     <Compile Include="Media\IMedia.cs" />
-    <Compile Include="Media\Nintendo\INESHeader.cs" />
-    <Compile Include="Media\Nintendo\NROMCartridge.cs" />
     <Compile Include="Media\Sega\RomHeader.cs" />
     <Compile Include="Media\MediaLoader.cs" />
     <Compile Include="Media\Sega\RomOnlyCartridge.cs" />
