@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
-using System.IO;
 
 using NAudio.Wave;
 
@@ -144,11 +143,6 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
             wram = new byte[ramSize];
             vdp = new TMS9918A(vdpClock, refreshRate, false);
             psg = new SN76489(psgClock, refreshRate, (s, e) => { OnAddSampleData?.Invoke(s, e); });
-        }
-
-        public bool CanLoadMedia(FileInfo mediaFile)
-        {
-            return (mediaFile.Extension == ".sg");
         }
 
         public void Startup()

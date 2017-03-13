@@ -4,13 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
-using System.IO;
 
 using MasterFudgeMk2.Common;
 using MasterFudgeMk2.Common.AudioBackend;
 using MasterFudgeMk2.Common.VideoBackend;
 using MasterFudgeMk2.Media;
-using MasterFudgeMk2.Media.Nintendo;
 using MasterFudgeMk2.Devices;
 
 namespace MasterFudgeMk2.Machines.Nintendo.NES
@@ -74,7 +72,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
         const double ppuClock = (masterClock / 4.0);
         const double apuClock = cpuClock;
 
-        INESMedia cartridge;
+        IMedia cartridge;
         byte[] wram;
         MOS6502 cpu;
         object ppu;
@@ -114,12 +112,6 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
             apu = null;
         }
 
-        public bool CanLoadMedia(FileInfo mediaFile)
-        {
-            RomHeaderINES inesHeader = new RomHeaderINES(File.ReadAllBytes(mediaFile.FullName));
-            return (inesHeader.IsSignatureCorrect);
-        }
-
         public void Startup()
         {
             cartridge?.Startup();
@@ -151,8 +143,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
 
         public void LoadMedia(IMedia media)
         {
-            if (!(media is INESMedia)) throw new Exception("Trying to load generic media into NES");
-            cartridge = (media as INESMedia);
+            cartridge = media;
         }
 
         public void SaveMedia()

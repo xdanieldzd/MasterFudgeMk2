@@ -34,7 +34,6 @@ namespace MasterFudgeMk2.Media
             if (cartIdent != null)
             {
                 media = (Activator.CreateInstance(cartIdent.MediaType) as IMedia);
-                media?.Load(romData);
             }
             else if ((machineManager is Machines.Sega.SG1000.Manager || machineManager is Machines.Sega.MasterSystem.Manager || machineManager is Machines.Sega.GameGear.Manager))
             {
@@ -48,41 +47,30 @@ namespace MasterFudgeMk2.Media
                     /* No special treatment and bigger than 48k, assume default Sega mapper */
                     media = (new StandardMapperCartridge() as IMedia);
                 }
-                media?.Load(romData);
             }
             else if (machineManager is Machines.Coleco.ColecoVision.Manager)
             {
                 media = (new RomOnlyCartridge() as IMedia);
-                media?.Load(romData);
             }
             else if (machineManager is Machines.Nintendo.NES.Manager)
             {
-                media = LoadMediaNES(machineManager, romData);
+                // TODO: the stupid mapper crap! prg & chr rom pages, etc...
+
+
+                /*INESHeader inesHeader = new INESHeader(romData);
+
+                byte[] headerlessRom = new byte[romData.Length - 0x10];
+                Buffer.BlockCopy(romData, 0x10, headerlessRom, 0, headerlessRom.Length);
+                romData = headerlessRom;
+
+                if (inesHeader.MapperNumber == 0x00)
+                    media = (new NROMCartridge() as IMedia);*/
             }
 
             if (media == null)
                 throw new Exception("Could not identify media");
 
-            return media;
-        }
-
-        private static INESMedia LoadMediaNES(IMachineManager machineManager, byte[] romData)
-        {
-            RomHeaderINES inesHeader = new RomHeaderINES(romData);
-
-            byte[] headerlessRom = new byte[romData.Length - 0x10];
-            Buffer.BlockCopy(romData, 0x10, headerlessRom, 0, headerlessRom.Length);
-
-            INESMedia media;
-
-            switch (inesHeader.MapperNumber)
-            {
-                case 0x00: media = (new NROMCartridge() as INESMedia); break;
-                default: throw new Exception("Unsupported mapper");
-            }
-
-            media.RomHeader = inesHeader;
-            media?.Load(headerlessRom);
+            media?.Load(romData);
 
             return media;
         }

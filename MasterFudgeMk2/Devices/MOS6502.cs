@@ -69,8 +69,8 @@ namespace MasterFudgeMk2.Devices
         MemoryReadDelegate memoryReadDelegate;
         MemoryWriteDelegate memoryWriteDelegate;
 
-        protected ushort pc;
-        protected byte sp, a, x, y;
+        protected ushort PC;
+        protected byte SP, A, X, Y;
         protected Flags p;
 
         protected byte op;
@@ -99,9 +99,9 @@ namespace MasterFudgeMk2.Devices
 
         public virtual void Reset()
         {
-            pc = ReadMemory8(0xFFFC);
-            sp = 0xFF;
-            a = x = y = 0;
+            PC = ReadMemory8(0xFFFC);
+            SP = 0xFF;
+            A = X = Y = 0;
             p = 0;
 
             intState = nmiState = InterruptState.Clear;
@@ -116,7 +116,6 @@ namespace MasterFudgeMk2.Devices
             /* Check INT line */
             if (intState == InterruptState.Assert)
             {
-                intState = InterruptState.Clear;
                 ServiceInterrupt();
             }
 
@@ -128,14 +127,14 @@ namespace MasterFudgeMk2.Devices
             }
 
             /* Fetch and execute opcode */
-            op = ReadMemory8(pc++);
+            op = ReadMemory8(PC++);
             switch (op)
             {
                 case 0x00: OpBRK(); break;
                 case 0x01: OpORA(AddressingModes.IndirectX); break;
                 case 0x05: OpORA(AddressingModes.ZeroPage); break;
                 case 0x06: OpASL(AddressingModes.ZeroPage); break;
-                case 0x08: PushP(); pc++; break;
+                case 0x08: PushP(); PC++; break;
                 case 0x09: OpORA(AddressingModes.Immediate); break;
                 case 0x0A: OpASL(AddressingModes.Accumulator); break;
                 case 0x0D: OpORA(AddressingModes.Absolute); break;
@@ -145,7 +144,7 @@ namespace MasterFudgeMk2.Devices
                 case 0x11: OpORA(AddressingModes.IndirectY); break;
                 case 0x15: OpORA(AddressingModes.ZeroPageX); break;
                 case 0x16: OpASL(AddressingModes.ZeroPageX); break;
-                case 0x18: ClearFlag(Flags.Carry); pc++; break;
+                case 0x18: ClearFlag(Flags.Carry); PC++; break;
                 case 0x19: OpORA(AddressingModes.AbsoluteY); break;
                 case 0x1D: OpORA(AddressingModes.AbsoluteX); break;
                 case 0x1E: OpASL(AddressingModes.AbsoluteX); break;
@@ -155,7 +154,7 @@ namespace MasterFudgeMk2.Devices
                 case 0x24: OpBIT(AddressingModes.ZeroPage); break;
                 case 0x25: OpAND(AddressingModes.ZeroPage); break;
                 case 0x26: OpROL(AddressingModes.ZeroPage); break;
-                case 0x28: PullP(); pc++; break;
+                case 0x28: PullP(); PC++; break;
                 case 0x29: OpAND(AddressingModes.Immediate); break;
                 case 0x2A: OpROL(AddressingModes.Accumulator); break;
                 case 0x2C: OpBIT(AddressingModes.Absolute); break;
@@ -166,16 +165,16 @@ namespace MasterFudgeMk2.Devices
                 case 0x31: OpAND(AddressingModes.IndirectY); break;
                 case 0x35: OpAND(AddressingModes.ZeroPageX); break;
                 case 0x36: OpROL(AddressingModes.ZeroPageX); break;
-                case 0x38: SetFlag(Flags.Carry); pc++; break;
+                case 0x38: SetFlag(Flags.Carry); PC++; break;
                 case 0x39: OpAND(AddressingModes.AbsoluteY); break;
                 case 0x3D: OpAND(AddressingModes.AbsoluteX); break;
                 case 0x3E: OpROL(AddressingModes.AbsoluteX); break;
 
-                case 0x40: PullP(); pc = Pull16(); break;
+                case 0x40: PullP(); PC = Pull16(); break;
                 case 0x41: OpEOR(AddressingModes.IndirectX); break;
                 case 0x45: OpEOR(AddressingModes.ZeroPage); break;
                 case 0x46: OpLSR(AddressingModes.ZeroPage); break;
-                case 0x48: Push(a); pc++; break;
+                case 0x48: Push(A); PC++; break;
                 case 0x49: OpEOR(AddressingModes.Immediate); break;
                 case 0x4A: OpLSR(AddressingModes.Accumulator); break;
                 case 0x4C: OpJMP(AddressingModes.Absolute); break;
@@ -186,16 +185,16 @@ namespace MasterFudgeMk2.Devices
                 case 0x51: OpEOR(AddressingModes.IndirectY); break;
                 case 0x55: OpEOR(AddressingModes.ZeroPageX); break;
                 case 0x56: OpLSR(AddressingModes.ZeroPageX); break;
-                case 0x58: ClearFlag(Flags.InterruptDisable); pc++; break;
+                case 0x58: ClearFlag(Flags.InterruptDisable); PC++; break;
                 case 0x59: OpEOR(AddressingModes.AbsoluteY); break;
                 case 0x5D: OpEOR(AddressingModes.AbsoluteX); break;
                 case 0x5E: OpLSR(AddressingModes.AbsoluteX); break;
 
-                case 0x60: pc = Pull16(); pc++; break;
+                case 0x60: PC = Pull16(); PC++; break;
                 case 0x61: OpADC(AddressingModes.IndirectX); break;
                 case 0x65: OpADC(AddressingModes.ZeroPage); break;
                 case 0x66: OpROR(AddressingModes.ZeroPage); break;
-                case 0x68: a = Pull(); SetClearFlagConditional(Flags.Zero, (a == 0x00)); SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80)); pc++; break;
+                case 0x68: A = Pull(); SetClearFlagConditional(Flags.Zero, (A == 0x00)); SetClearFlagConditional(Flags.Sign, ((A & 0x80) == 0x80)); PC++; break;
                 case 0x69: OpADC(AddressingModes.Immediate); break;
                 case 0x6A: OpROR(AddressingModes.Accumulator); break;
                 case 0x6C: OpJMP(AddressingModes.Indirect); break;
@@ -206,7 +205,7 @@ namespace MasterFudgeMk2.Devices
                 case 0x71: OpADC(AddressingModes.IndirectY); break;
                 case 0x75: OpADC(AddressingModes.ZeroPageX); break;
                 case 0x76: OpROR(AddressingModes.ZeroPageX); break;
-                case 0x78: SetFlag(Flags.InterruptDisable); pc++; break;
+                case 0x78: SetFlag(Flags.InterruptDisable); PC++; break;
                 case 0x79: OpADC(AddressingModes.AbsoluteY); break;
                 case 0x7D: OpADC(AddressingModes.AbsoluteX); break;
                 case 0x7E: OpROR(AddressingModes.AbsoluteX); break;
@@ -216,7 +215,7 @@ namespace MasterFudgeMk2.Devices
                 case 0x85: OpSTA(AddressingModes.ZeroPage); break;
                 case 0x86: OpSTX(AddressingModes.ZeroPage); break;
                 case 0x88: OpDEY(); break;
-                case 0x8A: a = x; SetClearFlagConditional(Flags.Zero, (a == 0x00)); SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80)); pc++; break;
+                case 0x8A: A = X; SetClearFlagConditional(Flags.Zero, (A == 0x00)); SetClearFlagConditional(Flags.Sign, ((A & 0x80) == 0x80)); PC++; break;
                 case 0x8C: OpSTY(AddressingModes.Absolute); break;
                 case 0x8D: OpSTA(AddressingModes.Absolute); break;
                 case 0x8E: OpSTX(AddressingModes.Absolute); break;
@@ -226,9 +225,9 @@ namespace MasterFudgeMk2.Devices
                 case 0x94: OpSTY(AddressingModes.ZeroPageX); break;
                 case 0x95: OpSTA(AddressingModes.ZeroPageX); break;
                 case 0x96: OpSTX(AddressingModes.ZeroPageY); break;
-                case 0x98: a = y; SetClearFlagConditional(Flags.Zero, (a == 0x00)); SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80)); pc++; break;
+                case 0x98: A = Y; SetClearFlagConditional(Flags.Zero, (A == 0x00)); SetClearFlagConditional(Flags.Sign, ((A & 0x80) == 0x80)); PC++; break;
                 case 0x99: OpSTA(AddressingModes.AbsoluteY); break;
-                case 0x9A: sp = x; pc++; break;
+                case 0x9A: SP = X; PC++; break;
                 case 0x9D: OpSTA(AddressingModes.AbsoluteX); break;
 
                 case 0xA0: OpLDY(AddressingModes.Immediate); break;
@@ -237,9 +236,9 @@ namespace MasterFudgeMk2.Devices
                 case 0xA4: OpLDY(AddressingModes.ZeroPage); break;
                 case 0xA5: OpLDA(AddressingModes.ZeroPage); break;
                 case 0xA6: OpLDX(AddressingModes.ZeroPage); break;
-                case 0xA8: y = a; SetClearFlagConditional(Flags.Zero, (y == 0x00)); SetClearFlagConditional(Flags.Sign, ((y & 0x80) == 0x80)); pc++; break;
+                case 0xA8: Y = A; SetClearFlagConditional(Flags.Zero, (Y == 0x00)); SetClearFlagConditional(Flags.Sign, ((Y & 0x80) == 0x80)); PC++; break;
                 case 0xA9: OpLDA(AddressingModes.Immediate); break;
-                case 0xAA: x = a; SetClearFlagConditional(Flags.Zero, (x == 0x00)); SetClearFlagConditional(Flags.Sign, ((x & 0x80) == 0x80)); pc++; break;
+                case 0xAA: X = A; SetClearFlagConditional(Flags.Zero, (X == 0x00)); SetClearFlagConditional(Flags.Sign, ((X & 0x80) == 0x80)); PC++; break;
                 case 0xAC: OpLDY(AddressingModes.Absolute); break;
                 case 0xAD: OpLDA(AddressingModes.Absolute); break;
                 case 0xAE: OpLDX(AddressingModes.Absolute); break;
@@ -249,9 +248,9 @@ namespace MasterFudgeMk2.Devices
                 case 0xB4: OpLDY(AddressingModes.ZeroPageX); break;
                 case 0xB5: OpLDA(AddressingModes.ZeroPageX); break;
                 case 0xB6: OpLDX(AddressingModes.ZeroPageY); break;
-                case 0xB8: ClearFlag(Flags.Overflow); pc++; break;
+                case 0xB8: ClearFlag(Flags.Overflow); PC++; break;
                 case 0xB9: OpLDA(AddressingModes.AbsoluteY); break;
-                case 0xBA: x = sp; SetClearFlagConditional(Flags.Zero, (x == 0x00)); SetClearFlagConditional(Flags.Sign, ((x & 0x80) == 0x80)); pc++; break;
+                case 0xBA: X = SP; SetClearFlagConditional(Flags.Zero, (X == 0x00)); SetClearFlagConditional(Flags.Sign, ((X & 0x80) == 0x80)); PC++; break;
                 case 0xBC: OpLDY(AddressingModes.AbsoluteX); break;
                 case 0xBD: OpLDA(AddressingModes.AbsoluteX); break;
                 case 0xBE: OpLDX(AddressingModes.AbsoluteY); break;
@@ -272,7 +271,7 @@ namespace MasterFudgeMk2.Devices
                 case 0xD1: OpCMP(AddressingModes.IndirectY); break;
                 case 0xD5: OpCMP(AddressingModes.ZeroPageX); break;
                 case 0xD6: OpDEC(AddressingModes.ZeroPageX); break;
-                case 0xD8: ClearFlag(Flags.DecimalMode); pc++; break;
+                case 0xD8: ClearFlag(Flags.DecimalMode); PC++; break;
                 case 0xD9: OpCMP(AddressingModes.AbsoluteY); break;
                 case 0xDD: OpCMP(AddressingModes.AbsoluteX); break;
                 case 0xDE: OpDEC(AddressingModes.AbsoluteX); break;
@@ -293,7 +292,7 @@ namespace MasterFudgeMk2.Devices
                 case 0xF1: OpSBC(AddressingModes.IndirectY); break;
                 case 0xF5: OpSBC(AddressingModes.ZeroPageX); break;
                 case 0xF6: OpINC(AddressingModes.ZeroPageX); break;
-                case 0xF8: SetFlag(Flags.DecimalMode); pc++; break;
+                case 0xF8: SetFlag(Flags.DecimalMode); PC++; break;
                 case 0xF9: OpSBC(AddressingModes.AbsoluteY); break;
                 case 0xFD: OpSBC(AddressingModes.AbsoluteX); break;
                 case 0xFE: OpINC(AddressingModes.AbsoluteX); break;
@@ -339,27 +338,12 @@ namespace MasterFudgeMk2.Devices
 
         private void ServiceInterrupt()
         {
-            if (!IsFlagSet(Flags.InterruptDisable))
-            {
-                ClearFlag(Flags.Brk);
-                Push16(pc);
-                PushP();
-                SetFlag(Flags.InterruptDisable);
-                pc = ReadMemory16(0xFFFE);
-
-                currentCycles += 7;
-            }
+            //
         }
 
         private void ServiceNonMaskableInterrupt()
         {
-            ClearFlag(Flags.Brk);
-            Push16(pc);
-            PushP();
-            SetFlag(Flags.InterruptDisable);
-            pc = ReadMemory16(0xFFFA);
-
-            currentCycles += 7;
+            //
         }
 
         private byte ReadMemory8(ushort address)
@@ -390,151 +374,151 @@ namespace MasterFudgeMk2.Devices
             return (ushort)((b << 8) | a);
         }
 
-        private byte ReadZeroPage(ushort address)
+        private byte ReadZeroPage(ushort A)
         {
-            return ReadMemory8(address);
+            return ReadMemory8(A);
         }
 
-        private byte ReadZeroPageX(ushort address)
+        private byte ReadZeroPageX(ushort A)
         {
-            return ReadMemory8((ushort)((address + x) & 0xFF));
+            return ReadMemory8((ushort)((A + X) & 0xFF));
         }
 
-        private byte ReadZeroPageY(ushort address)
+        private byte ReadZeroPageY(ushort A)
         {
-            return ReadMemory8((ushort)((address + y) & 0xFF));
+            return ReadMemory8((ushort)((A + Y) & 0xFF));
         }
 
-        private byte ReadAbsolute(byte address1, byte address2)
+        private byte ReadAbsolute(byte A, byte B)
         {
-            return ReadMemory8(CalculateAddress(address1, address2));
+            return ReadMemory8(CalculateAddress(A, B));
         }
 
-        private byte ReadAbsoluteX(byte address1, byte address2)
+        private byte ReadAbsoluteX(byte A, byte B)
         {
-            if ((CalculateAddress(address1, address2) & 0xFF00) != ((CalculateAddress(address1, address2) + x) & 0xFF00))
+            if ((CalculateAddress(A, B) & 0xFF00) != ((CalculateAddress(A, B) + X) & 0xFF00))
                 currentCycles += 1;
 
-            return ReadMemory8((ushort)(CalculateAddress(address1, address2) + x));
+            return ReadMemory8((ushort)(CalculateAddress(A, B) + X));
         }
 
-        private byte ReadAbsoluteY(byte address1, byte address2)
+        private byte ReadAbsoluteY(byte A, byte B)
         {
-            if ((CalculateAddress(address1, address2) & 0xFF00) != ((CalculateAddress(address1, address2) + y) & 0xFF00))
+            if ((CalculateAddress(A, B) & 0xFF00) != ((CalculateAddress(A, B) + Y) & 0xFF00))
                 currentCycles += 1;
 
-            return ReadMemory8((ushort)(CalculateAddress(address1, address2) + y));
+            return ReadMemory8((ushort)(CalculateAddress(A, B) + Y));
         }
 
-        private byte ReadIndirectX(byte address)
+        private byte ReadIndirectX(byte A)
         {
-            return ReadMemory8(ReadMemory16((ushort)((address + x) & 0xFF)));
+            return ReadMemory8(ReadMemory16((ushort)((A + X) & 0xFF)));
         }
 
-        private byte ReadIndirectY(byte address)
+        private byte ReadIndirectY(byte A)
         {
-            if ((ReadMemory16(address) & 0xFF00) != ((ReadMemory16(address) + y) & 0xFF00))
+            if ((ReadMemory16(A) & 0xFF00) != ((ReadMemory16(A) + Y) & 0xFF00))
                 currentCycles += 1;
 
-            return ReadMemory8((ushort)(ReadMemory16(address) + y));
+            return ReadMemory8((ushort)(ReadMemory16(A) + Y));
         }
 
-        private void WriteZeroPage(ushort address, byte Value)
+        private void WriteZeroPage(ushort A, byte Value)
         {
-            WriteMemory8(address, Value);
+            WriteMemory8(A, Value);
         }
 
-        private void WriteZeroPageX(ushort address, byte value)
+        private void WriteZeroPageX(ushort A, byte Value)
         {
-            WriteMemory8((ushort)((address + x) & 0xFF), value);
+            WriteMemory8((ushort)((A + X) & 0xFF), Value);
         }
 
-        private void WriteZeroPageY(ushort address, byte value)
+        private void WriteZeroPageY(ushort A, byte Value)
         {
-            WriteMemory8((ushort)((address + y) & 0xFF), value);
+            WriteMemory8((ushort)((A + Y) & 0xFF), Value);
         }
 
-        private void WriteAbsolute(byte address1, byte address2, byte value)
+        private void WriteAbsolute(byte A, byte B, byte Value)
         {
-            WriteMemory8(CalculateAddress(address1, address2), value);
+            WriteMemory8(CalculateAddress(A, B), Value);
         }
 
-        private void WriteAbsoluteX(byte address1, byte address2, byte value)
+        private void WriteAbsoluteX(byte A, byte B, byte Value)
         {
-            WriteMemory8((ushort)(CalculateAddress(address1, address2) + x), value);
+            WriteMemory8((ushort)(CalculateAddress(A, B) + X), Value);
         }
 
-        private void WriteAbsoluteY(byte address1, byte address2, byte value)
+        private void WriteAbsoluteY(byte A, byte B, byte Value)
         {
-            WriteMemory8((ushort)(CalculateAddress(address1, address2) + y), value);
+            WriteMemory8((ushort)(CalculateAddress(A, B) + Y), Value);
         }
 
-        private void WriteIndirectX(byte address, byte value)
+        private void WriteIndirectX(byte A, byte Value)
         {
-            WriteMemory8(ReadMemory16((ushort)((address + x) & 0xFF)), value);
+            WriteMemory8(ReadMemory16((ushort)((A + X) & 0xFF)), Value);
         }
 
-        private void WriteIndirectY(byte address, byte value)
+        private void WriteIndirectY(byte A, byte Value)
         {
-            WriteMemory8((ushort)(ReadMemory16(address) + y), value);
+            WriteMemory8((ushort)(ReadMemory16(A) + Y), Value);
         }
 
-        private byte GetOperand(AddressingModes mode)
+        private byte GetOperand(AddressingModes Mode)
         {
-            byte arg1 = ReadMemory8((ushort)(pc + 1));
-            byte arg2 = ReadMemory8((ushort)(pc + 2));
-            byte value = 0xFF;
+            byte Arg1 = ReadMemory8((ushort)(PC + 1));
+            byte Arg2 = ReadMemory8((ushort)(PC + 2));
+            byte Value = 0xFF;
 
-            switch (mode)
+            switch (Mode)
             {
                 case AddressingModes.Implied: break;
-                case AddressingModes.Accumulator: value = a; break;
-                case AddressingModes.Immediate: value = arg1; pc++; break;
-                case AddressingModes.ZeroPage: value = ReadZeroPage(arg1); pc++; break;
-                case AddressingModes.ZeroPageX: value = ReadZeroPageX(arg1); pc++; break;
-                case AddressingModes.ZeroPageY: value = ReadZeroPageY(arg1); pc++; break;
-                case AddressingModes.Absolute: value = ReadAbsolute(arg1, arg2); pc += 2; break;
-                case AddressingModes.AbsoluteX: value = ReadAbsoluteX(arg1, arg2); pc += 2; break;
-                case AddressingModes.AbsoluteY: value = ReadAbsoluteY(arg1, arg2); pc += 2; break;
-                case AddressingModes.IndirectX: value = ReadIndirectX(arg1); pc++; break;
-                case AddressingModes.IndirectY: value = ReadIndirectY(arg1); pc++; break;
+                case AddressingModes.Accumulator: Value = A; break;
+                case AddressingModes.Immediate: Value = Arg1; PC++; break;
+                case AddressingModes.ZeroPage: Value = ReadZeroPage(Arg1); PC++; break;
+                case AddressingModes.ZeroPageX: Value = ReadZeroPageX(Arg1); PC++; break;
+                case AddressingModes.ZeroPageY: Value = ReadZeroPageY(Arg1); PC++; break;
+                case AddressingModes.Absolute: Value = ReadAbsolute(Arg1, Arg2); PC += 2; break;
+                case AddressingModes.AbsoluteX: Value = ReadAbsoluteX(Arg1, Arg2); PC += 2; break;
+                case AddressingModes.AbsoluteY: Value = ReadAbsoluteY(Arg1, Arg2); PC += 2; break;
+                case AddressingModes.IndirectX: Value = ReadIndirectX(Arg1); PC++; break;
+                case AddressingModes.IndirectY: Value = ReadIndirectY(Arg1); PC++; break;
                 default: throw new Exception("6502 addressing mode error on read");
             }
 
-            return value;
+            return Value;
         }
 
-        private void WriteValue(AddressingModes mode, byte value)
+        private void WriteValue(AddressingModes Mode, byte Value)
         {
-            byte arg1 = ReadMemory8((ushort)(pc + 1));
-            byte arg2 = ReadMemory8((ushort)(pc + 2));
+            byte Arg1 = ReadMemory8((ushort)(PC + 1));
+            byte Arg2 = ReadMemory8((ushort)(PC + 2));
 
-            switch (mode)
+            switch (Mode)
             {
                 case AddressingModes.Implied: break;
-                case AddressingModes.Accumulator: a = value; break;
-                case AddressingModes.ZeroPage: WriteZeroPage(arg1, value); pc++; break;
-                case AddressingModes.ZeroPageX: WriteZeroPageX(arg1, value); pc++; break;
-                case AddressingModes.ZeroPageY: WriteZeroPageY(arg1, value); pc++; break;
-                case AddressingModes.Absolute: WriteAbsolute(arg1, arg2, value); pc += 2; break;
-                case AddressingModes.AbsoluteX: WriteAbsoluteX(arg1, arg2, value); pc += 2; break;
-                case AddressingModes.AbsoluteY: WriteAbsoluteY(arg1, arg2, value); pc += 2; break;
-                case AddressingModes.IndirectX: WriteIndirectX(arg1, value); pc++; break;
-                case AddressingModes.IndirectY: WriteIndirectY(arg1, value); pc++; break;
+                case AddressingModes.Accumulator: A = Value; break;
+                case AddressingModes.ZeroPage: WriteZeroPage(Arg1, Value); PC++; break;
+                case AddressingModes.ZeroPageX: WriteZeroPageX(Arg1, Value); PC++; break;
+                case AddressingModes.ZeroPageY: WriteZeroPageY(Arg1, Value); PC++; break;
+                case AddressingModes.Absolute: WriteAbsolute(Arg1, Arg2, Value); PC += 2; break;
+                case AddressingModes.AbsoluteX: WriteAbsoluteX(Arg1, Arg2, Value); PC += 2; break;
+                case AddressingModes.AbsoluteY: WriteAbsoluteY(Arg1, Arg2, Value); PC += 2; break;
+                case AddressingModes.IndirectX: WriteIndirectX(Arg1, Value); PC++; break;
+                case AddressingModes.IndirectY: WriteIndirectY(Arg1, Value); PC++; break;
                 default: throw new Exception("6502 addressing mode error on write");
             }
         }
 
-        public void Push(byte value)
+        public void Push(byte Value)
         {
-            WriteMemory8((ushort)(0x100 + sp), (byte)(value & 0xff));
-            sp = (byte)(sp - 1);
+            WriteMemory8((ushort)(0x100 + SP), (byte)(Value & 0xff));
+            SP = (byte)(SP - 1);
         }
 
-        public void Push16(ushort value)
+        public void Push16(ushort Value)
         {
-            Push((byte)(value >> 8));
-            Push((byte)(value & 0xff));
+            Push((byte)(Value >> 8));
+            Push((byte)(Value & 0xff));
         }
 
         public void PushP()
@@ -544,8 +528,8 @@ namespace MasterFudgeMk2.Devices
 
         public byte Pull()
         {
-            sp = (byte)(sp + 1);
-            return ReadMemory8((ushort)(0x100 + sp));
+            SP = (byte)(SP + 1);
+            return ReadMemory8((ushort)(0x100 + SP));
         }
 
         public ushort Pull16()
@@ -558,15 +542,15 @@ namespace MasterFudgeMk2.Devices
             p = (Flags)Pull();
         }
 
-        private void OpADC(AddressingModes mode)
+        private void OpADC(AddressingModes Mode)
         {
-            byte data = GetOperand(mode);
+            byte Data = GetOperand(Mode);
 
             uint w;
 
-            SetClearFlagConditional(Flags.Overflow, ((a ^ data) & 0x80) != 0);
+            SetClearFlagConditional(Flags.Overflow, ((A ^ Data) & 0x80) != 0);
 
-            w = (uint)(a + data + (IsFlagSet(Flags.Carry) ? 1 : 0));
+            w = (uint)(A + Data + (IsFlagSet(Flags.Carry) ? 1 : 0));
             if (w >= 0x100)
             {
                 SetFlag(Flags.Carry);
@@ -578,367 +562,377 @@ namespace MasterFudgeMk2.Devices
                 SetClearFlagConditional(Flags.Overflow, !(IsFlagSet(Flags.Overflow) && w < 0x80));
             }
 
-            a = (byte)(w & 0xFF);
-            SetClearFlagConditional(Flags.Zero, (a == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80));
+            A = (byte)(w & 0xFF);
+            SetClearFlagConditional(Flags.Zero, (A == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((A & 0x80) == 0x80));
         }
 
-        private void OpAND(AddressingModes mode)
+        private void OpAND(AddressingModes Mode)
         {
-            a = (byte)(a & GetOperand(mode));
+            A = (byte)(A & GetOperand(Mode));
 
-            SetClearFlagConditional(Flags.Zero, (a == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (A == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((A & 0x80) == 0x80));
         }
 
-        private void OpASL(AddressingModes mode)
+        private void OpASL(AddressingModes Mode)
         {
-            uint value = GetOperand(mode);
-            SetClearFlagConditional(Flags.Carry, ((value & 0x80) == 0x80));
+            uint Value = GetOperand(Mode);
+            SetClearFlagConditional(Flags.Carry, ((Value & 0x80) == 0x80));
 
-            value = (byte)(value << 1);
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
+            Value = (byte)(Value << 1);
+            SetClearFlagConditional(Flags.Zero, (Value == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((Value & 0x80) == 0x80));
 
-            WriteValue(mode, (byte)value);
+            WriteValue(Mode, (byte)Value);
         }
 
         private void OpBCC()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte Value = GetOperand(AddressingModes.Immediate);
 
             if (!IsFlagSet(Flags.Carry))
             {
-                if ((pc & 0xFF00) != ((pc + (sbyte)value + 2) & 0xFF00))
+                if ((PC & 0xFF00) != ((PC + (sbyte)Value + 2) & 0xFF00))
                     currentCycles += 1;
 
-                pc = (ushort)(pc + (sbyte)value);
+                PC = (ushort)(PC + (sbyte)Value);
             }
         }
 
         private void OpBCS()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte Value = GetOperand(AddressingModes.Immediate);
 
             if (IsFlagSet(Flags.Carry))
             {
-                if ((pc & 0xFF00) != ((pc + (sbyte)value + 2) & 0xFF00))
+                if ((PC & 0xFF00) != ((PC + (sbyte)Value + 2) & 0xFF00))
                     currentCycles += 1;
 
-                pc = (ushort)(pc + (sbyte)value);
+                PC = (ushort)(PC + (sbyte)Value);
             }
         }
 
         private void OpBEQ()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte Value = GetOperand(AddressingModes.Immediate);
 
             if (IsFlagSet(Flags.Zero))
             {
-                if ((pc & 0xFF00) != ((pc + (sbyte)value + 2) & 0xFF00))
+                if ((PC & 0xFF00) != ((PC + (sbyte)Value + 2) & 0xFF00))
                     currentCycles += 1;
 
-                pc = (ushort)(pc + (sbyte)value);
+                PC = (ushort)(PC + (sbyte)Value);
             }
         }
 
         private void OpBIT(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint Value = GetOperand(Mode);
 
-            SetClearFlagConditional(Flags.Zero, ((a & value) == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
-            SetClearFlagConditional(Flags.Overflow, ((value & 0x40) == 0x40));
+            SetClearFlagConditional(Flags.Zero, ((A & Value) == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((Value & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Overflow, ((Value & 0x40) == 0x40));
         }
 
         private void OpBMI()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte Value = GetOperand(AddressingModes.Immediate);
 
             if (IsFlagSet(Flags.Sign))
             {
-                if ((pc & 0xFF00) != ((pc + (sbyte)value + 2) & 0xFF00))
+                if ((PC & 0xFF00) != ((PC + (sbyte)Value + 2) & 0xFF00))
                     currentCycles += 1;
 
-                pc = (ushort)(pc + (sbyte)value);
+                PC = (ushort)(PC + (sbyte)Value);
             }
         }
 
         private void OpBNE()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte Value = GetOperand(AddressingModes.Immediate);
 
             if (!IsFlagSet(Flags.Zero))
             {
-                if ((pc & 0xFF00) != ((pc + (sbyte)value + 2) & 0xFF00))
+                if ((PC & 0xFF00) != ((PC + (sbyte)Value + 2) & 0xFF00))
                     currentCycles += 1;
 
-                pc = (ushort)(pc + (sbyte)value);
+                PC = (ushort)(PC + (sbyte)Value);
             }
         }
 
         private void OpBPL()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte Value = GetOperand(AddressingModes.Immediate);
 
             if (!IsFlagSet(Flags.Sign))
             {
-                if ((pc & 0xFF00) != ((pc + (sbyte)value + 2) & 0xFF00))
+                if ((PC & 0xFF00) != ((PC + (sbyte)Value + 2) & 0xFF00))
                     currentCycles += 1;
 
-                pc = (ushort)(pc + (sbyte)value);
+                PC = (ushort)(PC + (sbyte)Value);
             }
         }
 
         private void OpBRK()
         {
-            pc += 2;
-            Push16(pc);
+            PC += 2;
+            Push16(PC);
             SetFlag(Flags.Brk);
             PushP();
             SetFlag(Flags.InterruptDisable);
-            pc = ReadMemory16(0xFFFE);
+            PC = ReadMemory16(0xFFFE);
         }
 
         private void OpBVC()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte Value = GetOperand(AddressingModes.Immediate);
 
             if (!IsFlagSet(Flags.Overflow))
             {
-                if ((pc & 0xFF00) != ((pc + (sbyte)value + 2) & 0xFF00))
+                if ((PC & 0xFF00) != ((PC + (sbyte)Value + 2) & 0xFF00))
                     currentCycles += 1;
 
-                pc = (ushort)(pc + (sbyte)value);
+                PC = (ushort)(PC + (sbyte)Value);
             }
         }
 
         private void OpBVS()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte Value = GetOperand(AddressingModes.Immediate);
 
             if (IsFlagSet(Flags.Overflow))
             {
-                if ((pc & 0xFF00) != ((pc + (sbyte)value + 2) & 0xFF00))
+                if ((PC & 0xFF00) != ((PC + (sbyte)Value + 2) & 0xFF00))
                     currentCycles += 1;
 
-                pc = (ushort)(pc + (sbyte)value);
+                PC = (ushort)(PC + (sbyte)Value);
             }
         }
 
         private void OpCMP(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint Value = GetOperand(Mode);
 
-            SetClearFlagConditional(Flags.Carry, a >= (byte)value);
+            SetClearFlagConditional(Flags.Carry, A >= (byte)Value);
 
-            value = (byte)(a - value);
+            Value = (byte)(A - Value);
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (Value == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((Value & 0x80) == 0x80));
         }
 
         private void OpCPX(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint Value = GetOperand(Mode);
 
-            SetClearFlagConditional(Flags.Carry, x >= (byte)value);
+            SetClearFlagConditional(Flags.Carry, X >= (byte)Value);
 
-            value = (byte)(x - value);
+            Value = (byte)(X - Value);
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (Value == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((Value & 0x80) == 0x80));
         }
 
         private void OpCPY(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint Value = GetOperand(Mode);
 
-            SetClearFlagConditional(Flags.Carry, y >= (byte)value);
+            SetClearFlagConditional(Flags.Carry, Y >= (byte)Value);
 
-            value = (byte)(y - value);
+            Value = (byte)(Y - Value);
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (Value == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((Value & 0x80) == 0x80));
         }
 
         private void OpDEC(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint Value = GetOperand(Mode);
 
-            value--;
+            Value--;
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (Value == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((Value & 0x80) == 0x80));
 
-            WriteValue(Mode, (byte)(value & 0xFF));
+            WriteValue(Mode, (byte)(Value & 0xFF));
         }
 
         private void OpDEX()
         {
-            x--;
+            X--;
 
-            SetClearFlagConditional(Flags.Zero, (x == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((x & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (X == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((X & 0x80) == 0x80));
         }
 
         private void OpDEY()
         {
-            y--;
+            Y--;
 
-            SetClearFlagConditional(Flags.Zero, (y == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((y & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (Y == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((Y & 0x80) == 0x80));
         }
 
         private void OpEOR(AddressingModes Mode)
         {
-            a = (byte)(a ^ GetOperand(Mode));
+            A = (byte)(A ^ GetOperand(Mode));
 
-            SetClearFlagConditional(Flags.Zero, (a == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (A == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((A & 0x80) == 0x80));
         }
 
         private void OpINC(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint Value = GetOperand(Mode);
 
-            value++;
+            Value++;
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (Value == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((Value & 0x80) == 0x80));
 
-            WriteValue(Mode, (byte)(value & 0xFF));
+            WriteValue(Mode, (byte)(Value & 0xFF));
         }
 
         private void OpINX()
         {
-            x++;
+            X++;
 
-            SetClearFlagConditional(Flags.Zero, (x == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((x & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (X == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((X & 0x80) == 0x80));
         }
 
         private void OpINY()
         {
-            y++;
+            Y++;
 
-            SetClearFlagConditional(Flags.Zero, (y == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((y & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (Y == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((Y & 0x80) == 0x80));
         }
 
         private void OpJMP(AddressingModes Mode)
         {
-            ushort address = ReadMemory16((ushort)(pc + 1));
+            ushort Address = ReadMemory16((ushort)(PC + 1));
 
             switch (Mode)
             {
-                case AddressingModes.Absolute: pc = address; break;
-                case AddressingModes.Indirect: pc = ReadMemory16(address); break;
+                case AddressingModes.Absolute: PC = Address; break;
+                case AddressingModes.Indirect: PC = ReadMemory16(Address); break;
                 default: throw new Exception("6502 addressing mode error on jump");
             }
         }
 
         private void OpJSR()
         {
-            byte arg1 = ReadMemory8((ushort)(pc + 1));
-            byte arg2 = ReadMemory8((ushort)(pc + 2));
-            Push16((ushort)(pc + 2));
-            pc = CalculateAddress(arg1, arg2);
+            byte Arg1 = ReadMemory8((ushort)(PC + 1));
+            byte Arg2 = ReadMemory8((ushort)(PC + 2));
+            Push16((ushort)(PC + 2));
+            PC = CalculateAddress(Arg1, Arg2);
         }
 
         private void OpLDA(AddressingModes Mode)
         {
-            a = (byte)(GetOperand(Mode) & 0xFF);
+            A = (byte)(GetOperand(Mode) & 0xFF);
 
-            SetClearFlagConditional(Flags.Zero, (a == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (A == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((A & 0x80) == 0x80));
         }
 
         private void OpLDX(AddressingModes Mode)
         {
-            x = (byte)(GetOperand(Mode) & 0xFF);
+            X = (byte)(GetOperand(Mode) & 0xFF);
 
-            SetClearFlagConditional(Flags.Zero, (x == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((x & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (X == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((X & 0x80) == 0x80));
         }
 
         private void OpLDY(AddressingModes Mode)
         {
-            y = (byte)(GetOperand(Mode) & 0xFF);
+            Y = (byte)(GetOperand(Mode) & 0xFF);
 
-            SetClearFlagConditional(Flags.Zero, (y == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((y & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (Y == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((Y & 0x80) == 0x80));
         }
 
         private void OpLSR(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint Value = GetOperand(Mode);
 
-            SetClearFlagConditional(Flags.Sign, ((value & 0x01) == 0x01));
+            SetClearFlagConditional(Flags.Sign, ((Value & 0x01) == 0x01));
 
-            value = (byte)(value >> 1);
+            Value = (byte)(Value >> 1);
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (Value == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((Value & 0x80) == 0x80));
 
-            WriteValue(Mode, (byte)value);
+            WriteValue(Mode, (byte)Value);
         }
 
         private void OpNOP()
         {
-            pc++;
+            PC++;
         }
 
         private void OpORA(AddressingModes Mode)
         {
-            a = (byte)(a | GetOperand(Mode));
+            A = (byte)(A | GetOperand(Mode));
 
-            SetClearFlagConditional(Flags.Zero, (a == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (A == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((A & 0x80) == 0x80));
         }
 
         private void OpROL(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
-            bool tempBit = ((value & 0x80) == 0x80);
+            uint Value = GetOperand(Mode);
+            bool TempBit = false;
 
-            value = (byte)(value << 1);
-            value = (byte)(value | (byte)(IsFlagSet(Flags.Carry) ? 0x01 : 0x00));
+            if ((Value & 0x80) == 0x80)
+                TempBit = true;
+            else
+                TempBit = false;
 
-            SetClearFlagConditional(Flags.Carry, tempBit);
+            Value = (byte)(Value << 1);
+            Value = (byte)(Value | (byte)(IsFlagSet(Flags.Carry) ? 0x01 : 0x00));
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Carry, TempBit);
 
-            WriteValue(Mode, (byte)value);
+            SetClearFlagConditional(Flags.Zero, (Value == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((Value & 0x80) == 0x80));
+
+            WriteValue(Mode, (byte)Value);
         }
 
         private void OpROR(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
-            bool tempBit = ((value & 0x01) == 0x01);
+            uint Value = GetOperand(Mode);
+            bool TempBit = false;
 
-            value = (byte)(value >> 1);
+            if ((Value & 0x01) == 0x01)
+                TempBit = true;
+            else
+                TempBit = false;
+
+            Value = (byte)(Value >> 1);
 
             if (IsFlagSet(Flags.Carry))
-                value = (byte)(value | 0x80);
+                Value = (byte)(Value | 0x80);
 
-            SetClearFlagConditional(Flags.Carry, tempBit);
+            SetClearFlagConditional(Flags.Carry, TempBit);
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (Value == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((Value & 0x80) == 0x80));
 
-            WriteValue(Mode, (byte)value);
+            WriteValue(Mode, (byte)Value);
         }
 
         private void OpSBC(AddressingModes Mode)
         {
-            byte data = GetOperand(Mode);
+            byte Data = GetOperand(Mode);
             uint w;
 
-            SetClearFlagConditional(Flags.Overflow, ((a ^ data) & 0x80) != 0);
+            SetClearFlagConditional(Flags.Overflow, ((A ^ Data) & 0x80) != 0);
 
-            w = (uint)(0xff + a - data + (IsFlagSet(Flags.Carry) ? 1 : 0));
+            w = (uint)(0xff + A - Data + (IsFlagSet(Flags.Carry) ? 1 : 0));
             if (w < 0x100)
             {
                 ClearFlag(Flags.Carry);
@@ -950,25 +944,25 @@ namespace MasterFudgeMk2.Devices
                 SetClearFlagConditional(Flags.Overflow, !(IsFlagSet(Flags.Overflow) && w >= 0x180));
             }
 
-            a = (byte)(w & 0xFF);
+            A = (byte)(w & 0xFF);
 
-            SetClearFlagConditional(Flags.Zero, (a == 0x00));
-            SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80));
+            SetClearFlagConditional(Flags.Zero, (A == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((A & 0x80) == 0x80));
         }
 
         private void OpSTA(AddressingModes Mode)
         {
-            WriteValue(Mode, a);
+            WriteValue(Mode, A);
         }
 
         private void OpSTX(AddressingModes Mode)
         {
-            WriteValue(Mode, x);
+            WriteValue(Mode, X);
         }
 
         private void OpSTY(AddressingModes Mode)
         {
-            WriteValue(Mode, y);
+            WriteValue(Mode, Y);
         }
     }
 }

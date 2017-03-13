@@ -6,11 +6,9 @@ using System.Threading.Tasks;
 
 namespace MasterFudgeMk2.Media.Nintendo
 {
-    public class NROMCartridge : INESMedia
+    public class NROMCartridge : IMedia
     {
         byte[] romData;
-
-        public RomHeaderINES RomHeader { get; set; }
 
         public NROMCartridge() { }
 
@@ -45,11 +43,6 @@ namespace MasterFudgeMk2.Media.Nintendo
         {
             /* Cannot write to cartridge */
             return;
-        }
-
-        public void Tick()
-        {
-            /* Nothing to tick */
         }
     }
 }
