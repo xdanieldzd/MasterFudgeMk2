@@ -185,8 +185,6 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
 
         public void Startup()
         {
-            cartridge?.Startup();
-
             cpu.Startup();
             psg.Startup();
             vdp.Startup();

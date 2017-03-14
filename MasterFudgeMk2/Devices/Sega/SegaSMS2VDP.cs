@@ -23,14 +23,14 @@ namespace MasterFudgeMk2.Devices.Sega
         int lineInterruptCounter;
         protected int screenHeight;
 
-        bool isLineInterruptEnabled { get { return Utilities.IsBitSet(registers[0x00], 4); } }
+        bool isLineInterruptEnabled { get { return BitUtilities.IsBitSet(registers[0x00], 4); } }
         bool isLineInterruptPending;
 
-        bool isColumn0MaskEnabled { get { return Utilities.IsBitSet(registers[0x00], 5); } }
-        bool isVScrollPartiallyDisabled { get { return Utilities.IsBitSet(registers[0x00], 7); } }  /* Columns 24-31, i.e. pixels 192-255 */
-        bool isHScrollPartiallyDisabled { get { return Utilities.IsBitSet(registers[0x00], 6); } }  /* Rows 0-1, i.e. pixels 0-15 */
+        bool isColumn0MaskEnabled { get { return BitUtilities.IsBitSet(registers[0x00], 5); } }
+        bool isVScrollPartiallyDisabled { get { return BitUtilities.IsBitSet(registers[0x00], 7); } }  /* Columns 24-31, i.e. pixels 192-255 */
+        bool isHScrollPartiallyDisabled { get { return BitUtilities.IsBitSet(registers[0x00], 6); } }  /* Rows 0-1, i.e. pixels 0-15 */
 
-        bool isBitM4Set { get { return Utilities.IsBitSet(registers[0x00], 2); } }
+        bool isBitM4Set { get { return BitUtilities.IsBitSet(registers[0x00], 2); } }
 
         protected override bool isModeGraphics1 { get { return !(isBitM1Set || isBitM2Set || isBitM3Set || isBitM4Set); } }
         protected override bool isModeText { get { return (isBitM1Set && !(isBitM2Set || isBitM3Set || isBitM4Set)); } }
@@ -42,7 +42,7 @@ namespace MasterFudgeMk2.Devices.Sega
 
         bool isMasterSystemMode;
 
-        bool isSpriteShiftLeft8 { get { return Utilities.IsBitSet(registers[0x00], 3); } }
+        bool isSpriteShiftLeft8 { get { return BitUtilities.IsBitSet(registers[0x00], 3); } }
 
         protected override ushort nametableBaseAddress
         {

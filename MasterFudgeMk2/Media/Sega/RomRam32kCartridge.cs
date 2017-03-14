@@ -1,41 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MasterFudgeMk2.Media.Sega
+﻿namespace MasterFudgeMk2.Media.Sega
 {
-    public class RomRam32kCartridge : IMedia
+    public class RomRam32kCartridge : BaseCartridge
     {
-        byte[] romData, ramData;
+        byte[] ramData;
 
-        public RomRam32kCartridge()
+        public RomRam32kCartridge() : base()
         {
             ramData = new byte[0x4000];
         }
-
-        public void Load(byte[] rawData)
-        {
-            romData = rawData;
-        }
-
-        public void Startup()
-        {
-            //
-        }
-
-        public void Reset()
+        
+        public override void Reset()
         {
             // TODO: save ram handling
         }
 
-        public void Unload()
+        public override void Unload()
         {
             // TODO: save ram handling
         }
 
-        public byte Read(ushort address)
+        public override byte Read(ushort address)
         {
             if ((address & 0x8000) == 0x8000)
                 return ramData[address & (ramData.Length - 1)];
@@ -43,7 +27,7 @@ namespace MasterFudgeMk2.Media.Sega
                 return romData[address & (romData.Length - 1)];
         }
 
-        public void Write(ushort address, byte value)
+        public override void Write(ushort address, byte value)
         {
             if ((address & 0x8000) == 0x8000)
                 ramData[address & (ramData.Length - 1)] = value;

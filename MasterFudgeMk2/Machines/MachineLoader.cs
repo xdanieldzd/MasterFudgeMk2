@@ -16,7 +16,7 @@ namespace MasterFudgeMk2.Machines
 
         public static Type DetectMachine(FileInfo romFile)
         {
-            byte[] romData = MediaLoader.ReadSega8bitRomData(romFile.FullName);
+            byte[] romData = File.ReadAllBytes(romFile.FullName);
             RomHeader romHeader = new RomHeader(romData);
 
             if (romHeader.IsSEGAStringCorrect)

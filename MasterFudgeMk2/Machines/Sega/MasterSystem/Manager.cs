@@ -110,7 +110,7 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             P1Button2 = (1 << 5),
             P2Up = (1 << 6),
             P2Down = (1 << 7),
-            Mask = ((1 << 8) - 1)
+            Mask = (((P2Down << 1) - 1) - (P1Up - 1))
         }
         [Flags]
         enum PortIoBMiscButtons : byte
@@ -120,7 +120,7 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             P2Button1 = (1 << 2),
             P2Button2 = (1 << 3),
             Reset = (1 << 4),
-            Mask = ((1 << 5) - 1)
+            Mask = (((Reset << 1) - 1) - (P2Left - 1))
         }
 
         byte portMemoryControl, portIoControl, portIoAB, portIoBMisc;
@@ -130,12 +130,12 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
         int currentCyclesInLine, currentMasterClockCyclesInFrame;
         bool pauseButtonPressed, pauseButtonToggle;
 
-        public bool isExpansionSlotEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 7); } }
-        public bool isCartridgeSlotEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 6); } }
-        public bool isCardSlotEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 5); } }
-        public bool isWorkRamEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 4); } }
-        public bool isBootstrapRomEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 3); } }
-        public bool isIoChipEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 2); } }
+        public bool isExpansionSlotEnabled { get { return !BitUtilities.IsBitSet(portMemoryControl, 7); } }
+        public bool isCartridgeSlotEnabled { get { return !BitUtilities.IsBitSet(portMemoryControl, 6); } }
+        public bool isCardSlotEnabled { get { return !BitUtilities.IsBitSet(portMemoryControl, 5); } }
+        public bool isWorkRamEnabled { get { return !BitUtilities.IsBitSet(portMemoryControl, 4); } }
+        public bool isBootstrapRomEnabled { get { return !BitUtilities.IsBitSet(portMemoryControl, 3); } }
+        public bool isIoChipEnabled { get { return !BitUtilities.IsBitSet(portMemoryControl, 2); } }
 
         Configuration configuration;
 
@@ -184,10 +184,6 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
         {
             if (configuration.UseBootstrap && File.Exists(configuration.BootstrapPath))
                 bootstrap = MediaLoader.LoadMedia(this, new FileInfo(configuration.BootstrapPath));
-
-            bootstrap?.Startup();
-            cartridge?.Startup();
-            card?.Startup();
 
             cpu.Startup();
             psg.Startup();

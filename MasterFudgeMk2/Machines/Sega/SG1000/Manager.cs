@@ -105,7 +105,7 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
             P1Button2 = (1 << 5),
             P2Up = (1 << 6),
             P2Down = (1 << 7),
-            Mask = ((1 << 8) - 1)
+            Mask = (((P2Down << 1) - 1) - (P1Up - 1))
         }
         [Flags]
         enum PortIoBMiscButtons : byte
@@ -114,7 +114,7 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
             P2Right = (1 << 1),
             P2Button1 = (1 << 2),
             P2Button2 = (1 << 3),
-            Mask = ((1 << 4) - 1)
+            Mask = (((P2Button2 << 1) - 1) - (P2Left - 1))
         }
 
         byte portIoAB, portIoBMisc;
@@ -147,8 +147,6 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
 
         public void Startup()
         {
-            cartridge?.Startup();
-
             cpu.Startup();
             psg.Startup();
             vdp.Startup();

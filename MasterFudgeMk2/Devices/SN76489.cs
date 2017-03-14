@@ -196,7 +196,7 @@ namespace MasterFudgeMk2.Devices
 
         public void WriteData(byte data)
         {
-            if (Utilities.IsBitSet(data, 7))
+            if (BitUtilities.IsBitSet(data, 7))
             {
                 /* LATCH/DATA byte; get channel (0-3) and type (0 is tone/noise, 1 is volume) */
                 latchedChannel = (byte)((data >> 5) & 0x03);

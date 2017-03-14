@@ -62,27 +62,27 @@ namespace MasterFudgeMk2.Devices
             get { return ((statusFlags & StatusFlags.FrameInterruptPending) == StatusFlags.FrameInterruptPending); }
             set { statusFlags = ((statusFlags & ~StatusFlags.FrameInterruptPending) | (value ? StatusFlags.FrameInterruptPending : StatusFlags.None)); }
         }
-        protected bool isFrameInterruptEnabled { get { return Utilities.IsBitSet(registers[0x01], 5); } }
+        protected bool isFrameInterruptEnabled { get { return BitUtilities.IsBitSet(registers[0x01], 5); } }
 
         public InterruptState InterruptLine { get; protected set; }
 
         protected int currentScanline;
 
-        protected bool isDisplayBlanked { get { return !Utilities.IsBitSet(registers[0x01], 6); } }
+        protected bool isDisplayBlanked { get { return !BitUtilities.IsBitSet(registers[0x01], 6); } }
 
-        protected bool is16kVRAMEnabled { get { return Utilities.IsBitSet(registers[0x01], 7); } }
+        protected bool is16kVRAMEnabled { get { return BitUtilities.IsBitSet(registers[0x01], 7); } }
 
-        protected bool isBitM1Set { get { return Utilities.IsBitSet(registers[0x01], 4); } }
-        protected bool isBitM2Set { get { return Utilities.IsBitSet(registers[0x00], 1); } }
-        protected bool isBitM3Set { get { return Utilities.IsBitSet(registers[0x01], 3); } }
+        protected bool isBitM1Set { get { return BitUtilities.IsBitSet(registers[0x01], 4); } }
+        protected bool isBitM2Set { get { return BitUtilities.IsBitSet(registers[0x00], 1); } }
+        protected bool isBitM3Set { get { return BitUtilities.IsBitSet(registers[0x01], 3); } }
 
         protected virtual bool isModeGraphics1 { get { return !(isBitM1Set || isBitM2Set || isBitM3Set); } }
         protected virtual bool isModeText { get { return (isBitM1Set && !(isBitM2Set || isBitM3Set)); } }
         protected virtual bool isModeGraphics2 { get { return (isBitM2Set && !(isBitM1Set || isBitM3Set)); } }
         protected virtual bool isModeMulticolor { get { return (isBitM3Set && !(isBitM1Set || isBitM2Set)); } }
 
-        protected bool isLargeSprites { get { return Utilities.IsBitSet(registers[0x01], 1); } }
-        protected bool isZoomedSprites { get { return Utilities.IsBitSet(registers[0x01], 0); } }
+        protected bool isLargeSprites { get { return BitUtilities.IsBitSet(registers[0x01], 1); } }
+        protected bool isZoomedSprites { get { return BitUtilities.IsBitSet(registers[0x01], 0); } }
 
         protected virtual ushort nametableBaseAddress { get { return (ushort)((registers[0x02] & 0x0F) << 10); } }
         protected ushort spriteAttribTableBaseAddress { get { return (ushort)((registers[0x05] & 0x7E) << 7); } }

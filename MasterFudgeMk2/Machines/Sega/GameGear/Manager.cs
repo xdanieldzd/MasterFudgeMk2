@@ -92,7 +92,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             P1Button2 = (1 << 5),
             P2Up = (1 << 6),
             P2Down = (1 << 7),
-            Mask = ((1 << 8) - 1)
+            Mask = (((P2Down << 1) - 1) - (P1Up - 1))
         }
         [Flags]
         enum PortIoBMiscButtons : byte
@@ -102,13 +102,13 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             P2Button1 = (1 << 2),
             P2Button2 = (1 << 3),
             Reset = (1 << 4),
-            Mask = ((1 << 5) - 1)
+            Mask = (((Reset << 1) - 1) - (P2Left - 1))
         }
         [Flags]
         enum PortIoCButtons : byte
         {
             Start = (1 << 7),
-            Mask = ((1 << 8) - 1)
+            Mask = (((Start << 1) - 1) - (Start - 1))
         }
 
         byte portMemoryControl, portIoControl, portIoAB, portIoBMisc;
@@ -119,8 +119,8 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
         bool emulationPaused;
         int currentCyclesInLine, currentMasterClockCyclesInFrame;
 
-        public bool isWorkRamEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 4); } }
-        public bool isBootstrapRomEnabled { get { return !Utilities.IsBitSet(portMemoryControl, 3); } }
+        public bool isWorkRamEnabled { get { return !BitUtilities.IsBitSet(portMemoryControl, 4); } }
+        public bool isBootstrapRomEnabled { get { return !BitUtilities.IsBitSet(portMemoryControl, 3); } }
 
         Configuration configuration;
 
@@ -151,9 +151,6 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
         {
             if (configuration.UseBootstrap && System.IO.File.Exists(configuration.BootstrapPath))
                 bootstrap = MediaLoader.LoadMedia(this, new System.IO.FileInfo(configuration.BootstrapPath));
-
-            bootstrap?.Startup();
-            cartridge?.Startup();
 
             cpu.Startup();
             psg.Startup();

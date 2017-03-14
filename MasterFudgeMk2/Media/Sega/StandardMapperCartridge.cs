@@ -1,27 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+using System.IO;
 using MasterFudgeMk2.Common;
 
 namespace MasterFudgeMk2.Media.Sega
 {
-    public class StandardMapperCartridge : IMedia
+    public class StandardMapperCartridge : BaseCartridge
     {
-        byte[] romData, pagingRegisters, ramData;
+        byte[] pagingRegisters, ramData;
         byte bankMask;
         bool hasCartRam;
 
-        bool isRamEnabled { get { return Utilities.IsBitSet(pagingRegisters[0], 3); } }
-        bool isRomWriteEnable { get { return Utilities.IsBitSet(pagingRegisters[0], 7); } }
+        bool isRamEnabled { get { return BitUtilities.IsBitSet(pagingRegisters[0], 3); } }
+        bool isRomWriteEnable { get { return BitUtilities.IsBitSet(pagingRegisters[0], 7); } }
         int ramBank { get { return ((pagingRegisters[0] >> 2) & 0x01); } }
         int romBank0 { get { return pagingRegisters[1]; } }
         int romBank1 { get { return pagingRegisters[2]; } }
         int romBank2 { get { return pagingRegisters[3]; } }
 
-        public StandardMapperCartridge()
+        public StandardMapperCartridge() : base()
         {
             pagingRegisters = new byte[0x04];
             pagingRegisters[0] = 0x00;  /* Mapper control */
@@ -33,29 +29,24 @@ namespace MasterFudgeMk2.Media.Sega
             bankMask = 0xFF;
         }
 
-        public void Load(byte[] rawData)
+        public override void Load(FileInfo fileInfo)
         {
-            romData = rawData;
+            base.Load(fileInfo);
 
             bankMask = (byte)((romData.Length >> 14) - 1);
         }
 
-        public void Startup()
-        {
-            //
-        }
-
-        public void Reset()
+        public override void Reset()
         {
             // TODO: save ram handling
         }
 
-        public void Unload()
+        public override void Unload()
         {
             // TODO: save ram handling
         }
 
-        public byte Read(ushort address)
+        public override byte Read(ushort address)
         {
             switch (address & 0xC000)
             {
@@ -80,7 +71,7 @@ namespace MasterFudgeMk2.Media.Sega
             }
         }
 
-        public void Write(ushort address, byte value)
+        public override void Write(ushort address, byte value)
         {
             if (address >= 0xFFFC && address <= 0xFFFF)
             {

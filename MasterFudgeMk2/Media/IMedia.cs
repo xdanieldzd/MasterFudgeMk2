@@ -11,8 +11,7 @@ namespace MasterFudgeMk2.Media
     {
         // TODO: restructure for SRAM loading
 
-        void Load(byte[] rawData);
-        void Startup();
+        void Load(FileInfo fileInfo);
         void Reset();
         void Unload();
         byte Read(ushort address);

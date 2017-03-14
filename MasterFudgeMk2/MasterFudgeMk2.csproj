@@ -64,6 +64,7 @@
     <Compile Include="Common\BindableToolStripMenuItem.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Common\Crc32.cs" />
     <Compile Include="Common\InterruptState.cs" />
     <Compile Include="Common\MustInitialize.cs" />
     <Compile Include="Common\TupleListExtensions.cs" />
@@ -84,12 +85,13 @@
     <Compile Include="Machines\Coleco\ColecoVision\Manager.cs" />
     <Compile Include="Media\MediaIdentity.cs" />
     <Compile Include="Media\IMedia.cs" />
+    <Compile Include="Media\Sega\BaseCartridge.cs" />
     <Compile Include="Media\Sega\RomHeader.cs" />
     <Compile Include="Media\MediaLoader.cs" />
     <Compile Include="Media\Sega\RomOnlyCartridge.cs" />
     <Compile Include="Media\Sega\StandardMapperCartridge.cs" />
     <Compile Include="Devices\Z80A.Register.cs" />
-    <Compile Include="Common\Utilities.cs" />
+    <Compile Include="Common\BitUtilities.cs" />
     <Compile Include="Common\XInput\Controller.cs" />
     <Compile Include="Common\XInput\ControllerManager.cs" />
     <Compile Include="Common\XInput\NativeMethods.cs" />

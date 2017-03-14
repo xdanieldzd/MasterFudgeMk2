@@ -102,7 +102,7 @@ namespace MasterFudgeMk2
             // DEBUG SHORTCUTS HO
             if (Environment.MachineName == "NANAMI-X")
             {
-                StartMachine(typeof(Machines.Sega.MasterSystem.Manager));
+                //StartMachine(typeof(Machines.Sega.MasterSystem.Manager));
 
                 //LoadMedia(@"D:\ROMs\SG1000\Bank Panic (Japan).sg");
                 //LoadMedia(@"D:\ROMs\SG1000\Othello (Japan).sg");
@@ -113,7 +113,7 @@ namespace MasterFudgeMk2
 
                 //LoadMedia(@"D:\ROMs\SMS\F16_Fighting_Falcon_(UE)_[!].sms");
                 //LoadMedia(@"D:\ROMs\SMS\Dr._Robotnik's_Mean_Bean_Machine_(UE)_[!].sms");
-                LoadMedia(@"D:\ROMs\SMS\Sonic_the_Hedgehog_(UE)_[!].sms");
+                //LoadMedia(@"D:\ROMs\SMS\Sonic_the_Hedgehog_(UE)_[!].sms");
                 //LoadMedia(@"D:\ROMs\SMS\VDPTEST.sms");
                 //LoadMedia(@"D:\ROMs\SMS\zexdoc.sms");
                 //LoadMedia(@"D:\ROMs\SMS\zexdoc_sdsc.sms");
@@ -257,7 +257,6 @@ namespace MasterFudgeMk2
             }
         }
 
-
         private void CleanUpRecentList()
         {
             List<string> files = emuConfig.RecentFiles.Where(x => x != string.Empty).ToList();
@@ -327,6 +326,8 @@ namespace MasterFudgeMk2
 
         public void StartMachine(Type machineType)
         {
+            if (machineType == null) return;
+
             outputViewport = Rectangle.Empty;
             soundOutput?.Stop();
 
@@ -361,8 +362,8 @@ namespace MasterFudgeMk2
             StartMachine(MachineLoader.DetectMachine(fileInfo));
 
             IMedia media = MediaLoader.LoadMedia(machineManager, fileInfo);
-            machineManager.LoadMedia(media);
-            machineManager.Reset();
+            machineManager?.LoadMedia(media);
+            machineManager?.Reset();
 
             soundOutput?.Reset();
 
