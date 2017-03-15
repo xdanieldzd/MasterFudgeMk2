@@ -9,8 +9,6 @@ using System.ComponentModel;
 
 using Nini.Config;
 
-using MasterFudgeMk2.Common.XInput;
-
 namespace MasterFudgeMk2.Machines.Sega.MasterSystem
 {
     public sealed class Configuration : MachineConfiguration
@@ -18,28 +16,32 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
         public override sealed string Filename { get { return "MasterSystem.xml"; } }
 
         /* Settings */
+        [Description("Bootstrap Path")]
         public string BootstrapPath
         {
             get { return SettingsConfig.GetString(nameof(BootstrapPath), string.Empty); }
             set { SettingsConfig.Set(nameof(BootstrapPath), value); }
         }
 
+        [Description("Enable Bootstrap")]
         public bool UseBootstrap
         {
             get { return SettingsConfig.GetBoolean(nameof(UseBootstrap), false); }
             set { SettingsConfig.Set(nameof(UseBootstrap), value); }
         }
 
-        public bool IsPalSystem
-        {
-            get { return SettingsConfig.GetBoolean(nameof(IsPalSystem), true); }
-            set { SettingsConfig.Set(nameof(IsPalSystem), value); }
-        }
-
+        [Description("Emulate Export System")]
         public bool IsExportSystem
         {
             get { return SettingsConfig.GetBoolean(nameof(IsExportSystem), true); }
             set { SettingsConfig.Set(nameof(IsExportSystem), value); }
+        }
+
+        [Description("Emulate PAL System")]
+        public bool IsPalSystem
+        {
+            get { return SettingsConfig.GetBoolean(nameof(IsPalSystem), true); }
+            set { SettingsConfig.Set(nameof(IsPalSystem), value); }
         }
 
         /* Inputs (General) */

@@ -18,6 +18,7 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
         public override sealed string Filename { get { return "ColecoVision.xml"; } }
 
         /* Settings */
+        [Description("BIOS Path")]
         public string BiosPath
         {
             get { return SettingsConfig.GetString(nameof(BiosPath), string.Empty); }

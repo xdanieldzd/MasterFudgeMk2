@@ -99,11 +99,11 @@
     <Compile Include="Common\XInput\XInputGamepad.cs" />
     <Compile Include="Common\XInput\XInputState.cs" />
     <Compile Include="Common\XInput\XInputVibration.cs" />
-    <Compile Include="KeyConfigForm.cs">
+    <Compile Include="ConfigForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="KeyConfigForm.Designer.cs">
-      <DependentUpon>KeyConfigForm.cs</DependentUpon>
+    <Compile Include="ConfigForm.Designer.cs">
+      <DependentUpon>ConfigForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Common\DescriptionTypeConverter.cs" />
     <Compile Include="Devices\Sega\SegaGGVDP.cs" />
@@ -135,8 +135,8 @@
     <Compile Include="Common\ScreenControl.cs">
       <SubType>Component</SubType>
     </Compile>
-    <EmbeddedResource Include="KeyConfigForm.resx">
-      <DependentUpon>KeyConfigForm.cs</DependentUpon>
+    <EmbeddedResource Include="ConfigForm.resx">
+      <DependentUpon>ConfigForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>

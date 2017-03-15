@@ -15,10 +15,8 @@ using MasterFudgeMk2.Machines;
 
 namespace MasterFudgeMk2
 {
-    public partial class KeyConfigForm : Form
+    public partial class ConfigForm : Form
     {
-        // TODO: properly removing a setting; add another button "Clear" to the right?
-
         public MachineConfiguration Configuration { get; private set; }
 
         Dictionary<Enum, Enum> keyConfiguration;
@@ -30,14 +28,65 @@ namespace MasterFudgeMk2
         int settingWaitCounter;
         bool waitingForInput { get { return (settingWaitCounter > 0); } }
 
-        public KeyConfigForm(IMachineManager machineManager)
+        public ConfigForm(IMachineManager machineManager)
         {
             InitializeComponent();
 
-            Text = string.Format("Key Config ({0})", machineManager.FriendlyName);
+            Text = string.Format("Configuration ({0})", machineManager.FriendlyName);
 
             Configuration = machineManager.Configuration;
 
+            /* Main config stuff */
+            List<PropertyInfo> mainProps = Configuration.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Where(x => x.PropertyType != typeof(Enum) && x.CanWrite).ToList();
+            if (mainProps.Count == 0) tcConfig.TabPages.Remove(tpMainConfig);
+
+            tlpMainConfig.RowCount = (mainProps.Count + 1);
+            for (int i = 0; i < mainProps.Count; i++)
+            {
+                PropertyInfo prop = mainProps[i];
+
+                object[] descAttribs = prop.GetCustomAttributes(typeof(DescriptionAttribute), false);
+                string settingDescription = (descAttribs != null && descAttribs.Length > 0 ? (descAttribs[0] as DescriptionAttribute).Description : prop.Name);
+
+                if (prop.PropertyType == typeof(bool))
+                {
+                    CheckBox checkBox = new CheckBox() { Text = settingDescription, Dock = DockStyle.Fill, AutoSize = true, TextAlign = ContentAlignment.MiddleLeft, Margin = new Padding(6, 3, 3, 3) };
+                    checkBox.DataBindings.Add("Checked", Configuration, prop.Name, false, DataSourceUpdateMode.OnPropertyChanged);
+                    tlpMainConfig.Controls.Add(checkBox, 0, i);
+                    tlpMainConfig.SetColumnSpan(checkBox, 2);
+                }
+                else
+                {
+                    tlpMainConfig.Controls.Add(new Label() { Text = settingDescription, Dock = DockStyle.Fill, AutoSize = true, TextAlign = ContentAlignment.MiddleLeft }, 0, i);
+
+                    if (prop.PropertyType == typeof(string))
+                    {
+                        TextBox textBox = new TextBox() { Dock = DockStyle.Fill, TextAlign = HorizontalAlignment.Left };
+                        textBox.DataBindings.Add("Text", Configuration, prop.Name, false, DataSourceUpdateMode.OnPropertyChanged);
+                        tlpMainConfig.Controls.Add(textBox, 1, i);
+                        if (prop.Name.EndsWith("Path"))
+                        {
+                            textBox.ReadOnly = true;
+                            Button browseButton = new Button() { Text = "...", ClientSize = new Size(25, textBox.Height), Tag = textBox };
+                            tlpMainConfig.Controls.Add(browseButton, 2, i);
+                            tlpMainConfig.SetColumnSpan(textBox, 1);
+
+                            browseButton.Click += (s, e) =>
+                            {
+                                using (OpenFileDialog ofd = new OpenFileDialog() { Filter = machineManager.FileFilter })
+                                {
+                                    if (ofd.ShowDialog() == DialogResult.OK)
+                                        ((s as Button).Tag as TextBox).Text = ofd.FileName;
+                                }
+                            };
+                        }
+                        else
+                            tlpMainConfig.SetColumnSpan(textBox, 2);
+                    }
+                }
+            }
+
+            /* Key config stuff */
             keyConfiguration = new Dictionary<Enum, Enum>();
             foreach (PropertyInfo prop in Configuration.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Where(x => x.PropertyType == typeof(Enum)))
             {
@@ -71,6 +120,8 @@ namespace MasterFudgeMk2
 
                 if (timer.Tag != null || keysPressed.HasFlag(Keys.Escape))
                 {
+                    Enabled = true;
+
                     timer.Stop();
                     settingWaitTimer.Stop();
 
@@ -94,6 +145,8 @@ namespace MasterFudgeMk2
                 Button keyChangeButton = new Button() { Dock = DockStyle.Fill, FlatStyle = FlatStyle.Popup, Tag = mapping };
                 keyChangeButton.Click += (s, e) =>
                 {
+                    Enabled = false;
+
                     settingWaitCounter = 6;
                     settingWaitTimer.Interval = 1000;
                     settingWaitTimer.Tag = s;
@@ -156,6 +209,8 @@ namespace MasterFudgeMk2
             settingWaitCounter--;
             if (settingWaitCounter == 0)
             {
+                Enabled = true;
+
                 timer.Stop();
                 inputPollTimer.Stop();
 

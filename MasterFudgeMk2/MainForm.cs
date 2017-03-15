@@ -179,7 +179,7 @@ namespace MasterFudgeMk2
             pauseToolStripMenuItem.DataBindings.Add(nameof(pauseToolStripMenuItem.Enabled), emulationIsInitialized, nameof(emulationIsInitialized.IsTrue), false, DataSourceUpdateMode.OnPropertyChanged);
             resetToolStripMenuItem.DataBindings.Add(nameof(resetToolStripMenuItem.Enabled), emulationIsInitialized, nameof(emulationIsInitialized.IsTrue), false, DataSourceUpdateMode.OnPropertyChanged);
             infoToolStripMenuItem.DataBindings.Add(nameof(infoToolStripMenuItem.Enabled), emulationIsInitialized, nameof(emulationIsInitialized.IsTrue), false, DataSourceUpdateMode.OnPropertyChanged);
-            keyConfigToolStripMenuItem.DataBindings.Add(nameof(keyConfigToolStripMenuItem.Enabled), emulationIsInitialized, nameof(emulationIsInitialized.IsTrue), false, DataSourceUpdateMode.OnPropertyChanged);
+            configToolStripMenuItem.DataBindings.Add(nameof(configToolStripMenuItem.Enabled), emulationIsInitialized, nameof(emulationIsInitialized.IsTrue), false, DataSourceUpdateMode.OnPropertyChanged);
 
             /* Databindings for paused */
             pauseToolStripMenuItem.DataBindings.Add(nameof(pauseToolStripMenuItem.Checked), this, nameof(EmulationIsPaused), false, DataSourceUpdateMode.OnPropertyChanged);
@@ -569,17 +569,19 @@ namespace MasterFudgeMk2
             MessageBox.Show(sb.ToString(), "System Info", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        private void keyConfigToolStripMenuItem_Click(object sender, EventArgs e)
+        private void configToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (machineManager == null) return;
 
             machineManager.Pause();
-            using (KeyConfigForm keyConfigForm = new KeyConfigForm(machineManager))
+            using (ConfigForm configForm = new ConfigForm(machineManager))
             {
-                if (keyConfigForm.ShowDialog() == DialogResult.OK)
+                if (configForm.ShowDialog() == DialogResult.OK)
                 {
-                    machineManager.Configuration = keyConfigForm.Configuration;
+                    machineManager.Configuration = configForm.Configuration;
                     machineManager.Configuration.InputConfig.ConfigSource.Save();
+
+                    UpdateBootWithoutMediaMenu();
                 }
             }
             machineManager.Unpause();

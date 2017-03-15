@@ -18,18 +18,21 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
         public override sealed string Filename { get { return "GameGear.xml"; } }
 
         /* Settings */
+        [Description("Bootstrap Path")]
         public string BootstrapPath
         {
             get { return SettingsConfig.GetString(nameof(BootstrapPath), string.Empty); }
             set { SettingsConfig.Set(nameof(BootstrapPath), value); }
         }
 
+        [Description("Enable Bootstrap")]
         public bool UseBootstrap
         {
             get { return SettingsConfig.GetBoolean(nameof(UseBootstrap), false); }
             set { SettingsConfig.Set(nameof(UseBootstrap), value); }
         }
 
+        [Description("Emulate Export System")]
         public bool IsExportSystem
         {
             get { return SettingsConfig.GetBoolean(nameof(IsExportSystem), true); }
