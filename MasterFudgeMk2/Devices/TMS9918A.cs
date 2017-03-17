@@ -176,7 +176,7 @@ namespace MasterFudgeMk2.Devices
             {
                 if (currentScanline == 0) ClearScreen();
 
-                //ClearLine(currentScanline);
+                ClearLine(currentScanline);
                 RenderLine(currentScanline);
                 currentScanline++;
 
