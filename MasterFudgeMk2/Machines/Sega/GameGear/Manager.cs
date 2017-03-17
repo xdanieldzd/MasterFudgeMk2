@@ -184,8 +184,8 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             emulationPaused = false;
             currentCyclesInLine = currentMasterClockCyclesInFrame = 0;
 
-            OnScreenResize?.Invoke(this, new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, SegaSMS2VDP.NumVisibleLinesHigh));
-            OnScreenViewportChange?.Invoke(this, new ScreenViewportChangeEventArgs(SegaGGVDP.ScreenViewportX, ((SegaSMS2VDP.NumVisibleLinesHigh / 2) - (SegaGGVDP.ScreenViewportHeight) / 2), SegaGGVDP.ScreenViewportWidth, SegaGGVDP.ScreenViewportHeight));
+            OnScreenResize?.Invoke(this, new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
+            OnScreenViewportChange?.Invoke(this, new ScreenViewportChangeEventArgs(SegaGGVDP.ScreenViewportX, ((vdp.NumScanlines / 2) - (SegaGGVDP.ScreenViewportHeight) / 2), SegaGGVDP.ScreenViewportWidth, SegaGGVDP.ScreenViewportHeight));
         }
 
         public void LoadMedia(IMedia media)
@@ -239,7 +239,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             double currentMasterClockCycles = (currentCpuClockCycles * 3.0);
 
             if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
-                OnRenderScreen?.Invoke(this, new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, SegaSMS2VDP.NumVisibleLinesHigh, vdp.OutputFramebuffer));
+                OnRenderScreen?.Invoke(this, new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines, vdp.OutputFramebuffer));
 
             cpu.SetInterruptLine(vdp.InterruptLine);
 

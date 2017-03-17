@@ -208,8 +208,8 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
             emulationPaused = false;
             currentCyclesInLine = currentMasterClockCyclesInFrame = 0;
 
-            OnScreenResize?.Invoke(this, new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, TMS9918A.NumVisibleLines));
-            OnScreenViewportChange?.Invoke(this, new ScreenViewportChangeEventArgs(0, 0, TMS9918A.NumPixelsPerLine, TMS9918A.NumVisibleLines));
+            OnScreenResize?.Invoke(this, new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
+            OnScreenViewportChange?.Invoke(this, new ScreenViewportChangeEventArgs(0, 0, TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
         }
 
         public void LoadMedia(IMedia media)
@@ -252,7 +252,7 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
             double currentMasterClockCycles = (currentCpuClockCycles * 3.0);
 
             if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
-                OnRenderScreen?.Invoke(this, new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, TMS9918A.NumVisibleLines, vdp.OutputFramebuffer));
+                OnRenderScreen?.Invoke(this, new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines, vdp.OutputFramebuffer));
 
             /* The IMO oddball NMI-Vblank handling, see ex. Cogwheel */
             if (vdp.InterruptLine == InterruptState.Assert && !isNmi) isNmiPending = true;

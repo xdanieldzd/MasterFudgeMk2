@@ -36,7 +36,7 @@ namespace MasterFudgeMk2.Devices
             set { controlWord = (ushort)((codeRegister << 14) | (value & 0x3FFF)); }
         }
 
-        protected virtual int numScanlines { get { return (isPalChip ? NumScanlinesPal : NumScanlinesNtsc); } }
+        public virtual int NumScanlines { get { return (isPalChip ? NumScanlinesPal : NumScanlinesNtsc); } }
 
         [Flags]
         protected enum StatusFlags : byte
@@ -66,7 +66,7 @@ namespace MasterFudgeMk2.Devices
 
         public InterruptState InterruptLine { get; protected set; }
 
-        protected int currentScanline;
+        protected int currentScanline, virtualStartScanline;
 
         protected bool isDisplayBlanked { get { return !BitUtilities.IsBitSet(registers[0x01], 6); } }
 
@@ -136,11 +136,11 @@ namespace MasterFudgeMk2.Devices
             registers = new byte[0x10];
             vram = new byte[0x4000];
 
-            screenUsage = new byte[NumPixelsPerLine * numScanlines];
+            screenUsage = new byte[NumPixelsPerLine * NumScanlines];
 
-            outputFramebuffer = new byte[(NumPixelsPerLine * numScanlines) * 4];
+            outputFramebuffer = new byte[(NumPixelsPerLine * NumScanlines) * 4];
 
-            clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / numScanlines);
+            clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / NumScanlines);
         }
 
         public virtual void Startup()
@@ -159,6 +159,7 @@ namespace MasterFudgeMk2.Devices
             statusFlags = StatusFlags.None;
 
             currentScanline = 0;
+            virtualStartScanline = ((NumScanlines - NumVisibleLines) / 2);
 
             ClearScreen();
 
@@ -175,15 +176,14 @@ namespace MasterFudgeMk2.Devices
             {
                 if (currentScanline == 0) ClearScreen();
 
-                if (currentScanline < NumVisibleLines)
-                    RenderLine(currentScanline);
-
+                //ClearLine(currentScanline);
+                RenderLine(currentScanline);
                 currentScanline++;
 
                 if (currentScanline == (NumVisibleLines + 1))
                     isFrameInterruptPending = true;
 
-                if (currentScanline == numScanlines)
+                if (currentScanline == NumScanlines)
                 {
                     currentScanline = 0;
                     drawScreen = true;
@@ -217,78 +217,91 @@ namespace MasterFudgeMk2.Devices
         protected virtual void ClearScreen()
         {
             for (int i = 0; i < screenUsage.Length; i++) screenUsage[i] = screenUsageEmpty;
-            for (int i = 0; i < outputFramebuffer.Length; i += 4) WriteColorToFramebuffer(0, i);
+        }
+
+        protected virtual void ClearLine(int line)
+        {
+            if (line - virtualStartScanline < 0 || (line - virtualStartScanline) >= NumVisibleLines)
+            {
+                for (int i = 0; i < NumPixelsPerLine; i++)
+                {
+                    int outputY = (line * NumPixelsPerLine);
+                    int outputX = (i % NumPixelsPerLine);
+
+                    WriteColorToFramebuffer((byte)backgroundColor, ((outputY + outputX) * 4));
+                }
+            }
         }
 
         protected virtual void RenderLine(int line)
         {
-            if (isModeGraphics1)
+            if (line < NumVisibleLines)
             {
-                RenderGraphics1Background(line);
-                RenderSprites(line);
-            }
-            else if (isModeGraphics2)
-            {
-                RenderGraphics2Background(line);
-                RenderSprites(line);
-            }
-            else if (isModeMulticolor)
-            {
-                // TODO: backgrounds
-                RenderSprites(line);
-            }
-            else if (isModeText)
-            {
-                RenderTextBackground(line);
-            }
-            else
-            {
-                throw new Exception("whut in the vdp?");
+                if (isModeGraphics1)
+                {
+                    RenderGraphics1Background(line);
+                    RenderSprites(line);
+                }
+                else if (isModeGraphics2)
+                {
+                    RenderGraphics2Background(line);
+                    RenderSprites(line);
+                }
+                else if (isModeMulticolor)
+                {
+                    // TODO: backgrounds
+                    RenderSprites(line);
+                }
+                else if (isModeText)
+                {
+                    RenderTextBackground(line);
+                }
+                else
+                {
+                    throw new Exception("whut in the vdp?");
+                }
             }
         }
 
         protected void RenderGraphics1Background(int line)
         {
-            if (!isDisplayBlanked)
+            /* Calculate/set some variables we'll need */
+            int tileWidth = 8;
+            int numTilesPerLine = 32;
+            ushort patternGeneratorBaseAddress = (ushort)((registers[0x04] & 0x0F) << 10);
+            ushort colorTableBaseAddress = (ushort)(registers[0x03] << 6);
+
+            for (int tile = 0; tile < numTilesPerLine; tile++)
             {
-                /* Calculate/set some variables we'll need */
-                int tileWidth = 8;
-                int numTilesPerLine = 32;
-                ushort patternGeneratorBaseAddress = (ushort)((registers[0x04] & 0x0F) << 10);
-                ushort colorTableBaseAddress = (ushort)(registers[0x03] << 6);
+                /* Calculate nametable address, fetch character number */
+                ushort nametableAddress = (ushort)(nametableBaseAddress + ((line / 8) * numTilesPerLine) + tile);
+                byte characterNumber = ReadVram(nametableAddress);
 
-                for (int tile = 0; tile < numTilesPerLine; tile++)
+                /* Fetch pixel and color data for current pixel line (1 byte, 8 pixels) */
+                byte pixelLineData = ReadVram((ushort)(patternGeneratorBaseAddress + (characterNumber * 8) + (line % 8)));
+                byte pixelLineColor = ReadVram((ushort)(colorTableBaseAddress + (characterNumber / 8)));
+
+                /* Extract background and foreground color indices */
+                byte[] colorIndicesBackgroundForeground = new byte[2];
+                colorIndicesBackgroundForeground[0] = (byte)(pixelLineColor & 0x0F);
+                colorIndicesBackgroundForeground[1] = (byte)(pixelLineColor >> 4);
+
+                /* Draw pixels */
+                for (int pixel = 0; pixel < tileWidth; pixel++)
                 {
-                    /* Calculate nametable address, fetch character number */
-                    ushort nametableAddress = (ushort)(nametableBaseAddress + ((line / 8) * numTilesPerLine) + tile);
-                    byte characterNumber = ReadVram(nametableAddress);
+                    /* Fetch color index for current pixel (bit clear means background, bit set means foreground color) */
+                    byte c = colorIndicesBackgroundForeground[((pixelLineData >> (7 - pixel)) & 0x01)];
+                    /* Color index 0 is transparent, use background color */
+                    if (c == 0 || isDisplayBlanked) c = (byte)backgroundColor;
 
-                    /* Fetch pixel and color data for current pixel line (1 byte, 8 pixels) */
-                    byte pixelLineData = ReadVram((ushort)(patternGeneratorBaseAddress + (characterNumber * 8) + (line % 8)));
-                    byte pixelLineColor = ReadVram((ushort)(colorTableBaseAddress + (characterNumber / 8)));
+                    /* Calculate output framebuffer location, get BGRA values from color table, write to framebuffer */
+                    int outputY = ((virtualStartScanline + (line % NumVisibleLines)) * NumPixelsPerLine);
+                    int outputX = ((8 + (tile * tileWidth) + pixel) % NumPixelsPerLine);
 
-                    /* Extract background and foreground color indices */
-                    byte[] colorIndicesBackgroundForeground = new byte[2];
-                    colorIndicesBackgroundForeground[0] = (byte)(pixelLineColor & 0x0F);
-                    colorIndicesBackgroundForeground[1] = (byte)(pixelLineColor >> 4);
-
-                    /* Draw pixels */
-                    for (int pixel = 0; pixel < tileWidth; pixel++)
+                    if (screenUsage[outputY + outputX] == screenUsageEmpty)
                     {
-                        /* Fetch color index for current pixel (bit clear means background, bit set means foreground color) */
-                        byte c = colorIndicesBackgroundForeground[((pixelLineData >> (7 - pixel)) & 0x01)];
-                        /* Color index 0 is transparent, use background color */
-                        if (c == 0) c = (byte)backgroundColor;
-
-                        /* Calculate output framebuffer location, get BGRA values from color table, write to framebuffer */
-                        int outputY = ((line % NumVisibleLines) * NumPixelsPerLine);
-                        int outputX = ((8 + (tile * tileWidth) + pixel) % NumPixelsPerLine);
-
-                        if (screenUsage[outputY + outputX] == screenUsageEmpty)
-                        {
-                            WriteColorToFramebuffer(c, ((outputY + outputX) * 4));
-                            screenUsage[outputY + outputX] |= screenUsageBg;
-                        }
+                        WriteColorToFramebuffer(c, ((outputY + outputX) * 4));
+                        screenUsage[outputY + outputX] |= screenUsageBg;
                     }
                 }
             }
@@ -296,50 +309,47 @@ namespace MasterFudgeMk2.Devices
 
         protected void RenderGraphics2Background(int line)
         {
-            if (!isDisplayBlanked)
+            int numTilesPerLine = (NumPixelsPerLine / 8);
+
+            /* Calculate some base addresses */
+            ushort patternGeneratorBaseAddress = (ushort)((registers[0x04] & 0x04) << 11);
+            ushort colorTableBaseAddress = (ushort)((registers[0x03] & 0x80) << 6);
+
+            for (int tile = 0; tile < numTilesPerLine; tile++)
             {
-                int numTilesPerLine = (NumPixelsPerLine / 8);
+                /* Calculate nametable address */
+                ushort nametableAddress = (ushort)(nametableBaseAddress + ((line / 8) * numTilesPerLine) + tile);
 
-                /* Calculate some base addresses */
-                ushort patternGeneratorBaseAddress = (ushort)((registers[0x04] & 0x04) << 11);
-                ushort colorTableBaseAddress = (ushort)((registers[0x03] & 0x80) << 6);
+                /* Calculate character number and masks */
+                ushort characterNumber = (ushort)(((line / 64) << 8) | ReadVram(nametableAddress));
+                ushort characterNumberDataMask = (ushort)(((registers[0x04] & 0x03) << 8) | 0xFF);
+                ushort characterNumberColorMask = (ushort)(((registers[0x03] & 0x7F) << 3) | 0x07);
 
-                for (int tile = 0; tile < numTilesPerLine; tile++)
+                /* Fetch pixel and color data for current pixel line (1 byte, 8 pixels) */
+                byte pixelLineData = ReadVram((ushort)(patternGeneratorBaseAddress + ((characterNumber & characterNumberDataMask) * 8) + (line % 8)));
+                byte pixelLineColor = ReadVram((ushort)(colorTableBaseAddress + ((characterNumber & characterNumberColorMask) * 8) + (line % 8)));
+
+                /* Extract background and foreground color indices */
+                byte[] colorIndicesBackgroundForeground = new byte[2];
+                colorIndicesBackgroundForeground[0] = (byte)(pixelLineColor & 0x0F);
+                colorIndicesBackgroundForeground[1] = (byte)(pixelLineColor >> 4);
+
+                /* Draw pixels */
+                for (int pixel = 0; pixel < 8; pixel++)
                 {
-                    /* Calculate nametable address */
-                    ushort nametableAddress = (ushort)(nametableBaseAddress + ((line / 8) * numTilesPerLine) + tile);
+                    /* Fetch color index for current pixel (bit clear means background, bit set means foreground color) */
+                    byte c = colorIndicesBackgroundForeground[((pixelLineData >> (7 - pixel)) & 0x01)];
+                    /* Color index 0 is transparent, use background color */
+                    if (c == 0 || isDisplayBlanked) c = (byte)backgroundColor;
 
-                    /* Calculate character number and masks */
-                    ushort characterNumber = (ushort)(((line / 64) << 8) | ReadVram(nametableAddress));
-                    ushort characterNumberDataMask = (ushort)(((registers[0x04] & 0x03) << 8) | 0xFF);
-                    ushort characterNumberColorMask = (ushort)(((registers[0x03] & 0x7F) << 3) | 0x07);
+                    /* Calculate output framebuffer location, get BGRA values from color table, write to framebuffer */
+                    int outputY = ((virtualStartScanline + (line % NumVisibleLines)) * NumPixelsPerLine);
+                    int outputX = (((tile * 8) + pixel) % NumPixelsPerLine);
 
-                    /* Fetch pixel and color data for current pixel line (1 byte, 8 pixels) */
-                    byte pixelLineData = ReadVram((ushort)(patternGeneratorBaseAddress + ((characterNumber & characterNumberDataMask) * 8) + (line % 8)));
-                    byte pixelLineColor = ReadVram((ushort)(colorTableBaseAddress + ((characterNumber & characterNumberColorMask) * 8) + (line % 8)));
-
-                    /* Extract background and foreground color indices */
-                    byte[] colorIndicesBackgroundForeground = new byte[2];
-                    colorIndicesBackgroundForeground[0] = (byte)(pixelLineColor & 0x0F);
-                    colorIndicesBackgroundForeground[1] = (byte)(pixelLineColor >> 4);
-
-                    /* Draw pixels */
-                    for (int pixel = 0; pixel < 8; pixel++)
+                    if (screenUsage[outputY + outputX] == screenUsageEmpty)
                     {
-                        /* Fetch color index for current pixel (bit clear means background, bit set means foreground color) */
-                        byte c = colorIndicesBackgroundForeground[((pixelLineData >> (7 - pixel)) & 0x01)];
-                        /* Color index 0 is transparent, use background color */
-                        if (c == 0) c = (byte)backgroundColor;
-
-                        /* Calculate output framebuffer location, get BGRA values from color table, write to framebuffer */
-                        int outputY = ((line % NumVisibleLines) * NumPixelsPerLine);
-                        int outputX = (((tile * 8) + pixel) % NumPixelsPerLine);
-
-                        if (screenUsage[outputY + outputX] == screenUsageEmpty)
-                        {
-                            WriteColorToFramebuffer(c, ((outputY + outputX) * 4));
-                            screenUsage[outputY + outputX] |= screenUsageBg;
-                        }
+                        WriteColorToFramebuffer(c, ((outputY + outputX) * 4));
+                        screenUsage[outputY + outputX] |= screenUsageBg;
                     }
                 }
             }
@@ -347,42 +357,39 @@ namespace MasterFudgeMk2.Devices
 
         protected void RenderTextBackground(int line)
         {
-            if (!isDisplayBlanked)
+            /* Calculate/set some variables we'll need */
+            int tileWidth = 6;
+            int numTilesPerLine = 40;
+            ushort patternGeneratorBaseAddress = (ushort)((registers[0x04] & 0x07) << 11);
+
+            /* Get background and text color indices */
+            byte[] colorIndicesBackgroundText = new byte[2];
+            colorIndicesBackgroundText[0] = (byte)backgroundColor;
+            colorIndicesBackgroundText[1] = (byte)textColor;
+
+            for (int tile = 0; tile < numTilesPerLine; tile++)
             {
-                /* Calculate/set some variables we'll need */
-                int tileWidth = 6;
-                int numTilesPerLine = 40;
-                ushort patternGeneratorBaseAddress = (ushort)((registers[0x04] & 0x07) << 11);
+                /* Calculate nametable address, fetch character number */
+                ushort nametableAddress = (ushort)(nametableBaseAddress + ((line / 8) * numTilesPerLine) + tile);
+                byte characterNumber = ReadVram(nametableAddress);
 
-                /* Get background and text color indices */
-                byte[] colorIndicesBackgroundText = new byte[2];
-                colorIndicesBackgroundText[0] = (byte)backgroundColor;
-                colorIndicesBackgroundText[1] = (byte)textColor;
+                /* Fetch pixel data for current pixel line (1 byte, 8 pixels) */
+                byte pixelLineData = ReadVram((ushort)(patternGeneratorBaseAddress + (characterNumber * 8) + (line % 8)));
 
-                for (int tile = 0; tile < numTilesPerLine; tile++)
+                /* Draw pixels */
+                for (int pixel = 0; pixel < tileWidth; pixel++)
                 {
-                    /* Calculate nametable address, fetch character number */
-                    ushort nametableAddress = (ushort)(nametableBaseAddress + ((line / 8) * numTilesPerLine) + tile);
-                    byte characterNumber = ReadVram(nametableAddress);
+                    /* Fetch color index for current pixel (bit clear means background, bit set means text color) */
+                    byte c = (isDisplayBlanked ? (byte)backgroundColor : colorIndicesBackgroundText[((pixelLineData >> (7 - pixel)) & 0x01)]);
 
-                    /* Fetch pixel data for current pixel line (1 byte, 8 pixels) */
-                    byte pixelLineData = ReadVram((ushort)(patternGeneratorBaseAddress + (characterNumber * 8) + (line % 8)));
+                    /* Calculate output framebuffer location, get BGRA values from color table, write to framebuffer */
+                    int outputY = ((virtualStartScanline + (line % NumVisibleLines)) * NumPixelsPerLine);
+                    int outputX = ((8 + (tile * tileWidth) + pixel) % NumPixelsPerLine);
 
-                    /* Draw pixels */
-                    for (int pixel = 0; pixel < tileWidth; pixel++)
+                    if (screenUsage[outputY + outputX] == screenUsageEmpty)
                     {
-                        /* Fetch color index for current pixel (bit clear means background, bit set means text color) */
-                        byte c = colorIndicesBackgroundText[((pixelLineData >> (7 - pixel)) & 0x01)];
-
-                        /* Calculate output framebuffer location, get BGRA values from color table, write to framebuffer */
-                        int outputY = ((line % NumVisibleLines) * NumPixelsPerLine);
-                        int outputX = ((8 + (tile * tileWidth) + pixel) % NumPixelsPerLine);
-
-                        if (screenUsage[outputY + outputX] == screenUsageEmpty)
-                        {
-                            WriteColorToFramebuffer(c, ((outputY + outputX) * 4));
-                            screenUsage[outputY + outputX] |= screenUsageBg;
-                        }
+                        WriteColorToFramebuffer(c, ((outputY + outputX) * 4));
+                        screenUsage[outputY + outputX] |= screenUsageBg;
                     }
                 }
             }
@@ -431,7 +438,6 @@ namespace MasterFudgeMk2.Devices
                     return;
                 }
 
-                /* If display isn't blanked, draw line */
                 if (!isDisplayBlanked)
                 {
                     int xCoordinate = ReadVram((ushort)(spriteAttribTableBaseAddress + (sprite * 4) + 1));
@@ -478,7 +484,7 @@ namespace MasterFudgeMk2.Devices
                 if (spriteColor == 0 || ((pixelLineData >> (7 - (pixel >> zoomShift))) & 0x01) == 0x00 || (xCoordinate + pixel) >= NumPixelsPerLine || (xCoordinate + pixel) < 0) continue;
 
                 /* Calculate output framebuffer coordinates */
-                int outputY = (yCoordinate * NumPixelsPerLine);
+                int outputY = ((virtualStartScanline + yCoordinate) * NumPixelsPerLine);
                 int outputX = ((xCoordinate + pixel) % NumPixelsPerLine);
 
                 if ((screenUsage[outputY + outputX] & screenUsageSprite) == screenUsageSprite)

@@ -110,8 +110,6 @@ namespace MasterFudgeMk2.Devices.Sega
         const byte screenUsageBgLowPriority = screenUsageBg;
         const byte screenUsageBgHighPriority = (1 << 2);
 
-        int outputFramebufferStartAddress;
-
         public int ScreenHeight { get { return screenHeight; } }
 
         // TODO: PAL mode is broken-ish (vcounter stuff)
@@ -120,9 +118,9 @@ namespace MasterFudgeMk2.Devices.Sega
         {
             cram = new byte[0x20];
 
-            screenUsage = new byte[NumPixelsPerLine * numScanlines];
+            screenUsage = new byte[NumPixelsPerLine * NumScanlines];
 
-            outputFramebuffer = new byte[(NumPixelsPerLine * numScanlines) * 4];
+            outputFramebuffer = new byte[(NumPixelsPerLine * NumScanlines) * 4];
         }
 
         public override void Reset()
@@ -167,14 +165,13 @@ namespace MasterFudgeMk2.Devices.Sega
                 if (currentScanline == 0)
                 {
                     ClearScreen();
-                    RenderBeforeLine0();
 
                     horizontalScrollLatched = registers[0x08];
                     verticalScrollLatched = registers[0x09];
                 }
 
-                if (currentScanline < screenHeight)
-                    RenderLine(currentScanline);
+                ClearLine(currentScanline);
+                RenderLine(currentScanline);
 
                 vCounter = AdjustVCounter(currentScanline);
                 currentScanline++;
@@ -194,13 +191,10 @@ namespace MasterFudgeMk2.Devices.Sega
                 if (vCounter == (screenHeight + 1))
                     isFrameInterruptPending = true;
 
-                if (currentScanline == numScanlines)
+                if (currentScanline == NumScanlines)
                 {
                     currentScanline = 0;
                     drawScreen = true;
-
-                    for (int i = outputFramebufferStartAddress + (screenHeight * NumPixelsPerLine) * 4; i < outputFramebuffer.Length; i += 4)
-                        WriteColorToFramebuffer(1, backgroundColor, i);
                 }
 
                 if ((isFrameInterruptEnabled && isFrameInterruptPending) || (isLineInterruptEnabled && isLineInterruptPending))
@@ -210,11 +204,6 @@ namespace MasterFudgeMk2.Devices.Sega
             }
 
             return drawScreen;
-        }
-
-        private void RenderBeforeLine0()
-        {
-            for (int i = 0; i < outputFramebufferStartAddress; i += 4) WriteColorToFramebuffer(1, backgroundColor, i);
         }
 
         protected override byte ReadVram(ushort address)
@@ -232,98 +221,108 @@ namespace MasterFudgeMk2.Devices.Sega
             for (int i = 0; i < screenUsage.Length; i++) screenUsage[i] = screenUsageEmpty;
         }
 
+        protected override void ClearLine(int line)
+        {
+            if (line - virtualStartScanline < 0 || (line - virtualStartScanline) >= NumVisibleLines)
+            {
+                for (int i = 0; i < NumPixelsPerLine; i++)
+                {
+                    int outputY = (line * NumPixelsPerLine);
+                    int outputX = (i % NumPixelsPerLine);
+
+                    WriteColorToFramebuffer(1, backgroundColor, ((outputY + outputX) * 4));
+                }
+            }
+        }
+
         protected override void RenderLine(int line)
         {
-            int startPixel = (line * NumPixelsPerLine);
-
-            /* Clear line */
-            for (int i = startPixel; i < (startPixel + NumPixelsPerLine); i++)
-                WriteColorToFramebuffer(1, backgroundColor, outputFramebufferStartAddress + (i * 4));
-
-            /* Check mode */
-            if (isMasterSystemMode)
+            if (currentScanline < screenHeight)
             {
-                RenderMode4Background(line);
-                RenderMode4Sprites(line);
-            }
-            else if (isModeGraphics1)
-            {
-                RenderGraphics1Background(line);
-                RenderSprites(line);
-            }
-            else if (isModeGraphics2)
-            {
-                RenderGraphics2Background(line);
-                RenderSprites(line);
-            }
-            else if (isModeMulticolor)
-            {
-                // TODO: backgrounds
-                RenderSprites(line);
-            }
-            else if (isModeText)
-            {
-                RenderTextBackground(line);
+                /* Check mode */
+                if (isMasterSystemMode)
+                {
+                    RenderMode4Background(line);
+                    RenderMode4Sprites(line);
+                }
+                else if (isModeGraphics1)
+                {
+                    RenderGraphics1Background(line);
+                    RenderSprites(line);
+                }
+                else if (isModeGraphics2)
+                {
+                    RenderGraphics2Background(line);
+                    RenderSprites(line);
+                }
+                else if (isModeMulticolor)
+                {
+                    // TODO: backgrounds
+                    RenderSprites(line);
+                }
+                else if (isModeText)
+                {
+                    RenderTextBackground(line);
+                }
             }
         }
 
         private void RenderMode4Background(int line)
         {
-            if (!isDisplayBlanked)
+            /* Addresses (global) */
+            ushort currentNametableBaseAddress = nametableBaseAddress;
+
+            /* Horizontal scrolling (global) */
+            int currentHorizontalScroll = ((isHScrollPartiallyDisabled && line < 16) ? 0 : horizontalScrollLatched);
+            int horizontalOffset = (currentHorizontalScroll & 0x07);
+
+            /* Vertical scrolling (global) */
+            int scrolledLine = line;
+
+            int numColumnsPerLine = (NumPixelsPerLine / 8);
+            for (int column = 0; column < numColumnsPerLine; column++)
             {
-                /* Addresses (global) */
-                ushort currentNametableBaseAddress = nametableBaseAddress;
+                /* Horizontal scroll (column) */
+                int startingColumn = ((column - (currentHorizontalScroll / 8)) & 0x1F);
 
-                /* Horizontal scrolling (global) */
-                int currentHorizontalScroll = ((isHScrollPartiallyDisabled && line < 16) ? 0 : horizontalScrollLatched);
-                int horizontalOffset = (currentHorizontalScroll & 0x07);
+                /* Vertical scrolling (column) */
+                if (!(isVScrollPartiallyDisabled && column >= 24))
+                    scrolledLine = (line + verticalScrollLatched) % nametableHeight;
 
-                /* Vertical scrolling (global) */
-                int scrolledLine = line;
+                /* Get tile data */
+                ushort nametableAddress = (ushort)(currentNametableBaseAddress + ((scrolledLine / 8) * (numColumnsPerLine * 2)));
+                ushort ntData = (ushort)((ReadVram((ushort)(nametableAddress + (startingColumn * 2) + 1)) << 8) | ReadVram((ushort)(nametableAddress + (startingColumn * 2))));
 
-                int numColumnsPerLine = (NumPixelsPerLine / 8);
-                for (int column = 0; column < numColumnsPerLine; column++)
+                int tileIndex = (ntData & 0x01FF);
+                bool hFlip = ((ntData & 0x200) == 0x200);
+                bool vFlip = ((ntData & 0x400) == 0x400);
+                int palette = ((ntData & 0x800) >> 11);
+                bool priority = ((ntData & 0x1000) == 0x1000);
+
+                /* For vertical flip */
+                int tileLine = (vFlip ? ((scrolledLine / 8) * 8) + (-(scrolledLine % 8) + 7) : scrolledLine);
+
+                ushort tileAddress = (ushort)((tileIndex * 0x20) + ((tileLine % 8) * 4));
+                for (int pixel = 0; pixel < 8; pixel++)
                 {
-                    /* Horizontal scroll (column) */
-                    int startingColumn = ((column - (currentHorizontalScroll / 8)) & 0x1F);
+                    /* Calculate output framebuffer location, determine column masking, write to framebuffer */
+                    int outputX = (horizontalOffset + (column * 8) + pixel);
+                    int outputY = ((virtualStartScanline + (line % screenHeight)) * NumPixelsPerLine);
+                    int hShift = (hFlip ? pixel : (7 - pixel));
 
-                    /* Vertical scrolling (column) */
-                    if (!(isVScrollPartiallyDisabled && column >= 24))
-                        scrolledLine = (line + verticalScrollLatched) % nametableHeight;
+                    int c = (((ReadVram((ushort)(tileAddress + 0)) >> hShift) & 0x1) << 0);
+                    c |= (((ReadVram((ushort)(tileAddress + 1)) >> hShift) & 0x1) << 1);
+                    c |= (((ReadVram((ushort)(tileAddress + 2)) >> hShift) & 0x1) << 2);
+                    c |= (((ReadVram((ushort)(tileAddress + 3)) >> hShift) & 0x1) << 3);
 
-                    /* Get tile data */
-                    ushort nametableAddress = (ushort)(currentNametableBaseAddress + ((scrolledLine / 8) * (numColumnsPerLine * 2)));
-                    ushort ntData = (ushort)((ReadVram((ushort)(nametableAddress + (startingColumn * 2) + 1)) << 8) | ReadVram((ushort)(nametableAddress + (startingColumn * 2))));
-
-                    int tileIndex = (ntData & 0x01FF);
-                    bool hFlip = ((ntData & 0x200) == 0x200);
-                    bool vFlip = ((ntData & 0x400) == 0x400);
-                    int palette = ((ntData & 0x800) >> 11);
-                    bool priority = ((ntData & 0x1000) == 0x1000);
-
-                    /* For vertical flip */
-                    int tileLine = (vFlip ? ((scrolledLine / 8) * 8) + (-(scrolledLine % 8) + 7) : scrolledLine);
-
-                    ushort tileAddress = (ushort)((tileIndex * 0x20) + ((tileLine % 8) * 4));
-                    for (int pixel = 0; pixel < 8; pixel++)
+                    if ((screenUsage[outputY + outputX] == screenUsageEmpty) && (outputX < NumPixelsPerLine))
                     {
-                        /* Get output X position & check column 0 masking */
-                        int outputX = (horizontalOffset + (column * 8) + pixel);
-                        if (isColumn0MaskEnabled && outputX < 8) continue;
+                        screenUsage[outputY + outputX] |= ((c != 0 && priority) ? screenUsageBgHighPriority : screenUsageBgLowPriority);
 
-                        int outputY = ((line % screenHeight) * NumPixelsPerLine);
-                        int hShift = (hFlip ? pixel : (7 - pixel));
-
-                        int c = (((ReadVram((ushort)(tileAddress + 0)) >> hShift) & 0x1) << 0);
-                        c |= (((ReadVram((ushort)(tileAddress + 1)) >> hShift) & 0x1) << 1);
-                        c |= (((ReadVram((ushort)(tileAddress + 2)) >> hShift) & 0x1) << 2);
-                        c |= (((ReadVram((ushort)(tileAddress + 3)) >> hShift) & 0x1) << 3);
-
-                        if ((screenUsage[outputY + outputX] == screenUsageEmpty) && (outputX < NumPixelsPerLine))
-                        {
-                            screenUsage[outputY + outputX] |= ((c != 0 && priority) ? screenUsageBgHighPriority : screenUsageBgLowPriority);
-                            WriteColorToFramebuffer(palette, c, outputFramebufferStartAddress + ((outputY + outputX) * 4));
-                        }
+                        if ((isColumn0MaskEnabled && outputX < 8) || isDisplayBlanked)
+                            WriteColorToFramebuffer(1, backgroundColor, ((outputY + outputX) * 4));
+                        else
+                            WriteColorToFramebuffer(palette, c, ((outputY + outputX) * 4));
                     }
                 }
             }
@@ -404,7 +403,7 @@ namespace MasterFudgeMk2.Devices.Sega
                         c |= (((ReadVram((ushort)(tileAddress + 3)) >> (7 - (pixel >> zoomShift))) & 0x1) << 3);
                         if (c == 0 || xCoordinate + pixel >= NumPixelsPerLine) continue;
 
-                        int outputY = ((line % screenHeight) * NumPixelsPerLine);
+                        int outputY = ((virtualStartScanline + (line % screenHeight)) * NumPixelsPerLine);
                         if ((screenUsage[outputY + outputX] & screenUsageSprite) == screenUsageSprite)
                         {
                             /* Set sprite collision flag */
@@ -413,7 +412,7 @@ namespace MasterFudgeMk2.Devices.Sega
                         else if ((screenUsage[outputY + outputX] & screenUsageBgHighPriority) != screenUsageBgHighPriority)
                         {
                             /* Draw if pixel isn't occupied by high-priority BG */
-                            WriteColorToFramebuffer(1, c, outputFramebufferStartAddress + ((outputY + outputX) * 4));
+                            WriteColorToFramebuffer(1, c, ((outputY + outputX) * 4));
                         }
 
                         /* Note that there is a sprite here regardless */
@@ -502,7 +501,7 @@ namespace MasterFudgeMk2.Devices.Sega
                 nametableHeight = 224;
             }
 
-            outputFramebufferStartAddress = (((NumVisibleLinesHigh - screenHeight) / 2) * NumPixelsPerLine) * 4;
+            virtualStartScanline = ((NumScanlines - screenHeight) / 2);
         }
 
         protected virtual void WriteColorToFramebuffer(int palette, int color, int address)

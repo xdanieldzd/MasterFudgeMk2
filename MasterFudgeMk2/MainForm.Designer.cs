@@ -114,14 +114,14 @@
             // clearListToolStripMenuItem
             // 
             this.clearListToolStripMenuItem.Name = "clearListToolStripMenuItem";
-            this.clearListToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.clearListToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
             this.clearListToolStripMenuItem.Text = "&Clear List";
             this.clearListToolStripMenuItem.Click += new System.EventHandler(this.clearListToolStripMenuItem_Click);
             // 
             // toolStripMenuItem7
             // 
             this.toolStripMenuItem7.Name = "toolStripMenuItem7";
-            this.toolStripMenuItem7.Size = new System.Drawing.Size(149, 6);
+            this.toolStripMenuItem7.Size = new System.Drawing.Size(119, 6);
             // 
             // toolStripMenuItem1
             // 
@@ -192,7 +192,7 @@
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.aboutToolStripMenuItem.Size = new System.Drawing.Size(116, 22);
             this.aboutToolStripMenuItem.Text = "&About...";
             this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
@@ -201,7 +201,7 @@
             this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsslStatus,
             this.tsslFps});
-            this.statusStrip.Location = new System.Drawing.Point(0, 408);
+            this.statusStrip.Location = new System.Drawing.Point(0, 548);
             this.statusStrip.Name = "statusStrip";
             this.statusStrip.Size = new System.Drawing.Size(512, 22);
             this.statusStrip.TabIndex = 8;
@@ -226,7 +226,7 @@
             this.scScreen.Dock = System.Windows.Forms.DockStyle.Fill;
             this.scScreen.Location = new System.Drawing.Point(0, 24);
             this.scScreen.Name = "scScreen";
-            this.scScreen.Size = new System.Drawing.Size(512, 384);
+            this.scScreen.Size = new System.Drawing.Size(512, 524);
             this.scScreen.TabIndex = 0;
             this.scScreen.TabStop = false;
             this.scScreen.Viewport = new System.Drawing.Rectangle(0, 0, 0, 0);
@@ -300,7 +300,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(512, 430);
+            this.ClientSize = new System.Drawing.Size(512, 570);
             this.Controls.Add(this.scScreen);
             this.Controls.Add(this.menuStrip);
             this.Controls.Add(this.statusStrip);
