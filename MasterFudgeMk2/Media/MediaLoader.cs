@@ -34,7 +34,7 @@ namespace MasterFudgeMk2.Media
             {
                 media = (Activator.CreateInstance(cartIdent.MediaType) as IMedia);
             }
-            else if ((machineManager is Machines.Sega.SG1000.Manager || machineManager is Machines.Sega.MasterSystem.Manager || machineManager is Machines.Sega.GameGear.Manager))
+            else if (machineManager is Machines.Sega.SG1000.Manager || machineManager is Machines.Sega.MasterSystem.Manager || machineManager is Machines.Sega.GameGear.Manager || machineManager is Machines.Sega.SC3000.Manager)
             {
                 if (fileInfo.Length <= 0xC000)
                 {

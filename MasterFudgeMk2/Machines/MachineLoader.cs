@@ -41,6 +41,11 @@ namespace MasterFudgeMk2.Machines
                 /* For the few ROMS w/o a correct ROM header (ex. Hang-On...?) */
                 return typeof(Sega.MasterSystem.Manager);
             }
+            else if (romFile.Extension == ".sc")
+            {
+                // TODO: meeeeeh, same as SG1000 & Coleco...
+                return typeof(Sega.SC3000.Manager);
+            }
             else
             {
                 throw new Exception(string.Format("Could not identify machine from ROM '{0}'", romFile.Name));

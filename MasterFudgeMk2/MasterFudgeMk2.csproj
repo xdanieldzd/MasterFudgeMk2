@@ -74,6 +74,7 @@
     <Compile Include="Common\VideoBackend\ScreenResizeEventArgs.cs" />
     <Compile Include="Common\VideoBackend\ScreenViewportChangeEventArgs.cs" />
     <Compile Include="ConfigFile.cs" />
+    <Compile Include="Devices\i8255.cs" />
     <Compile Include="Devices\ISoundDevice.cs" />
     <Compile Include="Devices\Sega\SegaSMS2PSG.cs" />
     <Compile Include="Devices\Z80A.OpcodesPrefixCB.cs" />
@@ -84,6 +85,8 @@
     <Compile Include="Machines\BaseMachine.cs" />
     <Compile Include="Machines\Coleco\ColecoVision\Configuration.cs" />
     <Compile Include="Machines\Coleco\ColecoVision\Manager.cs" />
+    <Compile Include="Machines\Sega\SC3000\Configuration.cs" />
+    <Compile Include="Machines\Sega\SC3000\Manager.cs" />
     <Compile Include="Media\MediaIdentity.cs" />
     <Compile Include="Media\IMedia.cs" />
     <Compile Include="Media\Sega\BaseCartridge.cs" />

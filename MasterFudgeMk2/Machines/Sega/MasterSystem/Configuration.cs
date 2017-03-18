@@ -3,11 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
-using System.Windows.Forms;
 using System.ComponentModel;
-
-using Nini.Config;
 
 namespace MasterFudgeMk2.Machines.Sega.MasterSystem
 {
@@ -40,7 +36,7 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
         [Description("Emulate PAL System")]
         public bool IsPalSystem
         {
-            get { return SettingsConfig.GetBoolean(nameof(IsPalSystem), true); }
+            get { return SettingsConfig.GetBoolean(nameof(IsPalSystem), false); }
             set { SettingsConfig.Set(nameof(IsPalSystem), value); }
         }
 
@@ -131,9 +127,6 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             set { InputConfig.Set(MachineInputs.P2Button2.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
         }
 
-        public Configuration() : base()
-        {
-
-        }
+        public Configuration() : base() { }
     }
 }

@@ -3,13 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
-using System.Windows.Forms;
-using System.ComponentModel;
-
-using Nini.Config;
-
-using MasterFudgeMk2.Common.XInput;
 
 namespace MasterFudgeMk2.Machines.Sega.SG1000
 {
