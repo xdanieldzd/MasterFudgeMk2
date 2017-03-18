@@ -223,7 +223,7 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
             currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
         }
 
-        protected override void SetButtonData(PollInputEventArgs input)
+        protected override void ParseInput(PollInputEventArgs input)
         {
             // TODO: controller 2
 

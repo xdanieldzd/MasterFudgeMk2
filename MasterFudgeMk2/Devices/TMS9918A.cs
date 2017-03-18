@@ -362,6 +362,16 @@ namespace MasterFudgeMk2.Devices
 
         protected void RenderTextBackground(int line)
         {
+            /* Draw left and right borders */
+            for (int i = 0; i < 8; i++)
+            {
+                int outputY = ((virtualStartScanline + (line % NumVisibleLines)) * NumPixelsPerLine);
+                int outputX = (i % NumPixelsPerLine);
+
+                WriteColorToFramebuffer((byte)backgroundColor, ((outputY + outputX) * 4));
+                WriteColorToFramebuffer((byte)backgroundColor, ((outputY + (outputX + (NumPixelsPerLine - 8))) * 4));
+            }
+
             /* Calculate/set some variables we'll need */
             int tileWidth = 6;
             int numTilesPerLine = 40;
@@ -389,7 +399,7 @@ namespace MasterFudgeMk2.Devices
 
                     /* Calculate output framebuffer location, get BGRA values from color table, write to framebuffer */
                     int outputY = ((virtualStartScanline + (line % NumVisibleLines)) * NumPixelsPerLine);
-                    int outputX = ((8 + (tile * tileWidth) + pixel) % NumPixelsPerLine);
+                    int outputX = (8 + ((tile * tileWidth) + pixel) % NumPixelsPerLine);
 
                     if (screenUsage[outputY + outputX] == screenUsageEmpty)
                     {

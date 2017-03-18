@@ -22,7 +22,21 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
     [TypeConverter(typeof(DescriptionTypeConverter))]
     public enum MachineInputs
     {
-        //
+        [Description("Reset Key")]
+        Reset,
+
+        D1, D2, D3, D4, D5, D6, D7, P1Up,
+        Q, W, E, R, T, Y, U, P1Down,
+        A, S, D, F, G, H, J, P1Left,
+        Z, X, C, V, B, N, M, P1Right,
+        EngDiers, Space, HomeClr, InsDel, Unmapped36, Unmapped37, Unmapped38, P1Button1,
+        Comma, Period, Slash, Pi, Down, Left, Right, P1Button2,
+        K, L, Semicolon, Colon, BracketClose, CR, Up, P2Up,
+        I, O, P, At, BracketOpen, Unmapped61, Unmapped62, P2Down,
+        D8, D9, D0, Minus, Caret, Yen, Break, P2Left,
+        Unmapped72, Unmapped73, Unmapped74, Unmapped75, Unmapped76, Unmapped77, Graph, P2Right,
+        Unmapped80, Unmapped81, Unmapped82, Unmapped83, Unmapped84, Unmapped85, Ctrl, P2Button1,
+        Unmapped88, Unmapped89, Unmapped90, Unmapped91, Unmapped92, Func, Shift, P2Button2
     }
 
     public class Manager : BaseMachine
@@ -87,6 +101,8 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
 
         protected override int totalMasterClockCyclesInFrame { get { return (int)Math.Round(masterClock / refreshRate); } }
 
+        bool resetButtonPressed;
+
         Configuration configuration;
 
         public Manager()
@@ -141,6 +157,8 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
                 for (int j = 0; j < keyMatrix.GetLength(1); j++)
                     keyMatrix[i, j] = false;
 
+            resetButtonPressed = false;
+
             OnScreenResize(new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
             OnScreenViewportChange(new ScreenViewportChangeEventArgs(0, 0, TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
 
@@ -174,6 +192,12 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
             if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
                 OnRenderScreen(new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines, vdp.OutputFramebuffer));
 
+            if (resetButtonPressed)
+            {
+                resetButtonPressed = false;
+                cpu.SetNonMaskableInterruptLine(InterruptState.Assert);
+            }
+
             cpu.SetInterruptLine(vdp.InterruptLine);
 
             psg.Step((int)Math.Round(currentCpuClockCycles));
@@ -181,10 +205,116 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
             currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
         }
 
-        protected override void SetButtonData(PollInputEventArgs input)
+        protected override void ParseInput(PollInputEventArgs input)
         {
-            //
+            if (input.Pressed.Contains(configuration.Reset)) resetButtonPressed = true;
+
+            // TODO: uhh
+            SetKeyboardState(KeyboardKeys.D1, (input.Pressed.Contains(configuration.D1)));
+            SetKeyboardState(KeyboardKeys.D2, (input.Pressed.Contains(configuration.D2)));
+            SetKeyboardState(KeyboardKeys.D3, (input.Pressed.Contains(configuration.D3)));
+            SetKeyboardState(KeyboardKeys.D4, (input.Pressed.Contains(configuration.D4)));
+            SetKeyboardState(KeyboardKeys.D5, (input.Pressed.Contains(configuration.D5)));
+            SetKeyboardState(KeyboardKeys.D6, (input.Pressed.Contains(configuration.D6)));
+            SetKeyboardState(KeyboardKeys.D7, (input.Pressed.Contains(configuration.D7)));
+            SetKeyboardState(KeyboardKeys.P1Up, (input.Pressed.Contains(configuration.P1Up)));
+            SetKeyboardState(KeyboardKeys.Q, (input.Pressed.Contains(configuration.Q)));
+            SetKeyboardState(KeyboardKeys.W, (input.Pressed.Contains(configuration.W)));
+            SetKeyboardState(KeyboardKeys.E, (input.Pressed.Contains(configuration.E)));
+            SetKeyboardState(KeyboardKeys.R, (input.Pressed.Contains(configuration.R)));
+            SetKeyboardState(KeyboardKeys.T, (input.Pressed.Contains(configuration.T)));
+            SetKeyboardState(KeyboardKeys.Y, (input.Pressed.Contains(configuration.Y)));
+            SetKeyboardState(KeyboardKeys.U, (input.Pressed.Contains(configuration.U)));
+            SetKeyboardState(KeyboardKeys.P1Down, (input.Pressed.Contains(configuration.P1Down)));
+            SetKeyboardState(KeyboardKeys.A, (input.Pressed.Contains(configuration.A)));
+            SetKeyboardState(KeyboardKeys.S, (input.Pressed.Contains(configuration.S)));
+            SetKeyboardState(KeyboardKeys.D, (input.Pressed.Contains(configuration.D)));
+            SetKeyboardState(KeyboardKeys.F, (input.Pressed.Contains(configuration.F)));
+            SetKeyboardState(KeyboardKeys.G, (input.Pressed.Contains(configuration.G)));
+            SetKeyboardState(KeyboardKeys.H, (input.Pressed.Contains(configuration.H)));
+            SetKeyboardState(KeyboardKeys.J, (input.Pressed.Contains(configuration.J)));
+            SetKeyboardState(KeyboardKeys.P1Left, (input.Pressed.Contains(configuration.P1Left)));
+            SetKeyboardState(KeyboardKeys.Z, (input.Pressed.Contains(configuration.Z)));
+            SetKeyboardState(KeyboardKeys.X, (input.Pressed.Contains(configuration.X)));
+            SetKeyboardState(KeyboardKeys.C, (input.Pressed.Contains(configuration.C)));
+            SetKeyboardState(KeyboardKeys.V, (input.Pressed.Contains(configuration.V)));
+            SetKeyboardState(KeyboardKeys.B, (input.Pressed.Contains(configuration.B)));
+            SetKeyboardState(KeyboardKeys.N, (input.Pressed.Contains(configuration.N)));
+            SetKeyboardState(KeyboardKeys.M, (input.Pressed.Contains(configuration.M)));
+            SetKeyboardState(KeyboardKeys.P1Right, (input.Pressed.Contains(configuration.P1Right)));
+            SetKeyboardState(KeyboardKeys.EngDiers, (input.Pressed.Contains(configuration.EngDiers)));
+            SetKeyboardState(KeyboardKeys.Space, (input.Pressed.Contains(configuration.Space)));
+            SetKeyboardState(KeyboardKeys.HomeClr, (input.Pressed.Contains(configuration.HomeClr)));
+            SetKeyboardState(KeyboardKeys.InsDel, (input.Pressed.Contains(configuration.InsDel)));
+            SetKeyboardState(KeyboardKeys.Unmapped36, (input.Pressed.Contains(configuration.Unmapped36)));
+            SetKeyboardState(KeyboardKeys.Unmapped37, (input.Pressed.Contains(configuration.Unmapped37)));
+            SetKeyboardState(KeyboardKeys.Unmapped38, (input.Pressed.Contains(configuration.Unmapped38)));
+            SetKeyboardState(KeyboardKeys.P1Button1, (input.Pressed.Contains(configuration.P1Button1)));
+            SetKeyboardState(KeyboardKeys.Comma, (input.Pressed.Contains(configuration.Comma)));
+            SetKeyboardState(KeyboardKeys.Period, (input.Pressed.Contains(configuration.Period)));
+            SetKeyboardState(KeyboardKeys.Slash, (input.Pressed.Contains(configuration.Slash)));
+            SetKeyboardState(KeyboardKeys.Pi, (input.Pressed.Contains(configuration.Pi)));
+            SetKeyboardState(KeyboardKeys.Down, (input.Pressed.Contains(configuration.Down)));
+            SetKeyboardState(KeyboardKeys.Left, (input.Pressed.Contains(configuration.Left)));
+            SetKeyboardState(KeyboardKeys.Right, (input.Pressed.Contains(configuration.Right)));
+            SetKeyboardState(KeyboardKeys.P1Button2, (input.Pressed.Contains(configuration.P1Button2)));
+            SetKeyboardState(KeyboardKeys.K, (input.Pressed.Contains(configuration.K)));
+            SetKeyboardState(KeyboardKeys.L, (input.Pressed.Contains(configuration.L)));
+            SetKeyboardState(KeyboardKeys.Semicolon, (input.Pressed.Contains(configuration.Semicolon)));
+            SetKeyboardState(KeyboardKeys.Colon, (input.Pressed.Contains(configuration.Colon)));
+            SetKeyboardState(KeyboardKeys.BracketClose, (input.Pressed.Contains(configuration.BracketClose)));
+            SetKeyboardState(KeyboardKeys.CR, (input.Pressed.Contains(configuration.CR)));
+            SetKeyboardState(KeyboardKeys.Up, (input.Pressed.Contains(configuration.Up)));
+            SetKeyboardState(KeyboardKeys.P2Up, (input.Pressed.Contains(configuration.P2Up)));
+            SetKeyboardState(KeyboardKeys.I, (input.Pressed.Contains(configuration.I)));
+            SetKeyboardState(KeyboardKeys.O, (input.Pressed.Contains(configuration.O)));
+            SetKeyboardState(KeyboardKeys.P, (input.Pressed.Contains(configuration.P)));
+            SetKeyboardState(KeyboardKeys.At, (input.Pressed.Contains(configuration.At)));
+            SetKeyboardState(KeyboardKeys.BracketOpen, (input.Pressed.Contains(configuration.BracketOpen)));
+            SetKeyboardState(KeyboardKeys.Unmapped61, (input.Pressed.Contains(configuration.Unmapped61)));
+            SetKeyboardState(KeyboardKeys.Unmapped62, (input.Pressed.Contains(configuration.Unmapped62)));
+            SetKeyboardState(KeyboardKeys.P2Down, (input.Pressed.Contains(configuration.P2Down)));
+            SetKeyboardState(KeyboardKeys.D8, (input.Pressed.Contains(configuration.D8)));
+            SetKeyboardState(KeyboardKeys.D9, (input.Pressed.Contains(configuration.D9)));
+            SetKeyboardState(KeyboardKeys.D0, (input.Pressed.Contains(configuration.D0)));
+            SetKeyboardState(KeyboardKeys.Minus, (input.Pressed.Contains(configuration.Minus)));
+            SetKeyboardState(KeyboardKeys.Caret, (input.Pressed.Contains(configuration.Caret)));
+            SetKeyboardState(KeyboardKeys.Yen, (input.Pressed.Contains(configuration.Yen)));
+            SetKeyboardState(KeyboardKeys.Break, (input.Pressed.Contains(configuration.Break)));
+            SetKeyboardState(KeyboardKeys.P2Left, (input.Pressed.Contains(configuration.P2Left)));
+            SetKeyboardState(KeyboardKeys.Unmapped72, (input.Pressed.Contains(configuration.Unmapped72)));
+            SetKeyboardState(KeyboardKeys.Unmapped73, (input.Pressed.Contains(configuration.Unmapped73)));
+            SetKeyboardState(KeyboardKeys.Unmapped74, (input.Pressed.Contains(configuration.Unmapped74)));
+            SetKeyboardState(KeyboardKeys.Unmapped75, (input.Pressed.Contains(configuration.Unmapped75)));
+            SetKeyboardState(KeyboardKeys.Unmapped76, (input.Pressed.Contains(configuration.Unmapped76)));
+            SetKeyboardState(KeyboardKeys.Unmapped77, (input.Pressed.Contains(configuration.Unmapped77)));
+            SetKeyboardState(KeyboardKeys.Graph, (input.Pressed.Contains(configuration.Graph)));
+            SetKeyboardState(KeyboardKeys.P2Right, (input.Pressed.Contains(configuration.P2Right)));
+            SetKeyboardState(KeyboardKeys.Unmapped80, (input.Pressed.Contains(configuration.Unmapped80)));
+            SetKeyboardState(KeyboardKeys.Unmapped81, (input.Pressed.Contains(configuration.Unmapped81)));
+            SetKeyboardState(KeyboardKeys.Unmapped82, (input.Pressed.Contains(configuration.Unmapped82)));
+            SetKeyboardState(KeyboardKeys.Unmapped83, (input.Pressed.Contains(configuration.Unmapped83)));
+            SetKeyboardState(KeyboardKeys.Unmapped84, (input.Pressed.Contains(configuration.Unmapped84)));
+            SetKeyboardState(KeyboardKeys.Unmapped85, (input.Pressed.Contains(configuration.Unmapped85)));
+            SetKeyboardState(KeyboardKeys.Ctrl, (input.Pressed.Contains(configuration.Ctrl)));
+            SetKeyboardState(KeyboardKeys.P2Button1, (input.Pressed.Contains(configuration.P2Button1)));
+            SetKeyboardState(KeyboardKeys.Unmapped88, (input.Pressed.Contains(configuration.Unmapped88)));
+            SetKeyboardState(KeyboardKeys.Unmapped89, (input.Pressed.Contains(configuration.Unmapped89)));
+            SetKeyboardState(KeyboardKeys.Unmapped90, (input.Pressed.Contains(configuration.Unmapped90)));
+            SetKeyboardState(KeyboardKeys.Unmapped91, (input.Pressed.Contains(configuration.Unmapped91)));
+            SetKeyboardState(KeyboardKeys.Unmapped92, (input.Pressed.Contains(configuration.Unmapped92)));
+            SetKeyboardState(KeyboardKeys.Func, (input.Pressed.Contains(configuration.Func)));
+            SetKeyboardState(KeyboardKeys.Shift, (input.Pressed.Contains(configuration.Shift)));
+            SetKeyboardState(KeyboardKeys.P2Button2, (input.Pressed.Contains(configuration.P2Button2)));
         }
+
+        private void SetKeyboardState(KeyboardKeys key, bool state)
+        {
+            if (key == KeyboardKeys.None) return;
+            keyMatrix[(int)key / 8, (int)key % 8] = state;
+        }
+
+        // TODO: RAM on Basic carts (Service Manual, pg 11)
 
         private byte ReadMemory(ushort address)
         {

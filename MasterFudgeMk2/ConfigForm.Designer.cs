@@ -33,11 +33,15 @@
             this.tlpInputConfig = new System.Windows.Forms.TableLayoutPanel();
             this.tcConfig = new System.Windows.Forms.TabControl();
             this.tpMainConfig = new System.Windows.Forms.TabPage();
-            this.tpInputConfig = new System.Windows.Forms.TabPage();
             this.tlpMainConfig = new System.Windows.Forms.TableLayoutPanel();
+            this.tpInputConfig = new System.Windows.Forms.TabPage();
+            this.pnlInputConfig = new System.Windows.Forms.Panel();
+            this.panel1 = new System.Windows.Forms.Panel();
             this.tcConfig.SuspendLayout();
             this.tpMainConfig.SuspendLayout();
             this.tpInputConfig.SuspendLayout();
+            this.pnlInputConfig.SuspendLayout();
+            this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnOkay
@@ -64,17 +68,18 @@
             // 
             // tlpInputConfig
             // 
-            this.tlpInputConfig.AutoScroll = true;
+            this.tlpInputConfig.AutoSize = true;
+            this.tlpInputConfig.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.tlpInputConfig.ColumnCount = 3;
             this.tlpInputConfig.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.tlpInputConfig.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tlpInputConfig.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.tlpInputConfig.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tlpInputConfig.Location = new System.Drawing.Point(3, 3);
+            this.tlpInputConfig.Dock = System.Windows.Forms.DockStyle.Top;
+            this.tlpInputConfig.Location = new System.Drawing.Point(0, 0);
             this.tlpInputConfig.Name = "tlpInputConfig";
             this.tlpInputConfig.RowCount = 1;
             this.tlpInputConfig.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tlpInputConfig.Size = new System.Drawing.Size(366, 275);
+            this.tlpInputConfig.Size = new System.Drawing.Size(366, 0);
             this.tlpInputConfig.TabIndex = 4;
             // 
             // tcConfig
@@ -92,7 +97,7 @@
             // 
             // tpMainConfig
             // 
-            this.tpMainConfig.Controls.Add(this.tlpMainConfig);
+            this.tpMainConfig.Controls.Add(this.panel1);
             this.tpMainConfig.Location = new System.Drawing.Point(4, 22);
             this.tpMainConfig.Name = "tpMainConfig";
             this.tpMainConfig.Padding = new System.Windows.Forms.Padding(3);
@@ -101,9 +106,25 @@
             this.tpMainConfig.Text = "Main";
             this.tpMainConfig.UseVisualStyleBackColor = true;
             // 
+            // tlpMainConfig
+            // 
+            this.tlpMainConfig.AutoSize = true;
+            this.tlpMainConfig.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.tlpMainConfig.ColumnCount = 3;
+            this.tlpMainConfig.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.tlpMainConfig.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlpMainConfig.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.tlpMainConfig.Dock = System.Windows.Forms.DockStyle.Top;
+            this.tlpMainConfig.Location = new System.Drawing.Point(0, 0);
+            this.tlpMainConfig.Name = "tlpMainConfig";
+            this.tlpMainConfig.RowCount = 1;
+            this.tlpMainConfig.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tlpMainConfig.Size = new System.Drawing.Size(366, 0);
+            this.tlpMainConfig.TabIndex = 5;
+            // 
             // tpInputConfig
             // 
-            this.tpInputConfig.Controls.Add(this.tlpInputConfig);
+            this.tpInputConfig.Controls.Add(this.pnlInputConfig);
             this.tpInputConfig.Location = new System.Drawing.Point(4, 22);
             this.tpInputConfig.Name = "tpInputConfig";
             this.tpInputConfig.Padding = new System.Windows.Forms.Padding(3);
@@ -112,20 +133,25 @@
             this.tpInputConfig.Text = "Input";
             this.tpInputConfig.UseVisualStyleBackColor = true;
             // 
-            // tlpMainConfig
+            // pnlInputConfig
             // 
-            this.tlpMainConfig.AutoScroll = true;
-            this.tlpMainConfig.ColumnCount = 3;
-            this.tlpMainConfig.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.tlpMainConfig.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tlpMainConfig.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.tlpMainConfig.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tlpMainConfig.Location = new System.Drawing.Point(3, 3);
-            this.tlpMainConfig.Name = "tlpMainConfig";
-            this.tlpMainConfig.RowCount = 1;
-            this.tlpMainConfig.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tlpMainConfig.Size = new System.Drawing.Size(366, 275);
-            this.tlpMainConfig.TabIndex = 5;
+            this.pnlInputConfig.AutoScroll = true;
+            this.pnlInputConfig.Controls.Add(this.tlpInputConfig);
+            this.pnlInputConfig.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pnlInputConfig.Location = new System.Drawing.Point(3, 3);
+            this.pnlInputConfig.Name = "pnlInputConfig";
+            this.pnlInputConfig.Size = new System.Drawing.Size(366, 275);
+            this.pnlInputConfig.TabIndex = 5;
+            // 
+            // panel1
+            // 
+            this.panel1.AutoScroll = true;
+            this.panel1.Controls.Add(this.tlpMainConfig);
+            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panel1.Location = new System.Drawing.Point(3, 3);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(366, 275);
+            this.panel1.TabIndex = 6;
             // 
             // ConfigForm
             // 
@@ -147,6 +173,10 @@
             this.tcConfig.ResumeLayout(false);
             this.tpMainConfig.ResumeLayout(false);
             this.tpInputConfig.ResumeLayout(false);
+            this.pnlInputConfig.ResumeLayout(false);
+            this.pnlInputConfig.PerformLayout();
+            this.panel1.ResumeLayout(false);
+            this.panel1.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -159,5 +189,7 @@
         private System.Windows.Forms.TabPage tpInputConfig;
         private System.Windows.Forms.TabPage tpMainConfig;
         private System.Windows.Forms.TableLayoutPanel tlpMainConfig;
+        private System.Windows.Forms.Panel pnlInputConfig;
+        private System.Windows.Forms.Panel panel1;
     }
 }

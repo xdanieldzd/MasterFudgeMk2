@@ -195,7 +195,7 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
             currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
         }
 
-        protected override void SetButtonData(PollInputEventArgs input)
+        protected override void ParseInput(PollInputEventArgs input)
         {
             portIoAB |= (byte)PortIoABButtons.Mask;
             portIoBMisc |= (byte)PortIoBMiscButtons.Mask;

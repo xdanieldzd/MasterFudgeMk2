@@ -59,7 +59,7 @@ namespace MasterFudgeMk2.Machines
             {
                 PollInputEventArgs pollInputEventArgs = new PollInputEventArgs();
                 PollInput?.Invoke(this, pollInputEventArgs);
-                SetButtonData(pollInputEventArgs);
+                ParseInput(pollInputEventArgs);
 
                 while (currentMasterClockCyclesInFrame < totalMasterClockCyclesInFrame)
                     RunStep();
@@ -80,6 +80,6 @@ namespace MasterFudgeMk2.Machines
             emulationPaused = false;
         }
 
-        protected abstract void SetButtonData(PollInputEventArgs e);
+        protected abstract void ParseInput(PollInputEventArgs e);
     }
 }

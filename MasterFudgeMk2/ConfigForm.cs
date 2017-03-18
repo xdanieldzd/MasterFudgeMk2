@@ -120,32 +120,29 @@ namespace MasterFudgeMk2
 
                 if (timer.Tag != null || keysPressed.HasFlag(Keys.Escape))
                 {
-                    Enabled = true;
-
-                    timer.Stop();
+                    StopTimer(timer);
                     settingWaitTimer.Stop();
 
                     settingWaitCounter = 0;
-
-                    CheckCommitInputSetting();
-
                     keysPressed = Keys.None;
                 }
             };
 
+            tlpInputConfig.SuspendLayout();
             tlpInputConfig.RowCount = (keyConfiguration.Count + 1);
             for (int i = 0; i < keyConfiguration.Count; i++)
             {
                 KeyValuePair<Enum, Enum> mapping = keyConfiguration.ElementAt(i);
 
-                string keyDescription = (mapping.Key.GetType().GetField(mapping.Key.ToString()).GetCustomAttributes(typeof(DescriptionAttribute), false)?[0] as DescriptionAttribute).Description;
+                var descriptionAttribs = mapping.Key.GetType().GetField(mapping.Key.ToString()).GetCustomAttributes(typeof(DescriptionAttribute), false);
+                string keyDescription = ((descriptionAttribs != null && descriptionAttribs.Length > 0) ? (descriptionAttribs[0] as DescriptionAttribute).Description : mapping.Key.ToString());
 
                 tlpInputConfig.Controls.Add(new Label() { Text = keyDescription, Dock = DockStyle.Fill, AutoSize = true, TextAlign = ContentAlignment.MiddleLeft }, 0, i);
 
                 Button keyChangeButton = new Button() { Dock = DockStyle.Fill, FlatStyle = FlatStyle.Popup, Tag = mapping };
                 keyChangeButton.Click += (s, e) =>
                 {
-                    Enabled = false;
+                    tcConfig.Enabled = tlpInputConfig.Enabled = false;
 
                     settingWaitCounter = 6;
                     settingWaitTimer.Interval = 1000;
@@ -169,6 +166,8 @@ namespace MasterFudgeMk2
                 };
                 tlpInputConfig.Controls.Add(keyClearButton, 2, i);
             }
+
+            tlpInputConfig.ResumeLayout();
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -209,13 +208,16 @@ namespace MasterFudgeMk2
             settingWaitCounter--;
             if (settingWaitCounter == 0)
             {
-                Enabled = true;
-
-                timer.Stop();
+                StopTimer(timer);
                 inputPollTimer.Stop();
-
-                CheckCommitInputSetting();
             }
+        }
+
+        private void StopTimer(Timer timer)
+        {
+            tcConfig.Enabled = tlpInputConfig.Enabled = true;
+            timer.Stop();
+            CheckCommitInputSetting();
         }
 
         private void SetButtonLabel(Button button, Enum value)
