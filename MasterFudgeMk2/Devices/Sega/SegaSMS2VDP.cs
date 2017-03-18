@@ -52,6 +52,14 @@ namespace MasterFudgeMk2.Devices.Sega
                 else return (ushort)((registers[0x02] & 0x0F) << 10);
             }
         }
+        protected override ushort spriteAttribTableBaseAddress
+        {
+            get
+            {
+                if (isMasterSystemMode) return (ushort)((registers[0x05] & 0x7E) << 7);
+                else return (ushort)((registers[0x05] & 0x7F) << 7);
+            }
+        }
         protected override ushort spritePatternGenBaseAddress
         {
             get
@@ -63,7 +71,7 @@ namespace MasterFudgeMk2.Devices.Sega
 
         /* http://www.smspower.org/Development/Palette */
         // TODO: verify these, SMSPower has some mistakes (RGB approx correct, palette value wrong)
-        // (not that we'll really use this, as SG1000 games should always be loaded into the SG1000 core...)
+        // (not that we'll really use this, aside from for F-16 Fighting Falcon, as SG1000 games should always be loaded into the SG1000 core...)
         byte[] legacyColorMap = new byte[]
         {
             0x00,                                   /* Transparent */

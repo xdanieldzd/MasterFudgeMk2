@@ -85,7 +85,7 @@ namespace MasterFudgeMk2.Devices
         protected bool isZoomedSprites { get { return BitUtilities.IsBitSet(registers[0x01], 0); } }
 
         protected virtual ushort nametableBaseAddress { get { return (ushort)((registers[0x02] & 0x0F) << 10); } }
-        protected ushort spriteAttribTableBaseAddress { get { return (ushort)((registers[0x05] & 0x7E) << 7); } }
+        protected virtual ushort spriteAttribTableBaseAddress { get { return (ushort)((registers[0x05] & 0x7F) << 7); } }
         protected virtual ushort spritePatternGenBaseAddress { get { return (ushort)((registers[0x06] & 0x07) << 11); } }
 
         protected int backgroundColor { get { return (registers[0x07] & 0x0F); } }
@@ -221,7 +221,7 @@ namespace MasterFudgeMk2.Devices
 
         protected virtual void ClearLine(int line)
         {
-            if (line - virtualStartScanline < 0 || (line - virtualStartScanline) >= NumVisibleLines)
+            if ((line - virtualStartScanline) < 0 || (line - virtualStartScanline) >= NumVisibleLines)
             {
                 for (int i = 0; i < NumPixelsPerLine; i++)
                 {
@@ -249,7 +249,7 @@ namespace MasterFudgeMk2.Devices
                 }
                 else if (isModeMulticolor)
                 {
-                    // TODO: backgrounds
+                    RenderMulticolorBackground(line);
                     RenderSprites(line);
                 }
                 else if (isModeText)
@@ -296,7 +296,7 @@ namespace MasterFudgeMk2.Devices
 
                     /* Calculate output framebuffer location, get BGRA values from color table, write to framebuffer */
                     int outputY = ((virtualStartScanline + (line % NumVisibleLines)) * NumPixelsPerLine);
-                    int outputX = ((8 + (tile * tileWidth) + pixel) % NumPixelsPerLine);
+                    int outputX = (((tile * tileWidth) + pixel) % NumPixelsPerLine);
 
                     if (screenUsage[outputY + outputX] == screenUsageEmpty)
                     {
@@ -353,6 +353,11 @@ namespace MasterFudgeMk2.Devices
                     }
                 }
             }
+        }
+
+        protected void RenderMulticolorBackground(int line)
+        {
+            // TODO w/ Smurf Paint & Play (CV)
         }
 
         protected void RenderTextBackground(int line)

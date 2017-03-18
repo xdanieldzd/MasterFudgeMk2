@@ -103,6 +103,7 @@ namespace MasterFudgeMk2
             if (Environment.MachineName == "NANAMI-X")
             {
                 //StartMachine(typeof(Machines.Sega.MasterSystem.Manager));
+                //StartMachine(typeof(Machines.Coleco.ColecoVision.Manager));
 
                 //LoadMedia(@"D:\ROMs\SG1000\Bank Panic (Japan).sg");
                 //LoadMedia(@"D:\ROMs\SG1000\Othello (Japan).sg");
@@ -135,6 +136,7 @@ namespace MasterFudgeMk2
                 //LoadMedia(@"D:\ROMs\ColecoVision\Frogger (1982-83) (Parker Bros).col");
                 //LoadMedia(@"D:\ROMs\ColecoVision\Kevtris by Kevin Horton (1996) (PD).col");
                 //LoadMedia(@"D:\ROMs\ColecoVision\Smurf - Rescue in Gargamel's Castle (1982).col");
+                //LoadMedia(@"D:\ROMs\ColecoVision\Smurf - Paint 'n Play Workshop (1983).col");
             }
         }
 
