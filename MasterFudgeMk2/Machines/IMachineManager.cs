@@ -46,23 +46,23 @@ namespace MasterFudgeMk2.Machines
         /// <summary>
         /// Event handler for screen resizing
         /// </summary>
-        event EventHandler<ScreenResizeEventArgs> OnScreenResize;
+        event EventHandler<ScreenResizeEventArgs> ScreenResize;
         /// <summary>
         /// Event handler for rendering
         /// </summary>
-        event EventHandler<RenderScreenEventArgs> OnRenderScreen;
+        event EventHandler<RenderScreenEventArgs> RenderScreen;
         /// <summary>
         /// Event handler for viewport changes, ex. Game Gear's 160x144 viewport
         /// </summary>
-        event EventHandler<ScreenViewportChangeEventArgs> OnScreenViewportChange;
+        event EventHandler<ScreenViewportChangeEventArgs> ScreenViewportChange;
         /// <summary>
         /// Event handler for input polling
         /// </summary>
-        event EventHandler<PollInputEventArgs> OnPollInput;
+        event EventHandler<PollInputEventArgs> PollInput;
         /// <summary>
         /// Event handler for adding sound samples
         /// </summary>
-        event EventHandler<AddSampleDataEventArgs> OnAddSampleData;
+        event EventHandler<AddSampleDataEventArgs> AddSampleData;
 
         /// <summary>
         /// Start machine up
@@ -86,9 +86,13 @@ namespace MasterFudgeMk2.Machines
         /// </summary>
         void Shutdown();
         /// <summary>
-        /// Run machine
+        /// Run machine for one frame
         /// </summary>
-        void Run();
+        void RunFrame();
+        /// <summary>
+        /// Run machine for one step
+        /// </summary>
+        void RunStep();
         /// <summary>
         /// Pause machine
         /// </summary>

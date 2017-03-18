@@ -6,10 +6,7 @@ using System.Threading.Tasks;
 using System.ComponentModel;
 using System.IO;
 
-using NAudio.Wave;
-
 using MasterFudgeMk2.Common;
-using MasterFudgeMk2.Common.AudioBackend;
 using MasterFudgeMk2.Common.VideoBackend;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Devices;
@@ -63,18 +60,17 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
         KeypadNumberSign
     }
 
-    class Manager : IMachineManager
+    class Manager : BaseMachine
     {
-        public string FriendlyName { get { return "Coleco ColecoVision"; } }
-        public string FriendlyShortName { get { return "ColecoVision"; } }
-        public string FileFilter { get { return "ColecoVision ROMs (*.col)|*.col"; } }
-        public double RefreshRate { get { return refreshRate; } }
-        public bool SupportsBootingWithoutMedia { get { return true; } }
-        public bool CanCurrentlyBootWithoutMedia { get { return File.Exists(configuration.BiosPath); } }
-        public IWaveProvider WaveProvider { get { return (psg as IWaveProvider); } }
-        public MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
+        public override string FriendlyName { get { return "Coleco ColecoVision"; } }
+        public override string FriendlyShortName { get { return "ColecoVision"; } }
+        public override string FileFilter { get { return "ColecoVision ROMs (*.col)|*.col"; } }
+        public override double RefreshRate { get { return refreshRate; } }
+        public override bool SupportsBootingWithoutMedia { get { return true; } }
+        public override bool CanCurrentlyBootWithoutMedia { get { return File.Exists(configuration.BiosPath); } }
+        public override MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
 
-        public List<Tuple<string, Type, double>> DebugChipInformation
+        public override List<Tuple<string, Type, double>> DebugChipInformation
         {
             get
             {
@@ -86,12 +82,6 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
                 };
             }
         }
-
-        public event EventHandler<ScreenResizeEventArgs> OnScreenResize;
-        public event EventHandler<RenderScreenEventArgs> OnRenderScreen;
-        public event EventHandler<ScreenViewportChangeEventArgs> OnScreenViewportChange;
-        public event EventHandler<PollInputEventArgs> OnPollInput;
-        public event EventHandler<AddSampleDataEventArgs> OnAddSampleData;
 
         /* Constants */
         const double masterClock = 10738635;
@@ -143,8 +133,7 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
 
         bool isNmi, isNmiPending;
 
-        bool emulationPaused;
-        int currentCyclesInLine, currentMasterClockCyclesInFrame;
+        protected override int totalMasterClockCyclesInFrame { get { return (int)Math.Round(masterClock / refreshRate); } }
 
         Configuration configuration;
 
@@ -153,37 +142,18 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
             // TODO: better bios handling?
 
             configuration = new Configuration();
-            /*configuration.BiosPath = @"D:\ROMs\ColecoVision\ColecoVision BIOS (1982).col";
-            configuration.Keypad1 = System.Windows.Forms.Keys.NumPad1;
-            configuration.Keypad2 = System.Windows.Forms.Keys.NumPad2;
-            configuration.Keypad3 = System.Windows.Forms.Keys.NumPad3;
-            configuration.Keypad4 = System.Windows.Forms.Keys.NumPad4;
-            configuration.Keypad5 = System.Windows.Forms.Keys.NumPad5;
-            configuration.Keypad6 = System.Windows.Forms.Keys.NumPad6;
-            configuration.Keypad7 = System.Windows.Forms.Keys.NumPad7;
-            configuration.Keypad8 = System.Windows.Forms.Keys.NumPad8;
-            configuration.Keypad9 = System.Windows.Forms.Keys.NumPad9;
-            configuration.Keypad0 = System.Windows.Forms.Keys.NumPad0;
-            configuration.KeypadNumberSign = System.Windows.Forms.Keys.Divide;
-            configuration.KeypadStar = System.Windows.Forms.Keys.Multiply;
-            configuration.Up = System.Windows.Forms.Keys.Up;
-            configuration.Down = System.Windows.Forms.Keys.Down;
-            configuration.Left = System.Windows.Forms.Keys.Left;
-            configuration.Right = System.Windows.Forms.Keys.Right;
-            configuration.LeftButton = System.Windows.Forms.Keys.A;
-            configuration.RightButton = System.Windows.Forms.Keys.S;
-            */
+
             cartridge = null;
 
             cpu = new Z80A(cpuClock, refreshRate, ReadMemory, WriteMemory, ReadPort, WritePort);
             wram = new byte[ramSize];
             vdp = new TMS9918A(vdpClock, refreshRate, false);
-            psg = new SN76489(psgClock, refreshRate, (s, e) => { OnAddSampleData?.Invoke(s, e); });
+            psg = new SN76489(psgClock, refreshRate, (s, e) => { OnAddSampleData(e); });
 
             bios = File.ReadAllBytes(configuration.BiosPath);
         }
 
-        public void Startup()
+        public override void Startup()
         {
             cpu.Startup();
             psg.Startup();
@@ -192,7 +162,7 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
             Reset();
         }
 
-        public void Reset()
+        public override void Reset()
         {
             cartridge?.Reset();
 
@@ -205,46 +175,30 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
 
             isNmi = isNmiPending = false;
 
-            emulationPaused = false;
-            currentCyclesInLine = currentMasterClockCyclesInFrame = 0;
+            OnScreenResize(new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
+            OnScreenViewportChange(new ScreenViewportChangeEventArgs(0, 0, TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
 
-            OnScreenResize?.Invoke(this, new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
-            OnScreenViewportChange?.Invoke(this, new ScreenViewportChangeEventArgs(0, 0, TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
+            base.Reset();
         }
 
-        public void LoadMedia(IMedia media)
+        public override void LoadMedia(IMedia media)
         {
             cartridge = media;
         }
 
-        public void SaveMedia()
+        public override void SaveMedia()
         {
             //
         }
 
-        public void Shutdown()
+        public override void Shutdown()
         {
             cartridge?.Unload();
 
             psg?.Shutdown();
         }
 
-        public void Run()
-        {
-            if (!emulationPaused)
-            {
-                PollInputEventArgs pollInputEventArgs = new PollInputEventArgs();
-                OnPollInput?.Invoke(this, pollInputEventArgs);
-                SetButtonData(pollInputEventArgs);
-
-                while (currentMasterClockCyclesInFrame < (int)Math.Round(masterClock / refreshRate))
-                    Step();
-
-                currentMasterClockCyclesInFrame -= (int)Math.Round(masterClock / refreshRate);
-            }
-        }
-
-        private void Step()
+        public override void RunStep()
         {
             double currentCpuClockCycles = 0.0;
             currentCpuClockCycles += cpu.Step();
@@ -252,7 +206,7 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
             double currentMasterClockCycles = (currentCpuClockCycles * 3.0);
 
             if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
-                OnRenderScreen?.Invoke(this, new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines, vdp.OutputFramebuffer));
+                OnRenderScreen(new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines, vdp.OutputFramebuffer));
 
             /* The IMO oddball NMI-Vblank handling, see ex. Cogwheel */
             if (vdp.InterruptLine == InterruptState.Assert && !isNmi) isNmiPending = true;
@@ -269,17 +223,7 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
             currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
         }
 
-        public void Pause()
-        {
-            emulationPaused = true;
-        }
-
-        public void Unpause()
-        {
-            emulationPaused = false;
-        }
-
-        private void SetButtonData(PollInputEventArgs input)
+        protected override void SetButtonData(PollInputEventArgs input)
         {
             // TODO: controller 2
 

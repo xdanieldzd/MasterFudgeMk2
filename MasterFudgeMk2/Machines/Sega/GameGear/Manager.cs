@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.ComponentModel;
 
 using MasterFudgeMk2.Common;
-using MasterFudgeMk2.Common.AudioBackend;
 using MasterFudgeMk2.Common.VideoBackend;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Devices;
@@ -36,17 +35,17 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
         Start
     }
 
-    class Manager : IMachineManager
+    class Manager : BaseMachine
     {
-        public string FriendlyName { get { return "Sega Game Gear"; } }
-        public string FriendlyShortName { get { return "Game Gear"; } }
-        public string FileFilter { get { return "Game Gear ROMs (*.gg)|*.gg"; } }
-        public double RefreshRate { get { return refreshRate; } }
-        public bool SupportsBootingWithoutMedia { get { return false; } }
-        public bool CanCurrentlyBootWithoutMedia { get { return false; } }
-        public MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
+        public override string FriendlyName { get { return "Sega Game Gear"; } }
+        public override string FriendlyShortName { get { return "Game Gear"; } }
+        public override string FileFilter { get { return "Game Gear ROMs (*.gg)|*.gg"; } }
+        public override double RefreshRate { get { return refreshRate; } }
+        public override bool SupportsBootingWithoutMedia { get { return false; } }
+        public override bool CanCurrentlyBootWithoutMedia { get { return false; } }
+        public override MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
 
-        public List<Tuple<string, Type, double>> DebugChipInformation
+        public override List<Tuple<string, Type, double>> DebugChipInformation
         {
             get
             {
@@ -58,12 +57,6 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
                 };
             }
         }
-
-        public event EventHandler<ScreenResizeEventArgs> OnScreenResize;
-        public event EventHandler<RenderScreenEventArgs> OnRenderScreen;
-        public event EventHandler<ScreenViewportChangeEventArgs> OnScreenViewportChange;
-        public event EventHandler<PollInputEventArgs> OnPollInput;
-        public event EventHandler<AddSampleDataEventArgs> OnAddSampleData;
 
         /* Constants */
         const double masterClock = 10738635;
@@ -116,8 +109,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
 
         byte portIoC, portParallelData, portDataDirNMI, portTxBuffer, portRxBuffer, portSerialControl, portStereoControl;
 
-        bool emulationPaused;
-        int currentCyclesInLine, currentMasterClockCyclesInFrame;
+        protected override int totalMasterClockCyclesInFrame { get { return (int)Math.Round(masterClock / refreshRate); } }
 
         public bool isWorkRamEnabled { get { return !BitUtilities.IsBitSet(portMemoryControl, 4); } }
         public bool isBootstrapRomEnabled { get { return !BitUtilities.IsBitSet(portMemoryControl, 3); } }
@@ -127,27 +119,17 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
         public Manager()
         {
             configuration = new Configuration();
-            //configuration.BootstrapPath = @"D:\ROMs\GG\majbios.gg";
-            //configuration.UseBootstrap = true;
-            //configuration.IsExportSystem = true;
-            /*configuration.Start = Common.XInput.Buttons.Start;
-            configuration.Up = Common.XInput.Buttons.DPadUp;
-            configuration.Down = Common.XInput.Buttons.DPadDown;
-            configuration.Left = Common.XInput.Buttons.DPadLeft;
-            configuration.Right = Common.XInput.Buttons.DPadRight;
-            configuration.Button1 = Common.XInput.Buttons.A;
-            configuration.Button2 = Common.XInput.Buttons.X;
-            */
+
             bootstrap = null;
             cartridge = null;
 
             cpu = new Z80A(cpuClock, refreshRate, ReadMemory, WriteMemory, ReadPort, WritePort);
             wram = new byte[ramSize];
             vdp = new SegaGGVDP(vdpClock, refreshRate);
-            psg = new SegaSMS2PSG(psgClock, refreshRate, (s, e) => { OnAddSampleData?.Invoke(s, e); });
+            psg = new SegaSMS2PSG(psgClock, refreshRate, (s, e) => { OnAddSampleData(e); });
         }
 
-        public void Startup()
+        public override void Startup()
         {
             if (configuration.UseBootstrap && System.IO.File.Exists(configuration.BootstrapPath))
                 bootstrap = MediaLoader.LoadMedia(this, new System.IO.FileInfo(configuration.BootstrapPath));
@@ -159,7 +141,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             Reset();
         }
 
-        public void Reset()
+        public override void Reset()
         {
             bootstrap?.Reset();
             cartridge?.Reset();
@@ -181,24 +163,23 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             portSerialControl = 0x00;
             portStereoControl = 0xFF;
 
-            emulationPaused = false;
-            currentCyclesInLine = currentMasterClockCyclesInFrame = 0;
+            OnScreenResize(new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
+            OnScreenViewportChange(new ScreenViewportChangeEventArgs(SegaGGVDP.ScreenViewportX, ((vdp.NumScanlines / 2) - (SegaGGVDP.ScreenViewportHeight) / 2), SegaGGVDP.ScreenViewportWidth, SegaGGVDP.ScreenViewportHeight));
 
-            OnScreenResize?.Invoke(this, new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
-            OnScreenViewportChange?.Invoke(this, new ScreenViewportChangeEventArgs(SegaGGVDP.ScreenViewportX, ((vdp.NumScanlines / 2) - (SegaGGVDP.ScreenViewportHeight) / 2), SegaGGVDP.ScreenViewportWidth, SegaGGVDP.ScreenViewportHeight));
+            base.Reset();
         }
 
-        public void LoadMedia(IMedia media)
+        public override void LoadMedia(IMedia media)
         {
             cartridge = media;
         }
 
-        public void SaveMedia()
+        public override void SaveMedia()
         {
             //
         }
 
-        public void Shutdown()
+        public override void Shutdown()
         {
             bootstrap?.Unload();
             cartridge?.Unload();
@@ -206,32 +187,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             psg?.Shutdown();
         }
 
-        public void Run()
-        {
-            if (!emulationPaused)
-            {
-                PollInputEventArgs pollInputEventArgs = new PollInputEventArgs();
-                OnPollInput?.Invoke(this, pollInputEventArgs);
-                SetButtonData(pollInputEventArgs);
-
-                while (currentMasterClockCyclesInFrame < (int)Math.Round(masterClock / refreshRate))
-                    Step();
-
-                currentMasterClockCyclesInFrame -= (int)Math.Round(masterClock / refreshRate);
-            }
-        }
-
-        public void Pause()
-        {
-            emulationPaused = true;
-        }
-
-        public void Unpause()
-        {
-            emulationPaused = false;
-        }
-
-        private void Step()
+        public override void RunStep()
         {
             double currentCpuClockCycles = 0.0;
             currentCpuClockCycles += cpu.Step();
@@ -239,7 +195,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             double currentMasterClockCycles = (currentCpuClockCycles * 3.0);
 
             if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
-                OnRenderScreen?.Invoke(this, new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines, vdp.OutputFramebuffer));
+                OnRenderScreen(new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines, vdp.OutputFramebuffer));
 
             cpu.SetInterruptLine(vdp.InterruptLine);
 
@@ -248,7 +204,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
         }
 
-        private void SetButtonData(PollInputEventArgs input)
+        protected override void SetButtonData(PollInputEventArgs input)
         {
             portIoAB |= (byte)PortIoABButtons.Mask;
             portIoBMisc |= (byte)PortIoBMiscButtons.Mask;

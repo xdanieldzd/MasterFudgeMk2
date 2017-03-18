@@ -5,10 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
 
-using NAudio.Wave;
-
 using MasterFudgeMk2.Common;
-using MasterFudgeMk2.Common.AudioBackend;
 using MasterFudgeMk2.Common.VideoBackend;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Devices;
@@ -48,18 +45,17 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
         Pause
     }
 
-    class Manager : IMachineManager
+    class Manager : BaseMachine
     {
-        public string FriendlyName { get { return "Sega SG-1000"; } }
-        public string FriendlyShortName { get { return "SG-1000"; } }
-        public string FileFilter { get { return "SG-1000 ROMs (*.sg)|*.sg"; } }
-        public double RefreshRate { get { return refreshRate; } }
-        public bool SupportsBootingWithoutMedia { get { return false; } }
-        public bool CanCurrentlyBootWithoutMedia { get { return false; } }
-        public IWaveProvider WaveProvider { get { return (psg as IWaveProvider); } }
-        public MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
+        public override string FriendlyName { get { return "Sega SG-1000"; } }
+        public override string FriendlyShortName { get { return "SG-1000"; } }
+        public override string FileFilter { get { return "SG-1000 ROMs (*.sg)|*.sg"; } }
+        public override double RefreshRate { get { return refreshRate; } }
+        public override bool SupportsBootingWithoutMedia { get { return false; } }
+        public override bool CanCurrentlyBootWithoutMedia { get { return false; } }
+        public override MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
 
-        public List<Tuple<string, Type, double>> DebugChipInformation
+        public override List<Tuple<string, Type, double>> DebugChipInformation
         {
             get
             {
@@ -71,12 +67,6 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
                 };
             }
         }
-
-        public event EventHandler<ScreenResizeEventArgs> OnScreenResize;
-        public event EventHandler<RenderScreenEventArgs> OnRenderScreen;
-        public event EventHandler<ScreenViewportChangeEventArgs> OnScreenViewportChange;
-        public event EventHandler<PollInputEventArgs> OnPollInput;
-        public event EventHandler<AddSampleDataEventArgs> OnAddSampleData;
 
         /* Constants */
         const double masterClock = 10738635;
@@ -119,8 +109,8 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
 
         byte portIoAB, portIoBMisc;
 
-        bool emulationPaused;
-        int currentCyclesInLine, currentMasterClockCyclesInFrame;
+        protected override int totalMasterClockCyclesInFrame { get { return (int)Math.Round(masterClock / refreshRate); } }
+
         bool pauseButtonPressed, pauseButtonToggle;
 
         Configuration configuration;
@@ -128,24 +118,16 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
         public Manager()
         {
             configuration = new Configuration();
-            /*configuration.Pause = Common.XInput.Buttons.Start;
-            configuration.Reset = Common.XInput.Buttons.Back;
-            configuration.P1Up = Common.XInput.Buttons.DPadUp;
-            configuration.P1Down = Common.XInput.Buttons.DPadDown;
-            configuration.P1Left = Common.XInput.Buttons.DPadLeft;
-            configuration.P1Right = Common.XInput.Buttons.DPadRight;
-            configuration.P1Button1 = Common.XInput.Buttons.X;
-            configuration.P1Button2 = Common.XInput.Buttons.A;
-            */
+
             cartridge = null;
 
             cpu = new Z80A(cpuClock, refreshRate, ReadMemory, WriteMemory, ReadPort, WritePort);
             wram = new byte[ramSize];
             vdp = new TMS9918A(vdpClock, refreshRate, false);
-            psg = new SN76489(psgClock, refreshRate, (s, e) => { OnAddSampleData?.Invoke(s, e); });
+            psg = new SN76489(psgClock, refreshRate, (s, e) => { OnAddSampleData(e); });
         }
 
-        public void Startup()
+        public override void Startup()
         {
             cpu.Startup();
             psg.Startup();
@@ -154,7 +136,7 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
             Reset();
         }
 
-        public void Reset()
+        public override void Reset()
         {
             cartridge?.Reset();
 
@@ -165,47 +147,32 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
 
             portIoAB = portIoBMisc = 0xFF;
 
-            emulationPaused = false;
-            currentCyclesInLine = currentMasterClockCyclesInFrame = 0;
             pauseButtonPressed = pauseButtonToggle = false;
 
-            OnScreenResize?.Invoke(this, new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
-            OnScreenViewportChange?.Invoke(this, new ScreenViewportChangeEventArgs(0, 0, TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
+            OnScreenResize(new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
+            OnScreenViewportChange(new ScreenViewportChangeEventArgs(0, 0, TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
+
+            base.Reset();
         }
 
-        public void LoadMedia(IMedia media)
+        public override void LoadMedia(IMedia media)
         {
             cartridge = media;
         }
 
-        public void SaveMedia()
+        public override void SaveMedia()
         {
             //
         }
 
-        public void Shutdown()
+        public override void Shutdown()
         {
             cartridge?.Unload();
 
             psg?.Shutdown();
         }
 
-        public void Run()
-        {
-            if (!emulationPaused)
-            {
-                PollInputEventArgs pollInputEventArgs = new PollInputEventArgs();
-                OnPollInput?.Invoke(this, pollInputEventArgs);
-                SetButtonData(pollInputEventArgs);
-
-                while (currentMasterClockCyclesInFrame < (int)Math.Round(masterClock / refreshRate))
-                    Step();
-
-                currentMasterClockCyclesInFrame -= (int)Math.Round(masterClock / refreshRate);
-            }
-        }
-
-        private void Step()
+        public override void RunStep()
         {
             double currentCpuClockCycles = 0.0;
             currentCpuClockCycles += cpu.Step();
@@ -213,7 +180,7 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
             double currentMasterClockCycles = (currentCpuClockCycles * 3.0);
 
             if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
-                OnRenderScreen?.Invoke(this, new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines, vdp.OutputFramebuffer));
+                OnRenderScreen(new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines, vdp.OutputFramebuffer));
 
             if (pauseButtonPressed)
             {
@@ -228,17 +195,7 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
             currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
         }
 
-        public void Pause()
-        {
-            emulationPaused = true;
-        }
-
-        public void Unpause()
-        {
-            emulationPaused = false;
-        }
-
-        private void SetButtonData(PollInputEventArgs input)
+        protected override void SetButtonData(PollInputEventArgs input)
         {
             portIoAB |= (byte)PortIoABButtons.Mask;
             portIoBMisc |= (byte)PortIoBMiscButtons.Mask;
@@ -278,12 +235,6 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
             }
             else if (pauseButtonToggle)
                 pauseButtonToggle = false;
-        }
-
-        private int HandleInterrupts()
-        {
-
-            return 0;
         }
 
         private byte ReadMemory(ushort address)

@@ -6,10 +6,7 @@ using System.Threading.Tasks;
 using System.ComponentModel;
 using System.IO;
 
-using NAudio.Wave;
-
 using MasterFudgeMk2.Common;
-using MasterFudgeMk2.Common.AudioBackend;
 using MasterFudgeMk2.Common.VideoBackend;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Devices;
@@ -52,18 +49,17 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
         Pause
     }
 
-    class Manager : IMachineManager
+    class Manager : BaseMachine
     {
-        public string FriendlyName { get { return "Sega Master System"; } }
-        public string FriendlyShortName { get { return "Master System"; } }
-        public string FileFilter { get { return "Master System ROMs (*.sms)|*.sms"; } }
-        public double RefreshRate { get { return refreshRate; } }
-        public bool SupportsBootingWithoutMedia { get { return true; } }
-        public bool CanCurrentlyBootWithoutMedia { get { return (File.Exists(configuration.BootstrapPath) && configuration.UseBootstrap); } }
-        public IWaveProvider WaveProvider { get { return (psg as IWaveProvider); } }
-        public MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
+        public override string FriendlyName { get { return "Sega Master System"; } }
+        public override string FriendlyShortName { get { return "Master System"; } }
+        public override string FileFilter { get { return "Master System ROMs (*.sms)|*.sms"; } }
+        public override double RefreshRate { get { return refreshRate; } }
+        public override bool SupportsBootingWithoutMedia { get { return true; } }
+        public override bool CanCurrentlyBootWithoutMedia { get { return (File.Exists(configuration.BootstrapPath) && configuration.UseBootstrap); } }
+        public override MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
 
-        public List<Tuple<string, Type, double>> DebugChipInformation
+        public override List<Tuple<string, Type, double>> DebugChipInformation
         {
             get
             {
@@ -75,12 +71,6 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
                 };
             }
         }
-
-        public event EventHandler<ScreenResizeEventArgs> OnScreenResize;
-        public event EventHandler<RenderScreenEventArgs> OnRenderScreen;
-        public event EventHandler<ScreenViewportChangeEventArgs> OnScreenViewportChange;
-        public event EventHandler<PollInputEventArgs> OnPollInput;
-        public event EventHandler<AddSampleDataEventArgs> OnAddSampleData;
 
         /* Constants */
         const double masterClockNtsc = 10738635;
@@ -126,8 +116,8 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
         byte portMemoryControl, portIoControl, portIoAB, portIoBMisc;
         byte lastHCounter;
 
-        bool emulationPaused;
-        int currentCyclesInLine, currentMasterClockCyclesInFrame;
+        protected override int totalMasterClockCyclesInFrame { get { return (int)Math.Round(masterClock / refreshRate); } }
+
         bool pauseButtonPressed, pauseButtonToggle;
 
         public bool isExpansionSlotEnabled { get { return !BitUtilities.IsBitSet(portMemoryControl, 7); } }
@@ -142,19 +132,7 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
         public Manager()
         {
             configuration = new Configuration();
-            //configuration.BootstrapPath = @"D:\ROMs\SMS\[BIOS] Sega Master System (USA, Europe) (v1.3).sms";
-            //configuration.UseBootstrap = true;
-            //configuration.IsPalSystem = false;
-            //configuration.IsExportSystem = true;
-            /*configuration.Pause = Common.XInput.Buttons.Start;
-            configuration.Reset = Common.XInput.Buttons.Back;
-            configuration.P1Up = Common.XInput.Buttons.DPadUp;
-            configuration.P1Down = Common.XInput.Buttons.DPadDown;
-            configuration.P1Left = Common.XInput.Buttons.DPadLeft;
-            configuration.P1Right = Common.XInput.Buttons.DPadRight;
-            configuration.P1Button1 = Common.XInput.Buttons.A;
-            configuration.P1Button2 = Common.XInput.Buttons.X;
-            */
+
             bootstrap = null;
             cartridge = null;
             card = null;
@@ -177,10 +155,10 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             cpu = new Z80A(cpuClock, refreshRate, ReadMemory, WriteMemory, ReadPort, WritePort);
             wram = new byte[ramSize];
             vdp = new SegaSMS2VDP(vdpClock, refreshRate, configuration.IsPalSystem);
-            psg = new SegaSMS2PSG(psgClock, refreshRate, (s, e) => { OnAddSampleData?.Invoke(s, e); });
+            psg = new SegaSMS2PSG(psgClock, refreshRate, (s, e) => { OnAddSampleData(e); });
         }
 
-        public void Startup()
+        public override void Startup()
         {
             if (configuration.UseBootstrap && File.Exists(configuration.BootstrapPath))
                 bootstrap = MediaLoader.LoadMedia(this, new FileInfo(configuration.BootstrapPath));
@@ -192,7 +170,7 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             Reset();
         }
 
-        public void Reset()
+        public override void Reset()
         {
             bootstrap?.Reset();
             cartridge?.Reset();
@@ -207,25 +185,25 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             portIoControl = portIoAB = portIoBMisc = 0xFF;
             lastHCounter = 0x00;
 
-            emulationPaused = false;
-            currentCyclesInLine = currentMasterClockCyclesInFrame = 0;
             pauseButtonPressed = pauseButtonToggle = false;
 
-            OnScreenResize?.Invoke(this, new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
-            OnScreenViewportChange?.Invoke(this, new ScreenViewportChangeEventArgs(0, 0, TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
+            OnScreenResize(new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
+            OnScreenViewportChange(new ScreenViewportChangeEventArgs(0, 0, TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
+
+            base.Reset();
         }
 
-        public void LoadMedia(IMedia media)
+        public override void LoadMedia(IMedia media)
         {
             cartridge = media;
         }
 
-        public void SaveMedia()
+        public override void SaveMedia()
         {
             //
         }
 
-        public void Shutdown()
+        public override void Shutdown()
         {
             bootstrap?.Unload();
             cartridge?.Unload();
@@ -234,22 +212,7 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             psg?.Shutdown();
         }
 
-        public void Run()
-        {
-            if (!emulationPaused)
-            {
-                PollInputEventArgs pollInputEventArgs = new PollInputEventArgs();
-                OnPollInput?.Invoke(this, pollInputEventArgs);
-                SetButtonData(pollInputEventArgs);
-
-                while (currentMasterClockCyclesInFrame < (int)Math.Round(masterClock / refreshRate))
-                    Step();
-
-                currentMasterClockCyclesInFrame -= (int)Math.Round(masterClock / refreshRate);
-            }
-        }
-
-        private void Step()
+        public override void RunStep()
         {
             double currentCpuClockCycles = 0.0;
             currentCpuClockCycles += cpu.Step();
@@ -257,7 +220,7 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             double currentMasterClockCycles = (currentCpuClockCycles * 3.0);
 
             if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
-                OnRenderScreen?.Invoke(this, new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines, vdp.OutputFramebuffer));
+                OnRenderScreen(new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines, vdp.OutputFramebuffer));
 
             if (pauseButtonPressed)
             {
@@ -272,17 +235,7 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
         }
 
-        public void Pause()
-        {
-            emulationPaused = true;
-        }
-
-        public void Unpause()
-        {
-            emulationPaused = false;
-        }
-
-        private void SetButtonData(PollInputEventArgs input)
+        protected override void SetButtonData(PollInputEventArgs input)
         {
             portIoAB |= (byte)PortIoABButtons.Mask;
             portIoBMisc |= (byte)PortIoBMiscButtons.Mask;

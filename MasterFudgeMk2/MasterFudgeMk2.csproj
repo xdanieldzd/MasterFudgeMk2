@@ -81,6 +81,7 @@
     <Compile Include="Devices\Z80A.Disassembly.cs" />
     <Compile Include="Devices\Z80A.OpcodesNoPrefix.cs" />
     <Compile Include="EmulatorConfiguration.cs" />
+    <Compile Include="Machines\BaseMachine.cs" />
     <Compile Include="Machines\Coleco\ColecoVision\Configuration.cs" />
     <Compile Include="Machines\Coleco\ColecoVision\Manager.cs" />
     <Compile Include="Media\MediaIdentity.cs" />

@@ -191,7 +191,7 @@ namespace MasterFudgeMk2
             List<string> extensions = new List<string>();
 
             /* Fetch and iterate over machine types */
-            foreach (Type machineType in AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => typeof(IMachineManager).IsAssignableFrom(p) && !p.IsInterface).OrderBy(x => x.Name))
+            foreach (Type machineType in AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => typeof(IMachineManager).IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract).OrderBy(x => x.Name))
             {
                 IMachineManager machine = (Activator.CreateInstance(machineType) as IMachineManager);
 
@@ -336,12 +336,12 @@ namespace MasterFudgeMk2
             romFileInfo = null;
 
             machineManager = (Activator.CreateInstance(machineType) as IMachineManager);
-            machineManager.OnScreenResize += MachineManager_OnScreenResize;
-            machineManager.OnRenderScreen += MachineManager_OnRenderScreen;
-            machineManager.OnScreenViewportChange += MachineManager_OnScreenViewportChange;
-            machineManager.OnPollInput += MachineManager_OnPollInput;
+            machineManager.ScreenResize += MachineManager_OnScreenResize;
+            machineManager.RenderScreen += MachineManager_OnRenderScreen;
+            machineManager.ScreenViewportChange += MachineManager_OnScreenViewportChange;
+            machineManager.PollInput += MachineManager_OnPollInput;
 
-            machineManager.OnAddSampleData += MachineManager_OnAddSampleData;
+            machineManager.AddSampleData += MachineManager_OnAddSampleData;
 
             machineManager.Startup();
 
@@ -383,7 +383,7 @@ namespace MasterFudgeMk2
             if (machineManager == null || EmulationIsPaused) return;
 
             startTime = stopWatch.ElapsedMilliseconds;
-            machineManager.Run();
+            machineManager.RunFrame();
 
             while (LimitFps && (stopWatch.ElapsedMilliseconds - startTime) < interval)
                 Thread.Sleep(1);
