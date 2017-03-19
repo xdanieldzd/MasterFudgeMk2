@@ -258,7 +258,7 @@ namespace MasterFudgeMk2.Devices
                 }
                 else
                 {
-                    throw new Exception("whut in the vdp?");
+                    /* Undocumented mode, not emulated */
                 }
             }
         }

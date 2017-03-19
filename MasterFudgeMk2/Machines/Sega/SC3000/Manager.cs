@@ -17,26 +17,160 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
      * - https://sites.google.com/site/mavati56/sega_sf7000 
      */
 
-    // TODO: make joypad work, too
-
     [TypeConverter(typeof(DescriptionTypeConverter))]
     public enum MachineInputs
     {
         [Description("Reset Key")]
         Reset,
 
-        D1, D2, D3, D4, D5, D6, D7, P1Up,
-        Q, W, E, R, T, Y, U, P1Down,
-        A, S, D, F, G, H, J, P1Left,
-        Z, X, C, V, B, N, M, P1Right,
-        EngDiers, Space, HomeClr, InsDel, Unmapped36, Unmapped37, Unmapped38, P1Button1,
-        Comma, Period, Slash, Pi, Down, Left, Right, P1Button2,
-        K, L, Semicolon, Colon, BracketClose, CR, Up, P2Up,
-        I, O, P, At, BracketOpen, Unmapped61, Unmapped62, P2Down,
-        D8, D9, D0, Minus, Caret, Yen, Break, P2Left,
-        Unmapped72, Unmapped73, Unmapped74, Unmapped75, Unmapped76, Unmapped77, Graph, P2Right,
-        Unmapped80, Unmapped81, Unmapped82, Unmapped83, Unmapped84, Unmapped85, Ctrl, P2Button1,
-        Unmapped88, Unmapped89, Unmapped90, Unmapped91, Unmapped92, Func, Shift, P2Button2
+        [Description("Number 1")]
+        D1,
+        [Description("Number 2")]
+        D2,
+        [Description("Number 3")]
+        D3,
+        [Description("Number 4")]
+        D4,
+        [Description("Number 5")]
+        D5,
+        [Description("Number 6")]
+        D6,
+        [Description("Number 7")]
+        D7,
+        [Description("Player 1: Up")]
+        P1Up,
+        [Description("Q Key")]
+        Q,
+        [Description("W Key")]
+        W,
+        [Description("E Key")]
+        E,
+        [Description("R Key")]
+        R,
+        [Description("T Key")]
+        T,
+        [Description("Y Key")]
+        Y,
+        [Description("U Key")]
+        U,
+        [Description("Player 1: Down")]
+        P1Down,
+        [Description("A Key")]
+        A,
+        [Description("S Key")]
+        S,
+        [Description("D Key")]
+        D,
+        [Description("F Key")]
+        F,
+        [Description("G Key")]
+        G,
+        [Description("H Key")]
+        H,
+        [Description("J Key")]
+        J,
+        [Description("Player 1: Left")]
+        P1Left,
+        [Description("Z Key")]
+        Z,
+        [Description("X Key")]
+        X,
+        [Description("C Key")]
+        C,
+        [Description("V Key")]
+        V,
+        [Description("B Key")]
+        B,
+        [Description("N Key")]
+        N,
+        [Description("M Key")]
+        M,
+        [Description("Player 1: Right")]
+        P1Right,
+        [Description("Eng/Dier's or Kana Key")]
+        EngDiers,
+        [Description("Spacebar")]
+        Space,
+        [Description("Home/Clr Key")]
+        HomeClr,
+        [Description("Ins/Del Key")]
+        InsDel,
+        [Description("Player 1: Button Left")]
+        P1Button1,
+        [Description("Comma Key")]
+        Comma,
+        [Description("Period Key")]
+        Period,
+        [Description("Slash Key")]
+        Slash,
+        [Description("Pi Key")]
+        Pi,
+        [Description("Cursor Down")]
+        Down,
+        [Description("Cursor Left")]
+        Left,
+        [Description("Cursor Right")]
+        Right,
+        [Description("Player 1: Button Right")]
+        P1Button2,
+        [Description("K Key")]
+        K,
+        [Description("L Key")]
+        L,
+        [Description("Semicolon Key")]
+        Semicolon,
+        [Description("Colon Key")]
+        Colon,
+        [Description("\"}\" Key")]
+        BracketClose,
+        [Description("CR (Return)")]
+        CR,
+        [Description("Cursor Up")]
+        Up,
+        [Description("Player 2: Up")]
+        P2Up,
+        [Description("I Key")]
+        I,
+        [Description("O Key")]
+        O,
+        [Description("P Key")]
+        P,
+        [Description("\"@\" Key")]
+        At,
+        [Description("\"[\" Key")]
+        BracketOpen,
+        [Description("Player 2: Down")]
+        P2Down,
+        [Description("Number 8")]
+        D8,
+        [Description("Number 9")]
+        D9,
+        [Description("Number 0")]
+        D0,
+        [Description("Minus Key")]
+        Minus,
+        [Description("Caret Key")]
+        Caret,
+        [Description("Yen Key")]
+        Yen,
+        [Description("Break Key")]
+        Break,
+        [Description("Player 2: Left")]
+        P2Left,
+        [Description("Graph Key")]
+        Graph,
+        [Description("Player 2: Right")]
+        P2Right,
+        [Description("Ctrl Key")]
+        Ctrl,
+        [Description("Player 2: Button Left")]
+        P2Button1,
+        [Description("Func Key")]
+        Func,
+        [Description("Shift Key")]
+        Shift,
+        [Description("Player 2: Button Right")]
+        P2Button2
     }
 
     [TypeConverter(typeof(DescriptionTypeConverter))]
@@ -99,7 +233,7 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
         {
             None = -1,
 
-            D1 = (0 * 8), D2, D3, D4, D5, D6, D7, P1Up,
+            D1 = (8 * 0), D2, D3, D4, D5, D6, D7, P1Up,
             Q = (8 * 1), W, E, R, T, Y, U, P1Down,
             A = (8 * 2), S, D, F, G, H, J, P1Left,
             Z = (8 * 3), X, C, V, B, N, M, P1Right,
@@ -273,9 +407,6 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
             SetKeyboardState(KeyboardKeys.Space, (input.Pressed.Contains(configuration.Space)));
             SetKeyboardState(KeyboardKeys.HomeClr, (input.Pressed.Contains(configuration.HomeClr)));
             SetKeyboardState(KeyboardKeys.InsDel, (input.Pressed.Contains(configuration.InsDel)));
-            SetKeyboardState(KeyboardKeys.Unmapped36, (input.Pressed.Contains(configuration.Unmapped36)));
-            SetKeyboardState(KeyboardKeys.Unmapped37, (input.Pressed.Contains(configuration.Unmapped37)));
-            SetKeyboardState(KeyboardKeys.Unmapped38, (input.Pressed.Contains(configuration.Unmapped38)));
             SetKeyboardState(KeyboardKeys.P1Button1, (input.Pressed.Contains(configuration.P1Button1)));
             SetKeyboardState(KeyboardKeys.Comma, (input.Pressed.Contains(configuration.Comma)));
             SetKeyboardState(KeyboardKeys.Period, (input.Pressed.Contains(configuration.Period)));
@@ -298,8 +429,6 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
             SetKeyboardState(KeyboardKeys.P, (input.Pressed.Contains(configuration.P)));
             SetKeyboardState(KeyboardKeys.At, (input.Pressed.Contains(configuration.At)));
             SetKeyboardState(KeyboardKeys.BracketOpen, (input.Pressed.Contains(configuration.BracketOpen)));
-            SetKeyboardState(KeyboardKeys.Unmapped61, (input.Pressed.Contains(configuration.Unmapped61)));
-            SetKeyboardState(KeyboardKeys.Unmapped62, (input.Pressed.Contains(configuration.Unmapped62)));
             SetKeyboardState(KeyboardKeys.P2Down, (input.Pressed.Contains(configuration.P2Down)));
             SetKeyboardState(KeyboardKeys.D8, (input.Pressed.Contains(configuration.D8)));
             SetKeyboardState(KeyboardKeys.D9, (input.Pressed.Contains(configuration.D9)));
@@ -309,27 +438,10 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
             SetKeyboardState(KeyboardKeys.Yen, (input.Pressed.Contains(configuration.Yen)));
             SetKeyboardState(KeyboardKeys.Break, (input.Pressed.Contains(configuration.Break)));
             SetKeyboardState(KeyboardKeys.P2Left, (input.Pressed.Contains(configuration.P2Left)));
-            SetKeyboardState(KeyboardKeys.Unmapped72, (input.Pressed.Contains(configuration.Unmapped72)));
-            SetKeyboardState(KeyboardKeys.Unmapped73, (input.Pressed.Contains(configuration.Unmapped73)));
-            SetKeyboardState(KeyboardKeys.Unmapped74, (input.Pressed.Contains(configuration.Unmapped74)));
-            SetKeyboardState(KeyboardKeys.Unmapped75, (input.Pressed.Contains(configuration.Unmapped75)));
-            SetKeyboardState(KeyboardKeys.Unmapped76, (input.Pressed.Contains(configuration.Unmapped76)));
-            SetKeyboardState(KeyboardKeys.Unmapped77, (input.Pressed.Contains(configuration.Unmapped77)));
             SetKeyboardState(KeyboardKeys.Graph, (input.Pressed.Contains(configuration.Graph)));
             SetKeyboardState(KeyboardKeys.P2Right, (input.Pressed.Contains(configuration.P2Right)));
-            SetKeyboardState(KeyboardKeys.Unmapped80, (input.Pressed.Contains(configuration.Unmapped80)));
-            SetKeyboardState(KeyboardKeys.Unmapped81, (input.Pressed.Contains(configuration.Unmapped81)));
-            SetKeyboardState(KeyboardKeys.Unmapped82, (input.Pressed.Contains(configuration.Unmapped82)));
-            SetKeyboardState(KeyboardKeys.Unmapped83, (input.Pressed.Contains(configuration.Unmapped83)));
-            SetKeyboardState(KeyboardKeys.Unmapped84, (input.Pressed.Contains(configuration.Unmapped84)));
-            SetKeyboardState(KeyboardKeys.Unmapped85, (input.Pressed.Contains(configuration.Unmapped85)));
             SetKeyboardState(KeyboardKeys.Ctrl, (input.Pressed.Contains(configuration.Ctrl)));
             SetKeyboardState(KeyboardKeys.P2Button1, (input.Pressed.Contains(configuration.P2Button1)));
-            SetKeyboardState(KeyboardKeys.Unmapped88, (input.Pressed.Contains(configuration.Unmapped88)));
-            SetKeyboardState(KeyboardKeys.Unmapped89, (input.Pressed.Contains(configuration.Unmapped89)));
-            SetKeyboardState(KeyboardKeys.Unmapped90, (input.Pressed.Contains(configuration.Unmapped90)));
-            SetKeyboardState(KeyboardKeys.Unmapped91, (input.Pressed.Contains(configuration.Unmapped91)));
-            SetKeyboardState(KeyboardKeys.Unmapped92, (input.Pressed.Contains(configuration.Unmapped92)));
             SetKeyboardState(KeyboardKeys.Func, (input.Pressed.Contains(configuration.Func)));
             SetKeyboardState(KeyboardKeys.Shift, (input.Pressed.Contains(configuration.Shift)));
             SetKeyboardState(KeyboardKeys.P2Button2, (input.Pressed.Contains(configuration.P2Button2)));
@@ -339,6 +451,20 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
         {
             if (key == KeyboardKeys.None) return;
             keyMatrix[(int)key / 8, (int)key % 8] = state;
+        }
+
+        private void UpdateKeyboard()
+        {
+            int matrixRow = (ppi.PortCOutput & 0x07);
+            byte rowStateA = 0xFF, rowStateB = 0xFF;
+
+            for (int i = 0; i < 8; i++)
+                if (keyMatrix[i, matrixRow]) rowStateA &= (byte)~(1 << i);
+            for (int i = 0; i < 4; i++)
+                if (keyMatrix[8 + i, matrixRow]) rowStateB &= (byte)~(1 << i);
+
+            ppi.PortAInput = rowStateA;
+            ppi.PortBInput = (byte)((ppi.PortBInput & 0xF0) | (rowStateB & 0x0F));
         }
 
         private byte ReadMemory(ushort address)
@@ -453,23 +579,6 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
 
             if ((port & 0x80) == 0)
                 psg.WriteData(value);
-        }
-
-        private void UpdateKeyboard()
-        {
-            int matrixRow = (ppi.PortCOutput & 0x07);
-            if (matrixRow != 0x07)
-            {
-                byte rowStateA = 0xFF, rowStateB = 0xFF;
-
-                for (int i = 0; i < 8; i++)
-                    if (keyMatrix[i, matrixRow]) rowStateA &= (byte)~(1 << i);
-                for (int i = 0; i < 4; i++)
-                    if (keyMatrix[8 + i, matrixRow]) rowStateB &= (byte)~(1 << i);
-
-                ppi.PortAInput = rowStateA;
-                ppi.PortBInput = (byte)((ppi.PortBInput & 0xF0) | (rowStateB & 0x0F));
-            }
         }
     }
 }

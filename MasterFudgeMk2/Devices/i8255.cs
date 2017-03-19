@@ -37,8 +37,6 @@ namespace MasterFudgeMk2.Devices
             PortAInput = PortAOutput = 0x00;
             PortBInput = PortBOutput = 0x00;
             PortCInput = PortCOutput = 0x00;
-
-            WritePort(0x03, 0x92);
         }
 
         public void WritePort(byte port, byte value)
@@ -69,6 +67,7 @@ namespace MasterFudgeMk2.Devices
                 default: throw new Exception(string.Format("i8255: Unsupported write to port 0x{0:X2}, value 0x{1:X2}", port, value));
             }
         }
+
         public byte ReadPort(byte port)
         {
             switch (port & 0x03)

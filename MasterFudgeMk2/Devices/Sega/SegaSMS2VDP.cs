@@ -265,12 +265,16 @@ namespace MasterFudgeMk2.Devices.Sega
                 }
                 else if (isModeMulticolor)
                 {
-                    // TODO: backgrounds
+                    RenderMulticolorBackground(line);
                     RenderSprites(line);
                 }
                 else if (isModeText)
                 {
                     RenderTextBackground(line);
+                }
+                else
+                {
+                    /* Undocumented mode, not emulated */
                 }
             }
         }
