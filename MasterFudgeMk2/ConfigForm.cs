@@ -15,13 +15,14 @@ using MasterFudgeMk2.Machines;
 
 namespace MasterFudgeMk2
 {
-    public partial class ConfigForm : Form
+    public partial class ConfigForm : Form, IMessageFilter
     {
         public MachineConfiguration Configuration { get; private set; }
 
         Dictionary<Enum, Enum> keyConfiguration;
 
-        Keys keysPressed;
+        Keys keysPressed, modifiersPressed;
+        Keys lastKeyDown;
         Controller controller;
 
         Timer settingWaitTimer, inputPollTimer;
@@ -31,6 +32,7 @@ namespace MasterFudgeMk2
         public ConfigForm(IMachineManager machineManager)
         {
             InitializeComponent();
+            Application.AddMessageFilter(this);
 
             Text = string.Format("Configuration ({0})", machineManager.FriendlyName);
 
@@ -95,7 +97,8 @@ namespace MasterFudgeMk2
                 keyConfiguration.Add((Enum)key, (Enum)value);
             }
 
-            keysPressed = Keys.None;
+            keysPressed = modifiersPressed = Keys.None;
+            lastKeyDown = Keys.None;
             controller = ControllerManager.GetController(0);
 
             settingWaitTimer = new Timer();
@@ -110,7 +113,7 @@ namespace MasterFudgeMk2
 
                 controller.Update();
 
-                if (keysPressed != Keys.None && !keysPressed.HasFlag(Keys.Escape)) timer.Tag = keysPressed;
+                if ((keysPressed & Keys.KeyCode) != Keys.None && !keysPressed.HasFlag(Keys.Escape)) timer.Tag = keysPressed;
                 if (controller.Buttons != Buttons.None) timer.Tag = controller.Buttons;
 
                 if (timer.Tag == null && controller.LeftThumbstick.X < -XInputGamepad.LeftThumbDeadzone) timer.Tag = Buttons.DPadLeft;
@@ -124,7 +127,8 @@ namespace MasterFudgeMk2
                     settingWaitTimer.Stop();
 
                     settingWaitCounter = 0;
-                    keysPressed = Keys.None;
+                    keysPressed = modifiersPressed = Keys.None;
+                    lastKeyDown = Keys.None;
                 }
             };
 
@@ -170,23 +174,51 @@ namespace MasterFudgeMk2
             tlpInputConfig.ResumeLayout();
         }
 
+        public bool PreFilterMessage(ref Message m)
+        {
+            const int WM_KEYUP = 0x101;
+            const int WM_SYSKEYUP = 0x0105;
+
+            if ((m.Msg == WM_KEYUP) || (m.Msg == WM_SYSKEYUP))
+            {
+                if (keysPressed == Keys.None && ((lastKeyDown & Keys.KeyCode) == Keys.ControlKey || (lastKeyDown & Keys.KeyCode) == Keys.ShiftKey || (lastKeyDown & Keys.KeyCode) == Keys.Menu))
+                {
+                    keysPressed |= (lastKeyDown & Keys.KeyCode);
+                }
+                else
+                {
+                    keysPressed &= ~(lastKeyDown & Keys.KeyCode);
+                    modifiersPressed &= ~(lastKeyDown & Keys.Modifiers);
+                }
+            }
+
+            return false;
+        }
+
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             const int WM_KEYDOWN = 0x100;
-            const int WM_KEYUP = 0x101;
             const int WM_SYSKEYDOWN = 0x104;
 
             if (waitingForInput)
             {
+                lastKeyDown = keyData;
+
+                Keys keyCode = (keyData & Keys.KeyCode);
+                Keys modifier = (keyData & Keys.Modifiers);
+
                 if ((msg.Msg == WM_KEYDOWN) || (msg.Msg == WM_SYSKEYDOWN))
                 {
-                    keysPressed |= (keyData & Keys.KeyCode);
-                    return true;
-                }
-                else if (msg.Msg == WM_KEYUP)
-                {
-                    keysPressed &= ~keyData;
-                    return true;
+                    if ((keyCode != Keys.ControlKey) && (keyCode != Keys.ShiftKey) && (keyCode != Keys.Menu))
+                    {
+                        keysPressed |= (keyCode | modifiersPressed);
+                        return true;
+                    }
+                    else
+                    {
+                        modifiersPressed |= modifier;
+                        return false;
+                    }
                 }
             }
 
@@ -223,9 +255,21 @@ namespace MasterFudgeMk2
         private void SetButtonLabel(Button button, Enum value)
         {
             if (value != null)
-                button.Text = string.Format("({0}) {1}",
-                    (value.GetType().GetCustomAttributes(typeof(DescriptionAttribute), false)?.FirstOrDefault() as DescriptionAttribute)?.Description ?? value.GetType().Name,
-                    (value.GetType().GetField(value.ToString()).GetCustomAttributes(typeof(DescriptionAttribute), false)?.FirstOrDefault() as DescriptionAttribute)?.Description ?? value.ToString());
+            {
+                string sourceDescription, inputDescription;
+
+                var sourceDescriptionAttrib = value.GetType().GetCustomAttributes(typeof(DescriptionAttribute), false);
+                sourceDescription = (sourceDescriptionAttrib.FirstOrDefault() != null ? (sourceDescriptionAttrib.FirstOrDefault() as DescriptionAttribute).Description : value.GetType().Name);
+
+                var inputDescriptionField = value.GetType().GetField(value.ToString());
+                var inputDescriptionAttrib = inputDescriptionField?.GetCustomAttributes(typeof(DescriptionAttribute), false);
+                inputDescription = ((inputDescriptionAttrib != null && inputDescriptionAttrib.FirstOrDefault() != null) ? (inputDescriptionAttrib.FirstOrDefault() as DescriptionAttribute).Description : value.ToString());
+
+                if (inputDescription.Contains(","))
+                    button.Text = string.Format("({0}) [{1}]", sourceDescription, inputDescription.Replace(", ", " | "));
+                else
+                    button.Text = string.Format("({0}) {1}", sourceDescription, inputDescription);
+            }
             else
                 button.Text = "---";
         }
@@ -253,6 +297,8 @@ namespace MasterFudgeMk2
                 e.Cancel = true;
                 return;
             }
+
+            Application.RemoveMessageFilter(this);
 
             if (DialogResult == DialogResult.OK)
             {

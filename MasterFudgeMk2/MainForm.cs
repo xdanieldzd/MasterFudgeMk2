@@ -88,6 +88,8 @@ namespace MasterFudgeMk2
             KeyUp += MainForm_KeyUp;
             controller = ControllerManager.GetController(0);
 
+            menuStrip.MenuActivate += (s, e) => { keysPressed.Clear(); };
+
             emulationIsInitialized = new Common.UiStateBoolean(false);
 
             soundOutput = new NAudioOutput(44100, 1);
