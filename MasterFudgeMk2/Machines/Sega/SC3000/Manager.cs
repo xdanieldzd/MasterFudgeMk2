@@ -39,6 +39,19 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
         Unmapped88, Unmapped89, Unmapped90, Unmapped91, Unmapped92, Func, Shift, P2Button2
     }
 
+    [TypeConverter(typeof(DescriptionTypeConverter))]
+    public enum ExternalRamSizes
+    {
+        [Description("None")]
+        ExtNone,
+        [Description("2 Kilobyte")]
+        Ext2Kilobyte,
+        [Description("16 Kilobyte")]
+        Ext16Kilobyte,
+        [Description("32 Kilobyte")]
+        Ext32Kilobyte
+    }
+
     public class Manager : BaseMachine
     {
         public override string FriendlyName { get { return "Sega SC-3000"; } }
@@ -79,7 +92,8 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
         TMS9918A vdp;
         SN76489 psg;
         i8255 ppi;
-        bool[,] keyMatrix;
+
+        byte[] extRam;          /* Is *technically* provided by (Basic II/III) cartridges, but fudging it like this might be easier...? */
 
         enum KeyboardKeys
         {
@@ -98,6 +112,7 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
             Unmapped80 = (8 * 10), Unmapped81, Unmapped82, Unmapped83, Unmapped84, Unmapped85, Ctrl, P2Button1,
             Unmapped88 = (8 * 11), Unmapped89, Unmapped90, Unmapped91, Unmapped92, Func, Shift, P2Button2
         }
+        bool[,] keyMatrix;
 
         protected override int totalMasterClockCyclesInFrame { get { return (int)Math.Round(masterClock / refreshRate); } }
 
@@ -131,6 +146,18 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
             vdp = new TMS9918A(vdpClock, refreshRate, false);
             psg = new SN76489(psgClock, refreshRate, (s, e) => { OnAddSampleData(e); });
             ppi = new i8255();
+
+            int extRamSize;
+            switch (configuration.ExternalRam)
+            {
+                case ExternalRamSizes.ExtNone: extRamSize = 0x0000; break;
+                case ExternalRamSizes.Ext2Kilobyte: extRamSize = 0x0800; break;
+                case ExternalRamSizes.Ext16Kilobyte: extRamSize = 0x4000; break;
+                case ExternalRamSizes.Ext32Kilobyte: extRamSize = 0x8000; break;
+                default: throw new Exception("Invalid external RAM size");
+            }
+            extRam = new byte[extRamSize];
+
             keyMatrix = new bool[12, 8];
         }
 
@@ -318,28 +345,64 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
 
         private byte ReadMemory(ushort address)
         {
-            if (address >= 0x0000 && address <= 0xBFFF)
+            if (address >= 0x0000 && address <= 0x7FFF)
             {
                 return (cartridge != null ? cartridge.Read(address) : (byte)0x00);
             }
-            else if (address >= 0xC000 && address <= 0xFFFF)
+            else
             {
-                return wram[address & (ramSize - 1)];
+                /* External RAM, huh? Smaller than 32k? */
+                if (extRam.Length < 0x8000)
+                {
+                    if (extRam.Length > 0 && address >= 0x8000 && address <= 0xBFFF)
+                    {
+                        /* Inside external RAM area */
+                        return extRam[address & (extRam.Length - 1)];
+                    }
+                    else if (address >= 0xC000 && address <= 0xFFFF)
+                    {
+                        /* Inside internal RAM area */
+                        return wram[address & (ramSize - 1)];
+                    }
+                }
+                else
+                {
+                    /* 32k external RAM means internal RAM isn't used */
+                    return extRam[address & (extRam.Length - 1)];
+                }
             }
 
-            /* Cannot read from address, return 0 */
-            return 0x00;
+            /* Cannot read from address*/
+            return (byte)(address >> 8);
         }
 
         private void WriteMemory(ushort address, byte value)
         {
-            if (address >= 0x0000 && address <= 0xBFFF)
+            if (address >= 0x0000 && address <= 0x7FFF)
             {
                 cartridge?.Write(address, value);
             }
-            else if (address >= 0xC000 && address <= 0xFFFF)
+            else
             {
-                wram[address & (ramSize - 1)] = value;
+                /* External RAM again, check size */
+                if (extRam.Length < 0x8000)
+                {
+                    if (extRam.Length > 0 && address >= 0x8000 && address <= 0xBFFF)
+                    {
+                        /* External RAM */
+                        extRam[address & (extRam.Length - 1)] = value;
+                    }
+                    else if (address >= 0xC000 && address <= 0xFFFF)
+                    {
+                        /* Internal RAM */
+                        wram[address & (ramSize - 1)] = value;
+                    }
+                }
+                else
+                {
+                    /* No internal RAM visible */
+                    extRam[address & (extRam.Length - 1)] = value;
+                }
             }
         }
 

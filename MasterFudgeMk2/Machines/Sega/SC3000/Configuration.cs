@@ -18,6 +18,13 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
             set { SettingsConfig.Set(nameof(IsPalSystem), value); }
         }
 
+        [Description("External RAM")]
+        public ExternalRamSizes ExternalRam
+        {
+            get { return (ExternalRamSizes)SettingsConfig.GetString(nameof(ExternalRam)).GetEnumFromFullyQualifiedName(); }
+            set { SettingsConfig.Set(nameof(ExternalRam), value.GetFullyQualifiedName()); }
+        }
+
         public Enum Reset
         {
             get { return InputConfig.GetString(MachineInputs.Reset.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }

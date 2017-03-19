@@ -36,7 +36,7 @@ namespace MasterFudgeMk2
             if (name == null || name == string.Empty) return null;
             string @class = name.Substring(0, name.LastIndexOf('.'));
             string @enum = name.Substring(name.LastIndexOf('.') + 1);
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies().Where(x => x.FullName.StartsWith(@class.Substring(0, @class.IndexOf('.')))))
             {
                 Type classType = assembly.GetType(@class);
                 if (classType != null)

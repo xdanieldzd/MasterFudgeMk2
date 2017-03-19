@@ -85,6 +85,24 @@ namespace MasterFudgeMk2
                         else
                             tlpMainConfig.SetColumnSpan(textBox, 2);
                     }
+                    else if (prop.PropertyType.BaseType == typeof(Enum))
+                    {
+                        ComboBox comboBox = new ComboBox() { Dock = DockStyle.Fill, DropDownStyle = ComboBoxStyle.DropDownList };
+                        comboBox.DataSource = Enum.GetValues(prop.PropertyType)
+                            .Cast<Enum>()
+                            .Select(value => new
+                            {
+                                (Attribute.GetCustomAttribute(value.GetType().GetField(value.ToString()), typeof(DescriptionAttribute)) as DescriptionAttribute).Description,
+                                value
+                            })
+                            .OrderBy(item => item.value)
+                            .ToList();
+                        comboBox.DisplayMember = "Description";
+                        comboBox.ValueMember = "value";
+
+                        comboBox.DataBindings.Add("SelectedValue", Configuration, prop.Name, false, DataSourceUpdateMode.OnPropertyChanged);
+                        tlpMainConfig.Controls.Add(comboBox, 1, i);
+                    }
                 }
             }
 
@@ -145,29 +163,29 @@ namespace MasterFudgeMk2
 
                 Button keyChangeButton = new Button() { Dock = DockStyle.Fill, FlatStyle = FlatStyle.Popup, Tag = mapping };
                 keyChangeButton.Click += (s, e) =>
-                {
-                    tcConfig.Enabled = tlpInputConfig.Enabled = false;
+                                                {
+                                                    tcConfig.Enabled = tlpInputConfig.Enabled = false;
 
-                    settingWaitCounter = 6;
-                    settingWaitTimer.Interval = 1000;
-                    settingWaitTimer.Tag = s;
-                    SettingWaitTimer_Tick(settingWaitTimer, EventArgs.Empty);
-                    settingWaitTimer.Start();
+                                                    settingWaitCounter = 6;
+                                                    settingWaitTimer.Interval = 1000;
+                                                    settingWaitTimer.Tag = s;
+                                                    SettingWaitTimer_Tick(settingWaitTimer, EventArgs.Empty);
+                                                    settingWaitTimer.Start();
 
-                    inputPollTimer.Start();
-                };
+                                                    inputPollTimer.Start();
+                                                };
                 SetButtonLabel(keyChangeButton, mapping.Value);
                 tlpInputConfig.Controls.Add(keyChangeButton, 1, i);
 
                 Button keyClearButton = new Button() { Text = "Clear", Dock = DockStyle.Fill, FlatStyle = FlatStyle.Popup, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Tag = keyChangeButton };
                 keyClearButton.Click += (s, e) =>
-                {
-                    Button keyChgBtn = ((s as Button).Tag as Button);
-                    KeyValuePair<Enum, Enum> map = (KeyValuePair<Enum, Enum>)(keyChgBtn.Tag);
-                    keyConfiguration.Remove(map.Key);
-                    keyConfiguration.Add(map.Key, null);
-                    SetButtonLabel(keyChgBtn, null);
-                };
+                                                {
+                                                    Button keyChgBtn = ((s as Button).Tag as Button);
+                                                    KeyValuePair<Enum, Enum> map = (KeyValuePair<Enum, Enum>)(keyChgBtn.Tag);
+                                                    keyConfiguration.Remove(map.Key);
+                                                    keyConfiguration.Add(map.Key, null);
+                                                    SetButtonLabel(keyChgBtn, null);
+                                                };
                 tlpInputConfig.Controls.Add(keyClearButton, 2, i);
             }
 
