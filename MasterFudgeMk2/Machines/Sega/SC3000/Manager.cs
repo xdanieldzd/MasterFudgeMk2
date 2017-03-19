@@ -341,8 +341,6 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
             keyMatrix[(int)key / 8, (int)key % 8] = state;
         }
 
-        // TODO: RAM on Basic carts (Service Manual, pg 11)
-
         private byte ReadMemory(ushort address)
         {
             if (address >= 0x0000 && address <= 0x7FFF)
