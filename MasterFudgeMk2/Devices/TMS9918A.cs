@@ -268,7 +268,7 @@ namespace MasterFudgeMk2.Devices
             /* Calculate/set some variables we'll need */
             int tileWidth = 8;
             int numTilesPerLine = 32;
-            ushort patternGeneratorBaseAddress = (ushort)((registers[0x04] & 0x0F) << 10);
+            ushort patternGeneratorBaseAddress = (ushort)((registers[0x04] & 0x07) << 11);
             ushort colorTableBaseAddress = (ushort)(registers[0x03] << 6);
 
             for (int tile = 0; tile < numTilesPerLine; tile++)
