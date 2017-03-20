@@ -12,15 +12,18 @@ using System.Threading;
 using System.IO;
 using System.Globalization;
 
+using MasterFudgeMk2.Common;
+using MasterFudgeMk2.Common.EventArguments;
 using MasterFudgeMk2.Common.AudioBackend;
 using MasterFudgeMk2.Common.VideoBackend;
-using MasterFudgeMk2.Common.VideoBackend.Rendering;
 using MasterFudgeMk2.Common.XInput;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Machines;
 
 namespace MasterFudgeMk2
 {
+    // TODO: slim down & clean up form code, it's getting stupid again!
+
     public partial class MainForm : Form
     {
         const int maxRecentFiles = 12;
@@ -35,12 +38,12 @@ namespace MasterFudgeMk2
         Controller controller;
         FileInfo romFileInfo;
 
-        Common.UiStateBoolean emulationIsInitialized;
+        UiStateBoolean emulationIsInitialized;
         bool emulationIsPaused;
 
         IMachineManager machineManager;
-        IRenderer renderer;
-        ISoundOutput soundOutput;
+        IVideoBackend renderer;
+        IAudioBackend soundOutput;
 
         public bool LimitFps
         {
@@ -56,13 +59,21 @@ namespace MasterFudgeMk2
 
         public bool KeepAspectRatio
         {
-            get { return (renderer.KeepAspectRatio = emuConfig.KeepAspectRatio); }
+            get
+            {
+                if (renderer != null) renderer.KeepAspectRatio = emuConfig.KeepAspectRatio;
+                return emuConfig.KeepAspectRatio;
+            }
             set { renderer.KeepAspectRatio = emuConfig.KeepAspectRatio = value; }
         }
 
         public bool ForceSquarePixels
         {
-            get { return (renderer.ForceSquarePixels = emuConfig.ForceSquarePixels); }
+            get
+            {
+                if (renderer != null) renderer.ForceSquarePixels = emuConfig.ForceSquarePixels;
+                return emuConfig.ForceSquarePixels;
+            }
             set { renderer.ForceSquarePixels = emuConfig.ForceSquarePixels = value; }
         }
 
@@ -96,18 +107,18 @@ namespace MasterFudgeMk2
 
             menuStrip.MenuActivate += (s, e) => { keysPressed.Clear(); };
 
-            emulationIsInitialized = new Common.UiStateBoolean(false);
+            emulationIsInitialized = new UiStateBoolean(false);
 
-            // TODO: make renderer & audio backend selectable
-            renderer = new RendererSharpDX(scScreen);
-            soundOutput = new NAudioOutput(44100, 1);
-            //soundOutput = new WavFileSoundOutput(44100, 1);
+            PrepareUserInterface();
+
+            InitializeVideoBackend(emuConfig.VideoBackend);
+            InitializeAudioBackend(emuConfig.AudioBackend);
+
+            PrepareDataBindings();
 
             soundOutput.Stop();
 
             Application.Idle += (s, e) => { while (Common.NativeMethods.IsApplicationIdle()) { StepMachine(); } };
-
-            PrepareUserInterface();
 
             // DEBUG SHORTCUTS HO
             if (Environment.MachineName == "NANAMI-X")
@@ -156,12 +167,11 @@ namespace MasterFudgeMk2
             {
                 if (components != null) components.Dispose();
 
-                //if (outputBitmap != null) outputBitmap.Dispose();
                 if (soundOutput != null)
                 {
-                    if (soundOutput is WavFileSoundOutput)
+                    if (soundOutput is FileWriterBackend)
                     {
-                        (soundOutput as WavFileSoundOutput).Save(@"E:\temp\sms\new\test.wav");
+                        (soundOutput as FileWriterBackend).Save(@"E:\temp\sms\new\test.wav");
                     }
                     soundOutput.Dispose();
                 }
@@ -180,11 +190,8 @@ namespace MasterFudgeMk2
             machineManager?.Shutdown();
         }
 
-        private void PrepareUserInterface()
+        private void PrepareDataBindings()
         {
-            /* Set various UI text */
-            SetFormText();
-
             /* Set up databindings for settings */
             limitFPSToolStripMenuItem.DataBindings.Add(nameof(limitFPSToolStripMenuItem.Checked), emuConfig, nameof(emuConfig.LimitFps), false, DataSourceUpdateMode.OnPropertyChanged);
             muteSoundToolStripMenuItem.DataBindings.Add(nameof(muteSoundToolStripMenuItem.Checked), this, nameof(MuteSound), false, DataSourceUpdateMode.OnPropertyChanged);
@@ -204,13 +211,49 @@ namespace MasterFudgeMk2
             /* Databindings for form size and location */
             DataBindings.Add("Location", emuConfig, nameof(emuConfig.WindowLocation), false, DataSourceUpdateMode.OnPropertyChanged);
             DataBindings.Add("Size", emuConfig, nameof(emuConfig.WindowSize), false, DataSourceUpdateMode.OnPropertyChanged);
+        }
+
+        private IEnumerable<Type> GetImplementationsFromAssembly(Type type)
+        {
+            if (!type.IsInterface) throw new Exception("Type is not interface");
+            return AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => type.IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);
+        }
+
+        private void PrepareUserInterface()
+        {
+            /* Set various UI text */
+            SetFormText();
+
+            /* Fetch and iterate over video & audio backend */
+            foreach (Type videoBackendType in GetImplementationsFromAssembly(typeof(IVideoBackend)).OrderByDescending(x => x.Name.StartsWith("Null")).ThenBy(x => x.Name))
+            {
+                string videoBackendName = (videoBackendType.GetCustomAttributes(typeof(DescriptionAttribute), false).FirstOrDefault() as DescriptionAttribute)?.Description;
+
+                BindableToolStripMenuItem videoBackendMenuItem = new BindableToolStripMenuItem() { Text = (videoBackendName ?? videoBackendType.Name), Tag = videoBackendType, CheckOnClick = true };
+                videoBackendMenuItem.Click += (s, e) =>
+                {
+                    InitializeVideoBackend(emuConfig.VideoBackend = (s as ToolStripMenuItem).Tag as Type);
+                };
+                videoBackendToolStripMenuItem.DropDownItems.Add(videoBackendMenuItem);
+            }
+            foreach (Type audioBackendType in GetImplementationsFromAssembly(typeof(IAudioBackend)).OrderByDescending(x => x.Name.StartsWith("Null")).ThenBy(x => x.Name))
+            {
+                string audioBackendName = (audioBackendType.GetCustomAttributes(typeof(DescriptionAttribute), false).FirstOrDefault() as DescriptionAttribute)?.Description;
+
+                BindableToolStripMenuItem audioBackendMenuItem = new BindableToolStripMenuItem() { Text = (audioBackendName ?? audioBackendType.Name), Tag = audioBackendType, CheckOnClick = true };
+                audioBackendMenuItem.Click += (s, e) =>
+                {
+                    InitializeAudioBackend(emuConfig.AudioBackend = (s as ToolStripMenuItem).Tag as Type);
+                };
+                audioBackendToolStripMenuItem.DropDownItems.Add(audioBackendMenuItem);
+            }
 
             /* Some stuff we'll need... */
             List<string> filters = new List<string>();
             List<string> extensions = new List<string>();
 
             /* Fetch and iterate over machine types */
-            foreach (Type machineType in AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => typeof(IMachineManager).IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract).OrderBy(x => x.Name))
+            foreach (Type machineType in GetImplementationsFromAssembly(typeof(IMachineManager)).OrderBy(x => x.Name))
             {
                 IMachineManager machine = (Activator.CreateInstance(machineType) as IMachineManager);
 
@@ -245,6 +288,48 @@ namespace MasterFudgeMk2
             }
             CleanUpRecentList();
             UpdateRecentFilesMenu();
+        }
+
+        private void InitializeVideoBackend(Type videoBackendType)
+        {
+            if (videoBackendType == null)
+                emuConfig.VideoBackend = videoBackendType = GetImplementationsFromAssembly(typeof(IVideoBackend)).FirstOrDefault();
+
+            if (renderer != null)
+            {
+                if (machineManager != null)
+                    machineManager.RenderScreen -= renderer.OnRenderScreen;
+
+                renderer.Dispose();
+            }
+            renderer = (Activator.CreateInstance(videoBackendType, new object[] { scScreen }) as IVideoBackend);
+
+            if (machineManager != null)
+            {
+                machineManager.RenderScreen += renderer.OnRenderScreen;
+
+                KeepAspectRatio = emuConfig.KeepAspectRatio;
+                ForceSquarePixels = emuConfig.ForceSquarePixels;
+
+                renderer.AspectRatio = machineManager.AspectRatio;
+
+                renderer.ScreenViewport = machineManager.ScreenViewport;
+            }
+
+            foreach (ToolStripMenuItem menuItem in videoBackendToolStripMenuItem.DropDownItems)
+                menuItem.Checked = ((menuItem.Tag as Type) == videoBackendType);
+        }
+
+        private void InitializeAudioBackend(Type audioBackendType)
+        {
+            if (audioBackendType == null)
+                emuConfig.AudioBackend = audioBackendType = GetImplementationsFromAssembly(typeof(IAudioBackend)).FirstOrDefault();
+
+            if (soundOutput != null) soundOutput.Dispose();
+            soundOutput = (Activator.CreateInstance(audioBackendType, new object[] { 44100, 1 }) as IAudioBackend);
+
+            foreach (ToolStripMenuItem menuItem in audioBackendToolStripMenuItem.DropDownItems)
+                menuItem.Checked = ((menuItem.Tag as Type) == audioBackendType);
         }
 
         private void SetFormText()
@@ -355,12 +440,12 @@ namespace MasterFudgeMk2
 
             machineManager = (Activator.CreateInstance(machineType) as IMachineManager);
             machineManager.RenderScreen += renderer.OnRenderScreen;
-            machineManager.ScreenViewportChange += renderer.OnScreenViewportChange;
             machineManager.PollInput += MachineManager_OnPollInput;
             machineManager.FrameEnded += MachineManager_FrameEnded;
             machineManager.AddSampleData += MachineManager_OnAddSampleData;
 
             renderer.AspectRatio = machineManager.AspectRatio;
+            renderer.ScreenViewport = machineManager.ScreenViewport;
 
             machineManager.Startup();
 

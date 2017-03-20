@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.ComponentModel;
 using System.IO;
+using System.Drawing;
 
 using MasterFudgeMk2.Common;
-using MasterFudgeMk2.Common.VideoBackend;
+using MasterFudgeMk2.Common.EventArguments;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Devices;
 using MasterFudgeMk2.Devices.Sega;
@@ -54,8 +53,11 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
         public override string FriendlyName { get { return "Sega Master System"; } }
         public override string FriendlyShortName { get { return "Master System"; } }
         public override string FileFilter { get { return "Master System ROMs (*.sms)|*.sms"; } }
+
         public override double RefreshRate { get { return refreshRate; } }
         public override float AspectRatio { get { return (!configuration.IsPalSystem ? (576.0f / 486.0f) : (720.0f / 486.0f)); } }
+        public override Rectangle ScreenViewport { get { return new Rectangle(0, 0, TMS9918A.NumPixelsPerLine, vdp.NumScanlines); } }
+
         public override bool SupportsBootingWithoutMedia { get { return true; } }
         public override bool CanCurrentlyBootWithoutMedia { get { return (File.Exists(configuration.BootstrapPath) && configuration.UseBootstrap); } }
         public override MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
@@ -187,8 +189,6 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             lastHCounter = 0x00;
 
             pauseButtonPressed = pauseButtonToggle = false;
-
-            OnScreenViewportChange(new ScreenViewportChangeEventArgs(0, 0, TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
 
             base.Reset();
         }

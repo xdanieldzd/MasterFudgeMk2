@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.ComponentModel;
+using System.Drawing;
 
 using MasterFudgeMk2.Common;
-using MasterFudgeMk2.Common.VideoBackend;
+using MasterFudgeMk2.Common.EventArguments;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Devices;
 
@@ -50,8 +49,11 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
         public override string FriendlyName { get { return "Sega SG-1000"; } }
         public override string FriendlyShortName { get { return "SG-1000"; } }
         public override string FileFilter { get { return "SG-1000 ROMs (*.sg)|*.sg"; } }
+
         public override double RefreshRate { get { return refreshRate; } }
         public override float AspectRatio { get { return (576.0f / 486.0f); } }
+        public override Rectangle ScreenViewport { get { return new Rectangle(0, 0, TMS9918A.NumPixelsPerLine, vdp.NumScanlines); } }
+
         public override bool SupportsBootingWithoutMedia { get { return false; } }
         public override bool CanCurrentlyBootWithoutMedia { get { return false; } }
         public override MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
@@ -149,9 +151,7 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
             portIoAB = portIoBMisc = 0xFF;
 
             pauseButtonPressed = pauseButtonToggle = false;
-
-            OnScreenViewportChange(new ScreenViewportChangeEventArgs(0, 0, TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
-
+            
             base.Reset();
         }
 

@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System;
+using System.Drawing;
 
 using Nini.Config;
 
@@ -16,6 +17,18 @@ namespace MasterFudgeMk2
                 if (source.Configs[sectionSettings] == null) source.AddConfig(sectionSettings);
                 return source.Configs[sectionSettings];
             }
+        }
+
+        public Type VideoBackend
+        {
+            get { return Type.GetType(SettingsConfig.GetString(nameof(VideoBackend))); }
+            set { SettingsConfig.Set(nameof(VideoBackend), value.AssemblyQualifiedName); }
+        }
+
+        public Type AudioBackend
+        {
+            get { return Type.GetType(SettingsConfig.GetString(nameof(AudioBackend))); }
+            set { SettingsConfig.Set(nameof(AudioBackend), value.AssemblyQualifiedName); }
         }
 
         public Point WindowLocation

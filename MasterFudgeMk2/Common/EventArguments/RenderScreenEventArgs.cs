@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MasterFudgeMk2.Common.VideoBackend
+namespace MasterFudgeMk2.Common.EventArguments
 {
     public class RenderScreenEventArgs : EventArgs
     {

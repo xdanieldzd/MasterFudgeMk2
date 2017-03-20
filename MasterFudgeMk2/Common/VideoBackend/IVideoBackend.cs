@@ -1,16 +1,18 @@
 ﻿using System;
 using System.Drawing;
 
-namespace MasterFudgeMk2.Common.VideoBackend.Rendering
+using MasterFudgeMk2.Common.EventArguments;
+
+namespace MasterFudgeMk2.Common.VideoBackend
 {
-    interface IRenderer : IDisposable
+    interface IVideoBackend : IDisposable
     {
         bool KeepAspectRatio { get; set; }
         bool ForceSquarePixels { get; set; }
         float AspectRatio { get; set; }
+        Rectangle ScreenViewport { get; set; }
 
         void OnOutputResized(object sender, OutputResizedEventArgs e);
         void OnRenderScreen(object sender, RenderScreenEventArgs e);
-        void OnScreenViewportChange(object sender, ScreenViewportChangeEventArgs e);
     }
 }

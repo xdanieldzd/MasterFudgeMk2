@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MasterFudgeMk2.Common.AudioBackend
+namespace MasterFudgeMk2.Common.EventArguments
 {
     public class AddSampleDataEventArgs : EventArgs
     {

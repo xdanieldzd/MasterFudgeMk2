@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 using NAudio.Wave;
 
 namespace MasterFudgeMk2.Common.AudioBackend
 {
-    public class NAudioOutput : MustInitialize<int>, ISoundOutput
+    [Description("NAudio (WaveOut)")]
+    public class NAudioBackend : MustInitialize<int>, IAudioBackend
     {
         EmulatorWaveProvider waveProvider;
         WaveOut waveOutDevice;
@@ -16,7 +18,7 @@ namespace MasterFudgeMk2.Common.AudioBackend
             set { waveOutDevice.Volume = value; }
         }
 
-        public NAudioOutput(int sampleRate, int numChannels) : base(sampleRate, numChannels)
+        public NAudioBackend(int sampleRate, int numChannels) : base(sampleRate, numChannels)
         {
             waveProvider = new EmulatorWaveProvider(sampleRate, numChannels);
 

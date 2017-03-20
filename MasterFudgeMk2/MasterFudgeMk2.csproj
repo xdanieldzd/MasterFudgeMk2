@@ -81,10 +81,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Common\AudioBackend\AddSampleDataEventArgs.cs" />
-    <Compile Include="Common\AudioBackend\NAudioOutput.cs" />
-    <Compile Include="Common\AudioBackend\ISoundOutput.cs" />
-    <Compile Include="Common\AudioBackend\WavFileSoundOutput.cs" />
+    <Compile Include="Common\AudioBackend\NullAudioBackend.cs" />
+    <Compile Include="Common\EventArguments\AddSampleDataEventArgs.cs" />
+    <Compile Include="Common\AudioBackend\NAudioBackend.cs" />
+    <Compile Include="Common\AudioBackend\IAudioBackend.cs" />
+    <Compile Include="Common\AudioBackend\FileWriterBackend.cs" />
     <Compile Include="Common\BindableToolStripMenuItem.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -93,12 +94,13 @@
     <Compile Include="Common\MustInitialize.cs" />
     <Compile Include="Common\TupleListExtensions.cs" />
     <Compile Include="Common\UiStateBoolean.cs" />
-    <Compile Include="Common\VideoBackend\PollInputEventArgs.cs" />
-    <Compile Include="Common\VideoBackend\Rendering\IRenderer.cs" />
-    <Compile Include="Common\VideoBackend\Rendering\RendererSharpDX.cs" />
-    <Compile Include="Common\VideoBackend\OutputResizedEventArgs.cs" />
-    <Compile Include="Common\VideoBackend\RenderScreenEventArgs.cs" />
-    <Compile Include="Common\VideoBackend\ScreenViewportChangeEventArgs.cs" />
+    <Compile Include="Common\EventArguments\PollInputEventArgs.cs" />
+    <Compile Include="Common\VideoBackend\BaseVideoBackend.cs" />
+    <Compile Include="Common\VideoBackend\IVideoBackend.cs" />
+    <Compile Include="Common\VideoBackend\NullVideoBackend.cs" />
+    <Compile Include="Common\VideoBackend\SharpDXBackend.cs" />
+    <Compile Include="Common\EventArguments\OutputResizedEventArgs.cs" />
+    <Compile Include="Common\EventArguments\RenderScreenEventArgs.cs" />
     <Compile Include="ConfigFile.cs" />
     <Compile Include="Devices\i8255.cs" />
     <Compile Include="Devices\ISoundDevice.cs" />
@@ -199,6 +201,7 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

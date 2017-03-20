@@ -2,7 +2,7 @@
 
 namespace MasterFudgeMk2.Common.AudioBackend
 {
-    interface ISoundOutput : IDisposable
+    interface IAudioBackend : IDisposable
     {
         void AddSampleData(short[] samples);
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace MasterFudgeMk2.Common.VideoBackend
+namespace MasterFudgeMk2.Common.EventArguments
 {
     public class PollInputEventArgs : EventArgs
     {

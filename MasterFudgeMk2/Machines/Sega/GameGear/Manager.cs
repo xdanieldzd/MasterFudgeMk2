@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 using System.ComponentModel;
 
 using MasterFudgeMk2.Common;
-using MasterFudgeMk2.Common.VideoBackend;
+using MasterFudgeMk2.Common.EventArguments;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Devices;
 using MasterFudgeMk2.Devices.Sega;
+using System.Drawing;
 
 namespace MasterFudgeMk2.Machines.Sega.GameGear
 {
@@ -40,8 +41,11 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
         public override string FriendlyName { get { return "Sega Game Gear"; } }
         public override string FriendlyShortName { get { return "Game Gear"; } }
         public override string FileFilter { get { return "Game Gear ROMs (*.gg)|*.gg"; } }
+
         public override double RefreshRate { get { return refreshRate; } }
         public override float AspectRatio { get { return (576.0f / 486.0f); } }
+        public override Rectangle ScreenViewport { get { return new Rectangle(SegaGGVDP.ScreenViewportX, ((vdp.NumScanlines / 2) - (SegaGGVDP.ScreenViewportHeight) / 2), SegaGGVDP.ScreenViewportWidth, SegaGGVDP.ScreenViewportHeight); } }
+
         public override bool SupportsBootingWithoutMedia { get { return false; } }
         public override bool CanCurrentlyBootWithoutMedia { get { return false; } }
         public override MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
@@ -163,8 +167,6 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             portRxBuffer = 0xFF;
             portSerialControl = 0x00;
             portStereoControl = 0xFF;
-
-            OnScreenViewportChange(new ScreenViewportChangeEventArgs(SegaGGVDP.ScreenViewportX, ((vdp.NumScanlines / 2) - (SegaGGVDP.ScreenViewportHeight) / 2), SegaGGVDP.ScreenViewportWidth, SegaGGVDP.ScreenViewportHeight));
 
             base.Reset();
         }

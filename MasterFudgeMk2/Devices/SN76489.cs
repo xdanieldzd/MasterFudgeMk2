@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using MasterFudgeMk2.Common;
-using MasterFudgeMk2.Common.AudioBackend;
+using MasterFudgeMk2.Common.EventArguments;
 
 namespace MasterFudgeMk2.Devices
 {

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 
-using MasterFudgeMk2.Common.AudioBackend;
-using MasterFudgeMk2.Common.VideoBackend;
+using MasterFudgeMk2.Common.EventArguments;
 using MasterFudgeMk2.Media;
 
 namespace MasterFudgeMk2.Machines
@@ -21,6 +21,7 @@ namespace MasterFudgeMk2.Machines
         /// Get file filter for Open ROM dialog
         /// </summary>
         string FileFilter { get; }
+
         /// <summary>
         /// Get system refresh rate
         /// </summary>
@@ -29,6 +30,11 @@ namespace MasterFudgeMk2.Machines
         /// Get system aspect ratio
         /// </summary>
         float AspectRatio { get; }
+        /// <summary>
+        /// Get system screen viewport, ex. Game Gear's 160x144 viewport
+        /// </summary>
+        Rectangle ScreenViewport { get; }
+
         /// <summary>
         /// Get flag if system supports booting without media
         /// </summary>
@@ -51,10 +57,6 @@ namespace MasterFudgeMk2.Machines
         /// Event handler for rendering
         /// </summary>
         event EventHandler<RenderScreenEventArgs> RenderScreen;
-        /// <summary>
-        /// Event handler for viewport changes, ex. Game Gear's 160x144 viewport
-        /// </summary>
-        event EventHandler<ScreenViewportChangeEventArgs> ScreenViewportChange;
         /// <summary>
         /// Event handler for input polling
         /// </summary>

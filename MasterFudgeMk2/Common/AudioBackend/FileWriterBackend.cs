@@ -3,17 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.ComponentModel;
 
 namespace MasterFudgeMk2.Common.AudioBackend
 {
     /* http://www.codeguru.com/columns/dotnet/making-sounds-with-waves-using-c.html */
-    public class WavFileSoundOutput : MustInitialize<int>, ISoundOutput
+    [Description("File Writer")]
+    public class FileWriterBackend : MustInitialize<int>, IAudioBackend
     {
         WaveHeader waveHeader;
         FormatChunk formatChunk;
         DataChunk dataChunk;
 
-        public WavFileSoundOutput(int sampleRate, int numChannels) : base(sampleRate, numChannels)
+        public FileWriterBackend(int sampleRate, int numChannels) : base(sampleRate, numChannels)
         {
             waveHeader = new WaveHeader();
             formatChunk = new FormatChunk(sampleRate, numChannels);

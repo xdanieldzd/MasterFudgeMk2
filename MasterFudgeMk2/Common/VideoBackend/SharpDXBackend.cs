@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows.Forms;
+using System.ComponentModel;
 
 using SharpDX;
 using SharpDX.DXGI;
@@ -12,7 +13,9 @@ using Device = SharpDX.Direct3D11.Device;
 using FactoryD2D = SharpDX.Direct2D1.Factory;
 using FactoryDXGI = SharpDX.DXGI.Factory1;
 
-namespace MasterFudgeMk2.Common.VideoBackend.Rendering
+using MasterFudgeMk2.Common.EventArguments;
+
+namespace MasterFudgeMk2.Common.VideoBackend
 {
     /* https://gist.github.com/axefrog/db3a8ce7b00abb13d2d3
      * https://katyscode.wordpress.com/2013/08/24/c-directx-api-face-off-slimdx-vs-sharpdx-which-should-you-choose/
@@ -20,10 +23,9 @@ namespace MasterFudgeMk2.Common.VideoBackend.Rendering
      * http://andrew.hedges.name/experiments/aspect_ratio/
      */
 
-    public class RendererSharpDX : MustInitialize<Control>, IRenderer
+    [Description("Direct2D (SharpDX)")]
+    public class SharpDXBackend : BaseVideoBackend
     {
-        Control outputControl;
-
         Device device;
         SwapChain swapChain;
         WindowRenderTarget renderTarget;
@@ -32,17 +34,13 @@ namespace MasterFudgeMk2.Common.VideoBackend.Rendering
         Bitmap bitmap;
         RawRectangleF destinationRectangle, sourceRectangle;
 
-        bool keepAspectRatio, forceSquarePixels;
-        float aspectRatio;
+        public override bool KeepAspectRatio { get { return keepAspectRatio; } set { keepAspectRatio = value; ResizeRenderTargetAndDestinationRectangle(); } }
+        public override bool ForceSquarePixels { get { return forceSquarePixels; } set { forceSquarePixels = value; ResizeRenderTargetAndDestinationRectangle(); } }
+        public override float AspectRatio { get { return aspectRatio; } set { aspectRatio = value; ResizeRenderTargetAndDestinationRectangle(); } }
+        public override System.Drawing.Rectangle ScreenViewport { get { return screenViewport; } set { screenViewport = value; ResizeRenderTargetAndDestinationRectangle(); } }
 
-        public bool KeepAspectRatio { get { return keepAspectRatio; } set { keepAspectRatio = value; ResizeRenderTargetAndDestinationRectangle(); } }
-        public bool ForceSquarePixels { get { return forceSquarePixels; } set { forceSquarePixels = value; ResizeRenderTargetAndDestinationRectangle(); } }
-        public float AspectRatio { get { return aspectRatio; } set { aspectRatio = value; ResizeRenderTargetAndDestinationRectangle(); } }
-
-        public RendererSharpDX(Control control) : base(control)
+        public SharpDXBackend(Control control) : base(control)
         {
-            outputControl = control;
-
             var swapChainDesc = new SwapChainDescription()
             {
                 BufferCount = 2,
@@ -88,7 +86,7 @@ namespace MasterFudgeMk2.Common.VideoBackend.Rendering
             ResizeRenderTargetAndDestinationRectangle();
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
@@ -107,6 +105,7 @@ namespace MasterFudgeMk2.Common.VideoBackend.Rendering
 
         private void ResizeRenderTargetAndDestinationRectangle()
         {
+            sourceRectangle = new RawRectangleF(screenViewport.X, screenViewport.Y, (screenViewport.X + screenViewport.Width), (screenViewport.Y + screenViewport.Height));
             renderTarget.Resize(new Size2(outputControl.ClientSize.Width, outputControl.ClientSize.Height));
 
             if (keepAspectRatio)
@@ -135,12 +134,12 @@ namespace MasterFudgeMk2.Common.VideoBackend.Rendering
             destinationRectangle.Bottom += 0.5f;
         }
 
-        public void OnOutputResized(object sender, OutputResizedEventArgs e)
+        public override void OnOutputResized(object sender, OutputResizedEventArgs e)
         {
             ResizeRenderTargetAndDestinationRectangle();
         }
 
-        public void OnRenderScreen(object sender, RenderScreenEventArgs e)
+        public override void OnRenderScreen(object sender, RenderScreenEventArgs e)
         {
             if (bitmap == null)
                 bitmap = new Bitmap(renderTarget, new Size2(e.Width, e.Height), new BitmapProperties(renderTarget.PixelFormat));
@@ -155,12 +154,6 @@ namespace MasterFudgeMk2.Common.VideoBackend.Rendering
             renderTarget.Clear(Color.Black);
             renderTarget.DrawBitmap(bitmapRenderTarget.Bitmap, destinationRectangle, 1.0f, BitmapInterpolationMode.Linear, sourceRectangle);
             renderTarget.EndDraw();
-        }
-
-        public void OnScreenViewportChange(object sender, ScreenViewportChangeEventArgs e)
-        {
-            sourceRectangle = new RawRectangleF(e.X, e.Y, (e.X + e.Width), (e.Y + e.Height));
-            ResizeRenderTargetAndDestinationRectangle();
         }
     }
 }

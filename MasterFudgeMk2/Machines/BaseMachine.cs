@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Drawing;
 
-using MasterFudgeMk2.Common.AudioBackend;
-using MasterFudgeMk2.Common.VideoBackend;
+using MasterFudgeMk2.Common.EventArguments;
 using MasterFudgeMk2.Media;
 
 namespace MasterFudgeMk2.Machines
@@ -15,8 +12,11 @@ namespace MasterFudgeMk2.Machines
         public abstract string FriendlyName { get; }
         public abstract string FriendlyShortName { get; }
         public abstract string FileFilter { get; }
+
         public abstract double RefreshRate { get; }
         public abstract float AspectRatio { get; }
+        public abstract Rectangle ScreenViewport { get; }
+
         public abstract bool SupportsBootingWithoutMedia { get; }
         public abstract bool CanCurrentlyBootWithoutMedia { get; }
         public abstract MachineConfiguration Configuration { get; set; }
@@ -25,9 +25,6 @@ namespace MasterFudgeMk2.Machines
 
         public event EventHandler<RenderScreenEventArgs> RenderScreen;
         protected virtual void OnRenderScreen(RenderScreenEventArgs e) { RenderScreen?.Invoke(this, e); }
-
-        public event EventHandler<ScreenViewportChangeEventArgs> ScreenViewportChange;
-        protected virtual void OnScreenViewportChange(ScreenViewportChangeEventArgs e) { ScreenViewportChange?.Invoke(this, e); }
 
         public event EventHandler<PollInputEventArgs> PollInput;
         protected virtual void OnPollInput(PollInputEventArgs e) { PollInput?.Invoke(this, e); }
