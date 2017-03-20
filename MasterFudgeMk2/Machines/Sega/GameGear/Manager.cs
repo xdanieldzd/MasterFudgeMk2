@@ -41,6 +41,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
         public override string FriendlyShortName { get { return "Game Gear"; } }
         public override string FileFilter { get { return "Game Gear ROMs (*.gg)|*.gg"; } }
         public override double RefreshRate { get { return refreshRate; } }
+        public override float AspectRatio { get { return (576.0f / 486.0f); } }
         public override bool SupportsBootingWithoutMedia { get { return false; } }
         public override bool CanCurrentlyBootWithoutMedia { get { return false; } }
         public override MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
@@ -163,7 +164,6 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             portSerialControl = 0x00;
             portStereoControl = 0xFF;
 
-            OnScreenResize(new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
             OnScreenViewportChange(new ScreenViewportChangeEventArgs(SegaGGVDP.ScreenViewportX, ((vdp.NumScanlines / 2) - (SegaGGVDP.ScreenViewportHeight) / 2), SegaGGVDP.ScreenViewportWidth, SegaGGVDP.ScreenViewportHeight));
 
             base.Reset();

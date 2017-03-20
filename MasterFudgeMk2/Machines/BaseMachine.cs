@@ -16,14 +16,12 @@ namespace MasterFudgeMk2.Machines
         public abstract string FriendlyShortName { get; }
         public abstract string FileFilter { get; }
         public abstract double RefreshRate { get; }
+        public abstract float AspectRatio { get; }
         public abstract bool SupportsBootingWithoutMedia { get; }
         public abstract bool CanCurrentlyBootWithoutMedia { get; }
         public abstract MachineConfiguration Configuration { get; set; }
 
         public abstract List<Tuple<string, Type, double>> DebugChipInformation { get; }
-
-        public event EventHandler<ScreenResizeEventArgs> ScreenResize;
-        protected virtual void OnScreenResize(ScreenResizeEventArgs e) { ScreenResize?.Invoke(this, e); }
 
         public event EventHandler<RenderScreenEventArgs> RenderScreen;
         protected virtual void OnRenderScreen(RenderScreenEventArgs e) { RenderScreen?.Invoke(this, e); }
@@ -36,6 +34,9 @@ namespace MasterFudgeMk2.Machines
 
         public event EventHandler<AddSampleDataEventArgs> AddSampleData;
         protected virtual void OnAddSampleData(AddSampleDataEventArgs e) { AddSampleData?.Invoke(this, e); }
+
+        public event EventHandler FrameEnded;
+        protected virtual void OnFrameEnded(EventArgs e) { FrameEnded?.Invoke(this, e); }
 
         protected bool emulationPaused;
         protected int currentCyclesInLine, currentMasterClockCyclesInFrame;
@@ -66,6 +67,8 @@ namespace MasterFudgeMk2.Machines
 
                 currentMasterClockCyclesInFrame -= totalMasterClockCyclesInFrame;
             }
+
+            OnFrameEnded(EventArgs.Empty);
         }
 
         public abstract void RunStep();

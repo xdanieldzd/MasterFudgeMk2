@@ -66,6 +66,7 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
         public override string FriendlyShortName { get { return "ColecoVision"; } }
         public override string FileFilter { get { return "ColecoVision ROMs (*.col)|*.col"; } }
         public override double RefreshRate { get { return refreshRate; } }
+        public override float AspectRatio { get { return (576.0f / 486.0f); } }
         public override bool SupportsBootingWithoutMedia { get { return true; } }
         public override bool CanCurrentlyBootWithoutMedia { get { return File.Exists(configuration.BiosPath); } }
         public override MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
@@ -175,7 +176,6 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
 
             isNmi = isNmiPending = false;
 
-            OnScreenResize(new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
             OnScreenViewportChange(new ScreenViewportChangeEventArgs(0, 0, TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
 
             base.Reset();

@@ -192,6 +192,7 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
         public override string FriendlyShortName { get { return "SC-3000"; } }
         public override string FileFilter { get { return "SC-3000 ROMs (*.sc)|*.sc"; } }
         public override double RefreshRate { get { return refreshRate; } }
+        public override float AspectRatio { get { return (!configuration.IsPalSystem ? (576.0f / 486.0f) : (720.0f / 486.0f)); } }
         public override bool SupportsBootingWithoutMedia { get { return false; } }
         public override bool CanCurrentlyBootWithoutMedia { get { return false; } }
         public override MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
@@ -320,7 +321,6 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
 
             resetButtonPressed = false;
 
-            OnScreenResize(new ScreenResizeEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
             OnScreenViewportChange(new ScreenViewportChangeEventArgs(0, 0, TMS9918A.NumPixelsPerLine, vdp.NumScanlines));
 
             base.Reset();

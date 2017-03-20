@@ -1,4 +1,4 @@
-﻿using System.IO;
+﻿using System.Drawing;
 
 using Nini.Config;
 
@@ -15,6 +15,32 @@ namespace MasterFudgeMk2
             {
                 if (source.Configs[sectionSettings] == null) source.AddConfig(sectionSettings);
                 return source.Configs[sectionSettings];
+            }
+        }
+
+        public Point WindowLocation
+        {
+            get
+            {
+                string[] coords = SettingsConfig.GetString(nameof(WindowLocation), "0;0").Split(';');
+                return new Point(int.Parse(coords[0]), int.Parse(coords[1]));
+            }
+            set
+            {
+                SettingsConfig.Set(nameof(WindowLocation), string.Format("{0};{1}", value.X, value.Y));
+            }
+        }
+
+        public Size WindowSize
+        {
+            get
+            {
+                string[] coords = SettingsConfig.GetString(nameof(WindowSize), "528;526").Split(';');
+                return new Size(int.Parse(coords[0]), int.Parse(coords[1]));
+            }
+            set
+            {
+                SettingsConfig.Set(nameof(WindowSize), string.Format("{0};{1}", value.Width, value.Height));
             }
         }
 
@@ -36,10 +62,10 @@ namespace MasterFudgeMk2
             set { SettingsConfig.Set(nameof(KeepAspectRatio), value); }
         }
 
-        public bool AutoResize
+        public bool ForceSquarePixels
         {
-            get { return SettingsConfig.GetBoolean(nameof(AutoResize), true); }
-            set { SettingsConfig.Set(nameof(AutoResize), value); }
+            get { return SettingsConfig.GetBoolean(nameof(ForceSquarePixels), false); }
+            set { SettingsConfig.Set(nameof(ForceSquarePixels), value); }
         }
 
         public bool DebugMode

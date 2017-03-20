@@ -7,8 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Threading;
 using System.IO;
@@ -16,6 +14,7 @@ using System.Globalization;
 
 using MasterFudgeMk2.Common.AudioBackend;
 using MasterFudgeMk2.Common.VideoBackend;
+using MasterFudgeMk2.Common.VideoBackend.Rendering;
 using MasterFudgeMk2.Common.XInput;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Machines;
@@ -38,9 +37,9 @@ namespace MasterFudgeMk2
 
         Common.UiStateBoolean emulationIsInitialized;
         bool emulationIsPaused;
+
         IMachineManager machineManager;
-        Rectangle outputViewport;
-        Bitmap outputBitmap;
+        IRenderer renderer;
         ISoundOutput soundOutput;
 
         public bool LimitFps
@@ -57,8 +56,14 @@ namespace MasterFudgeMk2
 
         public bool KeepAspectRatio
         {
-            get { return (emuConfig.KeepAspectRatio = scScreen.KeepAspectRatio); }
-            set { emuConfig.KeepAspectRatio = scScreen.KeepAspectRatio = value; }
+            get { return (renderer.KeepAspectRatio = emuConfig.KeepAspectRatio); }
+            set { renderer.KeepAspectRatio = emuConfig.KeepAspectRatio = value; }
+        }
+
+        public bool ForceSquarePixels
+        {
+            get { return (renderer.ForceSquarePixels = emuConfig.ForceSquarePixels); }
+            set { renderer.ForceSquarePixels = emuConfig.ForceSquarePixels = value; }
         }
 
         public bool EmulationIsPaused
@@ -86,14 +91,17 @@ namespace MasterFudgeMk2
             keysPressed = new List<Keys>();
             KeyDown += MainForm_KeyDown;
             KeyUp += MainForm_KeyUp;
+            Resize += MainForm_Resize;
             controller = ControllerManager.GetController(0);
 
             menuStrip.MenuActivate += (s, e) => { keysPressed.Clear(); };
 
             emulationIsInitialized = new Common.UiStateBoolean(false);
 
+            // TODO: make renderer & audio backend selectable
+            renderer = new RendererSharpDX(scScreen);
             soundOutput = new NAudioOutput(44100, 1);
-            soundOutput = new WavFileSoundOutput(44100, 1);
+            //soundOutput = new WavFileSoundOutput(44100, 1);
 
             soundOutput.Stop();
 
@@ -148,7 +156,7 @@ namespace MasterFudgeMk2
             {
                 if (components != null) components.Dispose();
 
-                if (outputBitmap != null) outputBitmap.Dispose();
+                //if (outputBitmap != null) outputBitmap.Dispose();
                 if (soundOutput != null)
                 {
                     if (soundOutput is WavFileSoundOutput)
@@ -157,9 +165,14 @@ namespace MasterFudgeMk2
                     }
                     soundOutput.Dispose();
                 }
+                if (renderer != null) renderer.Dispose();
             }
 
             base.Dispose(disposing);
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -175,8 +188,8 @@ namespace MasterFudgeMk2
             /* Set up databindings for settings */
             limitFPSToolStripMenuItem.DataBindings.Add(nameof(limitFPSToolStripMenuItem.Checked), emuConfig, nameof(emuConfig.LimitFps), false, DataSourceUpdateMode.OnPropertyChanged);
             muteSoundToolStripMenuItem.DataBindings.Add(nameof(muteSoundToolStripMenuItem.Checked), this, nameof(MuteSound), false, DataSourceUpdateMode.OnPropertyChanged);
-            keepAspectRatioToolStripMenuItem.DataBindings.Add(nameof(keepAspectRatioToolStripMenuItem.Checked), emuConfig, nameof(emuConfig.KeepAspectRatio), false, DataSourceUpdateMode.OnPropertyChanged);
-            autoResizeWindowToolStripMenuItem.DataBindings.Add(nameof(autoResizeWindowToolStripMenuItem.Checked), emuConfig, nameof(emuConfig.AutoResize), false, DataSourceUpdateMode.OnPropertyChanged);
+            keepAspectRatioToolStripMenuItem.DataBindings.Add(nameof(keepAspectRatioToolStripMenuItem.Checked), this, nameof(KeepAspectRatio), false, DataSourceUpdateMode.OnPropertyChanged);
+            forceSquarePixelsToolStripMenuItem.DataBindings.Add(nameof(forceSquarePixelsToolStripMenuItem.Checked), this, nameof(ForceSquarePixels), false, DataSourceUpdateMode.OnPropertyChanged);
 
             /* Databindings for initialized */
             takeScreenshotToolStripMenuItem.DataBindings.Add(nameof(takeScreenshotToolStripMenuItem.Enabled), emulationIsInitialized, nameof(emulationIsInitialized.IsTrue), false, DataSourceUpdateMode.OnPropertyChanged);
@@ -187,6 +200,10 @@ namespace MasterFudgeMk2
 
             /* Databindings for paused */
             pauseToolStripMenuItem.DataBindings.Add(nameof(pauseToolStripMenuItem.Checked), this, nameof(EmulationIsPaused), false, DataSourceUpdateMode.OnPropertyChanged);
+
+            /* Databindings for form size and location */
+            DataBindings.Add("Location", emuConfig, nameof(emuConfig.WindowLocation), false, DataSourceUpdateMode.OnPropertyChanged);
+            DataBindings.Add("Size", emuConfig, nameof(emuConfig.WindowSize), false, DataSourceUpdateMode.OnPropertyChanged);
 
             /* Some stuff we'll need... */
             List<string> filters = new List<string>();
@@ -332,18 +349,18 @@ namespace MasterFudgeMk2
         {
             if (machineType == null) return;
 
-            outputViewport = Rectangle.Empty;
             soundOutput?.Stop();
 
             romFileInfo = null;
 
             machineManager = (Activator.CreateInstance(machineType) as IMachineManager);
-            machineManager.ScreenResize += MachineManager_OnScreenResize;
-            machineManager.RenderScreen += MachineManager_OnRenderScreen;
-            machineManager.ScreenViewportChange += MachineManager_OnScreenViewportChange;
+            machineManager.RenderScreen += renderer.OnRenderScreen;
+            machineManager.ScreenViewportChange += renderer.OnScreenViewportChange;
             machineManager.PollInput += MachineManager_OnPollInput;
-
+            machineManager.FrameEnded += MachineManager_FrameEnded;
             machineManager.AddSampleData += MachineManager_OnAddSampleData;
+
+            renderer.AspectRatio = machineManager.AspectRatio;
 
             machineManager.Startup();
 
@@ -411,58 +428,9 @@ namespace MasterFudgeMk2
                 keysPressed.Remove(e.KeyCode);
         }
 
-        private void MachineManager_OnScreenResize(object sender, ScreenResizeEventArgs e)
+        private void MainForm_Resize(object sender, EventArgs e)
         {
-            outputBitmap?.Dispose();
-            outputBitmap = new Bitmap(e.Width, e.Height, PixelFormat.Format32bppArgb);
-
-            if (outputViewport == Rectangle.Empty) outputViewport = new Rectangle(0, 0, e.Width, e.Height);
-
-            scScreen.OutputBitmap = outputBitmap;
-            scScreen.Viewport = outputViewport;
-        }
-
-        private void MachineManager_OnRenderScreen(object sender, RenderScreenEventArgs e)
-        {
-            BitmapData bmpData = outputBitmap.LockBits(new Rectangle(0, 0, e.Width, e.Height), ImageLockMode.WriteOnly, outputBitmap.PixelFormat);
-
-            byte[] pixelData = new byte[bmpData.Stride * bmpData.Height];
-            Buffer.BlockCopy(e.FrameData, 0, pixelData, 0, pixelData.Length);
-            Marshal.Copy(pixelData, 0, bmpData.Scan0, pixelData.Length);
-
-            outputBitmap.UnlockBits(bmpData);
-
-            scScreen.Invalidate();
-            scScreen.Update();
-
-            tsslFps.Text = string.Format(CultureInfo.InvariantCulture, "{0:##.##} FPS", framesPerSecond);
-        }
-
-        private void MachineManager_OnScreenViewportChange(object sender, ScreenViewportChangeEventArgs e)
-        {
-            outputViewport = new Rectangle(e.X, e.Y, e.Width, e.Height);
-            scScreen.Viewport = outputViewport;
-
-            if (emuConfig.AutoResize)
-            {
-                FormWindowState oldWindowState = WindowState;
-                WindowState = FormWindowState.Normal;
-
-                SuspendLayout();
-                {
-                    Size formSize = ClientSize;
-                    Size oldScreenSize = scScreen.ClientSize;
-
-                    formSize.Width = ((formSize.Width - oldScreenSize.Width) + (e.Width * 2));
-                    formSize.Height = ((formSize.Height - oldScreenSize.Height) + (e.Height * 2));
-
-                    ClientSize = formSize;
-                    oldScreenSize = scScreen.ClientSize;
-
-                    WindowState = oldWindowState;
-                }
-                ResumeLayout();
-            }
+            renderer.OnOutputResized(sender, new OutputResizedEventArgs(scScreen.Width, scScreen.Height));
         }
 
         private void MachineManager_OnPollInput(object sender, PollInputEventArgs e)
@@ -503,6 +471,11 @@ namespace MasterFudgeMk2
             soundOutput.AddSampleData(e.Samples);
         }
 
+        private void MachineManager_FrameEnded(object sender, EventArgs e)
+        {
+            tsslFps.Text = string.Format(CultureInfo.InvariantCulture, "{0:##.##} FPS", framesPerSecond);
+        }
+
         private void openROMToolStripMenuItem_Click(object sender, EventArgs e)
         {
             machineManager?.Pause();
@@ -529,14 +502,16 @@ namespace MasterFudgeMk2
 
         private void takeScreenshotToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (Bitmap screenshot = new Bitmap(outputViewport.Width, outputViewport.Height))
+            throw new NotImplementedException();
+
+            /*using (Bitmap screenshot = new Bitmap(outputViewport.Width, outputViewport.Height))
             {
                 using (Graphics g = Graphics.FromImage(screenshot))
                 {
                     g.DrawImage(outputBitmap, new Rectangle(0, 0, screenshot.Width, screenshot.Height), outputViewport, GraphicsUnit.Pixel);
                 }
                 screenshot?.Save(@"E:\temp\sms\new\temp.png");
-            }
+            }*/
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)

@@ -26,6 +26,10 @@ namespace MasterFudgeMk2.Machines
         /// </summary>
         double RefreshRate { get; }
         /// <summary>
+        /// Get system aspect ratio
+        /// </summary>
+        float AspectRatio { get; }
+        /// <summary>
         /// Get flag if system supports booting without media
         /// </summary>
         bool SupportsBootingWithoutMedia { get; }
@@ -44,10 +48,6 @@ namespace MasterFudgeMk2.Machines
         List<Tuple<string, Type, double>> DebugChipInformation { get; }
 
         /// <summary>
-        /// Event handler for screen resizing
-        /// </summary>
-        event EventHandler<ScreenResizeEventArgs> ScreenResize;
-        /// <summary>
         /// Event handler for rendering
         /// </summary>
         event EventHandler<RenderScreenEventArgs> RenderScreen;
@@ -63,6 +63,10 @@ namespace MasterFudgeMk2.Machines
         /// Event handler for adding sound samples
         /// </summary>
         event EventHandler<AddSampleDataEventArgs> AddSampleData;
+        /// <summary>
+        /// Event handler for end of frame
+        /// </summary>
+        event EventHandler FrameEnded;
 
         /// <summary>
         /// Start machine up
