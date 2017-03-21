@@ -114,8 +114,9 @@ namespace MasterFudgeMk2.Media.Sega
             for (int i = 0; i < (romData.Length < 0x8000 ? romData.Length - 0x10 : 0x7FF0); i++)
                 checksum += romData[i];
 
-            if ((IsRomSizeCorrect ? GetRomSizeValue() : RomSizeCalculated) >= 0x10000)
-                for (int i = 0x8000; i < GetRomSizeValue(); i++)
+            uint romSize = (IsRomSizeCorrect ? GetRomSizeValue() : RomSizeCalculated);
+            if (romSize >= 0x10000)
+                for (int i = 0x8000; i < romSize; i++)
                     checksum += romData[i];
 
             return checksum;
