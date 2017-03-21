@@ -12,10 +12,10 @@ using System.Threading;
 using System.IO;
 using System.Globalization;
 
+using MasterFudgeMk2.AudioBackends;
+using MasterFudgeMk2.VideoBackends;
 using MasterFudgeMk2.Common;
 using MasterFudgeMk2.Common.EventArguments;
-using MasterFudgeMk2.Common.AudioBackend;
-using MasterFudgeMk2.Common.VideoBackend;
 using MasterFudgeMk2.Common.XInput;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Machines;

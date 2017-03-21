@@ -81,11 +81,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Common\AudioBackend\NullAudioBackend.cs" />
+    <Compile Include="AudioBackends\NullAudioBackend.cs" />
     <Compile Include="Common\EventArguments\AddSampleDataEventArgs.cs" />
-    <Compile Include="Common\AudioBackend\NAudioBackend.cs" />
-    <Compile Include="Common\AudioBackend\IAudioBackend.cs" />
-    <Compile Include="Common\AudioBackend\FileWriterBackend.cs" />
+    <Compile Include="AudioBackends\NAudioBackend.cs" />
+    <Compile Include="AudioBackends\IAudioBackend.cs" />
+    <Compile Include="AudioBackends\FileWriterBackend.cs" />
     <Compile Include="Common\BindableToolStripMenuItem.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -95,10 +95,10 @@
     <Compile Include="Common\TupleListExtensions.cs" />
     <Compile Include="Common\UiStateBoolean.cs" />
     <Compile Include="Common\EventArguments\PollInputEventArgs.cs" />
-    <Compile Include="Common\VideoBackend\BaseVideoBackend.cs" />
-    <Compile Include="Common\VideoBackend\IVideoBackend.cs" />
-    <Compile Include="Common\VideoBackend\NullVideoBackend.cs" />
-    <Compile Include="Common\VideoBackend\SharpDXBackend.cs" />
+    <Compile Include="VideoBackends\BaseVideoBackend.cs" />
+    <Compile Include="VideoBackends\IVideoBackend.cs" />
+    <Compile Include="VideoBackends\NullVideoBackend.cs" />
+    <Compile Include="VideoBackends\SharpDXBackend.cs" />
     <Compile Include="Common\EventArguments\OutputResizedEventArgs.cs" />
     <Compile Include="Common\EventArguments\RenderScreenEventArgs.cs" />
     <Compile Include="ConfigFile.cs" />

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MasterFudgeMk2.Common.AudioBackend
+namespace MasterFudgeMk2.AudioBackends
 {
     interface IAudioBackend : IDisposable
     {

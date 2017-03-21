@@ -19,7 +19,7 @@ using DrawingBitmapData = System.Drawing.Imaging.BitmapData;
 
 using MasterFudgeMk2.Common.EventArguments;
 
-namespace MasterFudgeMk2.Common.VideoBackend
+namespace MasterFudgeMk2.VideoBackends
 {
     /* https://gist.github.com/axefrog/db3a8ce7b00abb13d2d3
      * https://katyscode.wordpress.com/2013/08/24/c-directx-api-face-off-slimdx-vs-sharpdx-which-should-you-choose/

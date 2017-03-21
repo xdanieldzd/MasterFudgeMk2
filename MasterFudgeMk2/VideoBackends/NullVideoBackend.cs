@@ -4,7 +4,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using MasterFudgeMk2.Common.EventArguments;
 
-namespace MasterFudgeMk2.Common.VideoBackend
+namespace MasterFudgeMk2.VideoBackends
 {
     [Description("Null Video")]
     public class NullVideoBackend : BaseVideoBackend

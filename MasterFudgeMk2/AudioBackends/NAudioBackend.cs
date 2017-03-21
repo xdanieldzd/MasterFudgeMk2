@@ -4,7 +4,9 @@ using System.ComponentModel;
 
 using NAudio.Wave;
 
-namespace MasterFudgeMk2.Common.AudioBackend
+using MasterFudgeMk2.Common;
+
+namespace MasterFudgeMk2.AudioBackends
 {
     [Description("NAudio (WaveOut)")]
     public class NAudioBackend : MustInitialize<int>, IAudioBackend

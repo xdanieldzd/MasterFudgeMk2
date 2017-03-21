@@ -3,7 +3,7 @@ using System.Drawing;
 
 using MasterFudgeMk2.Common.EventArguments;
 
-namespace MasterFudgeMk2.Common.VideoBackend
+namespace MasterFudgeMk2.VideoBackends
 {
     public abstract class BaseVideoBackend : IVideoBackend
     {

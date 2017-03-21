@@ -1,7 +1,9 @@
 ﻿using System;
 using System.ComponentModel;
 
-namespace MasterFudgeMk2.Common.AudioBackend
+using MasterFudgeMk2.Common;
+
+namespace MasterFudgeMk2.AudioBackends
 {
     [Description("Null Audio")]
     public class NullAudioBackend : MustInitialize<int>, IAudioBackend

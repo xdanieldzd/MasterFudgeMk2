@@ -5,7 +5,9 @@ using System.Text;
 using System.IO;
 using System.ComponentModel;
 
-namespace MasterFudgeMk2.Common.AudioBackend
+using MasterFudgeMk2.Common;
+
+namespace MasterFudgeMk2.AudioBackends
 {
     /* http://www.codeguru.com/columns/dotnet/making-sounds-with-waves-using-c.html */
     [Description("File Writer")]
