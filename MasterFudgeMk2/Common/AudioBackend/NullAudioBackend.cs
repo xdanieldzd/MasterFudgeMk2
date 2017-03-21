@@ -6,8 +6,6 @@ namespace MasterFudgeMk2.Common.AudioBackend
     [Description("Null Audio")]
     public class NullAudioBackend : MustInitialize<int>, IAudioBackend
     {
-        public float Volume { get; set; }
-
         public NullAudioBackend(int sampleRate, int numChannels) : base(sampleRate, numChannels) { }
 
         public void Dispose()

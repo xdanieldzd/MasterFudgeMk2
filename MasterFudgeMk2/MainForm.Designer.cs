@@ -40,16 +40,17 @@
             this.statusStrip = new System.Windows.Forms.StatusStrip();
             this.tsslStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.tsslFps = new System.Windows.Forms.ToolStripStatusLabel();
+            this.videoSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.scScreen = new MasterFudgeMk2.Common.ScreenControl();
             this.takeScreenshotToolStripMenuItem = new MasterFudgeMk2.Common.BindableToolStripMenuItem();
             this.pauseToolStripMenuItem = new MasterFudgeMk2.Common.BindableToolStripMenuItem();
             this.resetToolStripMenuItem = new MasterFudgeMk2.Common.BindableToolStripMenuItem();
             this.infoToolStripMenuItem = new MasterFudgeMk2.Common.BindableToolStripMenuItem();
             this.limitFPSToolStripMenuItem = new MasterFudgeMk2.Common.BindableToolStripMenuItem();
-            this.muteSoundToolStripMenuItem = new MasterFudgeMk2.Common.BindableToolStripMenuItem();
             this.keepAspectRatioToolStripMenuItem = new MasterFudgeMk2.Common.BindableToolStripMenuItem();
             this.forceSquarePixelsToolStripMenuItem = new MasterFudgeMk2.Common.BindableToolStripMenuItem();
             this.configToolStripMenuItem = new MasterFudgeMk2.Common.BindableToolStripMenuItem();
+            this.sfdSaveScreenshot = new System.Windows.Forms.SaveFileDialog();
             this.menuStrip.SuspendLayout();
             this.statusStrip.SuspendLayout();
             this.SuspendLayout();
@@ -163,15 +164,13 @@
             // optionsToolStripMenuItem
             // 
             this.optionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.limitFPSToolStripMenuItem,
+            this.toolStripMenuItem3,
             this.videoBackendToolStripMenuItem,
             this.audioBackendToolStripMenuItem,
-            this.toolStripMenuItem8,
-            this.limitFPSToolStripMenuItem,
-            this.muteSoundToolStripMenuItem,
-            this.toolStripMenuItem3,
-            this.keepAspectRatioToolStripMenuItem,
-            this.forceSquarePixelsToolStripMenuItem,
             this.toolStripMenuItem4,
+            this.videoSettingsToolStripMenuItem,
+            this.toolStripMenuItem8,
             this.configToolStripMenuItem});
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
             this.optionsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
@@ -180,29 +179,29 @@
             // videoBackendToolStripMenuItem
             // 
             this.videoBackendToolStripMenuItem.Name = "videoBackendToolStripMenuItem";
-            this.videoBackendToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
+            this.videoBackendToolStripMenuItem.Size = new System.Drawing.Size(157, 22);
             this.videoBackendToolStripMenuItem.Text = "&Video Backend";
             // 
             // audioBackendToolStripMenuItem
             // 
             this.audioBackendToolStripMenuItem.Name = "audioBackendToolStripMenuItem";
-            this.audioBackendToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
+            this.audioBackendToolStripMenuItem.Size = new System.Drawing.Size(157, 22);
             this.audioBackendToolStripMenuItem.Text = "&Audio Backend";
             // 
             // toolStripMenuItem8
             // 
             this.toolStripMenuItem8.Name = "toolStripMenuItem8";
-            this.toolStripMenuItem8.Size = new System.Drawing.Size(171, 6);
+            this.toolStripMenuItem8.Size = new System.Drawing.Size(154, 6);
             // 
             // toolStripMenuItem3
             // 
             this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-            this.toolStripMenuItem3.Size = new System.Drawing.Size(171, 6);
+            this.toolStripMenuItem3.Size = new System.Drawing.Size(154, 6);
             // 
             // toolStripMenuItem4
             // 
             this.toolStripMenuItem4.Name = "toolStripMenuItem4";
-            this.toolStripMenuItem4.Size = new System.Drawing.Size(171, 6);
+            this.toolStripMenuItem4.Size = new System.Drawing.Size(154, 6);
             // 
             // helpToolStripMenuItem
             // 
@@ -242,6 +241,15 @@
             this.tsslFps.Name = "tsslFps";
             this.tsslFps.Size = new System.Drawing.Size(22, 17);
             this.tsslFps.Text = "---";
+            // 
+            // videoSettingsToolStripMenuItem
+            // 
+            this.videoSettingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.keepAspectRatioToolStripMenuItem,
+            this.forceSquarePixelsToolStripMenuItem});
+            this.videoSettingsToolStripMenuItem.Name = "videoSettingsToolStripMenuItem";
+            this.videoSettingsToolStripMenuItem.Size = new System.Drawing.Size(157, 22);
+            this.videoSettingsToolStripMenuItem.Text = "&Video Settings";
             // 
             // scScreen
             // 
@@ -287,15 +295,8 @@
             // 
             this.limitFPSToolStripMenuItem.CheckOnClick = true;
             this.limitFPSToolStripMenuItem.Name = "limitFPSToolStripMenuItem";
-            this.limitFPSToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
+            this.limitFPSToolStripMenuItem.Size = new System.Drawing.Size(157, 22);
             this.limitFPSToolStripMenuItem.Text = "&Limit FPS";
-            // 
-            // muteSoundToolStripMenuItem
-            // 
-            this.muteSoundToolStripMenuItem.CheckOnClick = true;
-            this.muteSoundToolStripMenuItem.Name = "muteSoundToolStripMenuItem";
-            this.muteSoundToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
-            this.muteSoundToolStripMenuItem.Text = "&Mute Sound";
             // 
             // keepAspectRatioToolStripMenuItem
             // 
@@ -314,7 +315,7 @@
             // configToolStripMenuItem
             // 
             this.configToolStripMenuItem.Name = "configToolStripMenuItem";
-            this.configToolStripMenuItem.Size = new System.Drawing.Size(174, 22);
+            this.configToolStripMenuItem.Size = new System.Drawing.Size(157, 22);
             this.configToolStripMenuItem.Text = "&Configuration...";
             this.configToolStripMenuItem.Click += new System.EventHandler(this.configToolStripMenuItem_Click);
             // 
@@ -331,7 +332,6 @@
             this.Name = "MainForm";
             this.Text = "---";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
-            this.Load += new System.EventHandler(this.MainForm_Load);
             this.menuStrip.ResumeLayout(false);
             this.menuStrip.PerformLayout();
             this.statusStrip.ResumeLayout(false);
@@ -356,18 +356,15 @@
         private System.Windows.Forms.ToolStripMenuItem optionsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
         private Common.BindableToolStripMenuItem limitFPSToolStripMenuItem;
-        private Common.BindableToolStripMenuItem keepAspectRatioToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
         private Common.BindableToolStripMenuItem configToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
         private System.Windows.Forms.ToolStripStatusLabel tsslFps;
-        private Common.BindableToolStripMenuItem muteSoundToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem emulationToolStripMenuItem;
         private Common.BindableToolStripMenuItem pauseToolStripMenuItem;
         private Common.BindableToolStripMenuItem resetToolStripMenuItem;
         private System.Windows.Forms.ToolStripStatusLabel tsslStatus;
         private Common.BindableToolStripMenuItem infoToolStripMenuItem;
-        private Common.BindableToolStripMenuItem forceSquarePixelsToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem4;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem5;
         private System.Windows.Forms.ToolStripMenuItem bootWithoutMediaToolStripMenuItem;
@@ -378,6 +375,10 @@
         private System.Windows.Forms.ToolStripMenuItem videoBackendToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem audioBackendToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem8;
+        private System.Windows.Forms.ToolStripMenuItem videoSettingsToolStripMenuItem;
+        private Common.BindableToolStripMenuItem keepAspectRatioToolStripMenuItem;
+        private Common.BindableToolStripMenuItem forceSquarePixelsToolStripMenuItem;
+        private System.Windows.Forms.SaveFileDialog sfdSaveScreenshot;
     }
 }
 

@@ -25,6 +25,8 @@ namespace MasterFudgeMk2.Common.VideoBackend
 
         public abstract void Dispose();
 
+        public abstract Bitmap GetRawScreenshot();
+
         public abstract void OnOutputResized(object sender, OutputResizedEventArgs e);
         public abstract void OnRenderScreen(object sender, RenderScreenEventArgs e);
     }

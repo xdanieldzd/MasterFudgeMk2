@@ -12,6 +12,8 @@ namespace MasterFudgeMk2.Common.VideoBackend
         float AspectRatio { get; set; }
         Rectangle ScreenViewport { get; set; }
 
+        Bitmap GetRawScreenshot();
+
         void OnOutputResized(object sender, OutputResizedEventArgs e);
         void OnRenderScreen(object sender, RenderScreenEventArgs e);
     }

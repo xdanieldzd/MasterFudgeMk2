@@ -51,12 +51,6 @@ namespace MasterFudgeMk2
             set { emuConfig.LimitFps = value; }
         }
 
-        public bool MuteSound
-        {
-            get { return (emuConfig.MuteSound = (soundOutput?.Volume == 0.0f)); }
-            set { if (soundOutput != null) soundOutput.Volume = ((emuConfig.MuteSound = value) ? 0.0f : 1.0f); }
-        }
-
         public bool KeepAspectRatio
         {
             get
@@ -181,10 +175,6 @@ namespace MasterFudgeMk2
             base.Dispose(disposing);
         }
 
-        private void MainForm_Load(object sender, EventArgs e)
-        {
-        }
-
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             machineManager?.Shutdown();
@@ -194,7 +184,6 @@ namespace MasterFudgeMk2
         {
             /* Set up databindings for settings */
             limitFPSToolStripMenuItem.DataBindings.Add(nameof(limitFPSToolStripMenuItem.Checked), emuConfig, nameof(emuConfig.LimitFps), false, DataSourceUpdateMode.OnPropertyChanged);
-            muteSoundToolStripMenuItem.DataBindings.Add(nameof(muteSoundToolStripMenuItem.Checked), this, nameof(MuteSound), false, DataSourceUpdateMode.OnPropertyChanged);
             keepAspectRatioToolStripMenuItem.DataBindings.Add(nameof(keepAspectRatioToolStripMenuItem.Checked), this, nameof(KeepAspectRatio), false, DataSourceUpdateMode.OnPropertyChanged);
             forceSquarePixelsToolStripMenuItem.DataBindings.Add(nameof(forceSquarePixelsToolStripMenuItem.Checked), this, nameof(ForceSquarePixels), false, DataSourceUpdateMode.OnPropertyChanged);
 
@@ -288,6 +277,9 @@ namespace MasterFudgeMk2
             }
             CleanUpRecentList();
             UpdateRecentFilesMenu();
+
+            /* Set common image format filter, for screenshot saving */
+            sfdSaveScreenshot.SetCommonImageFilter("png");
         }
 
         private void InitializeVideoBackend(Type videoBackendType)
@@ -587,16 +579,13 @@ namespace MasterFudgeMk2
 
         private void takeScreenshotToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            throw new NotImplementedException();
-
-            /*using (Bitmap screenshot = new Bitmap(outputViewport.Width, outputViewport.Height))
+            if (sfdSaveScreenshot.ShowDialog() == DialogResult.OK)
             {
-                using (Graphics g = Graphics.FromImage(screenshot))
+                using (Bitmap screenshot = renderer.GetRawScreenshot())
                 {
-                    g.DrawImage(outputBitmap, new Rectangle(0, 0, screenshot.Width, screenshot.Height), outputViewport, GraphicsUnit.Pixel);
+                    screenshot.Save(sfdSaveScreenshot.FileName);
                 }
-                screenshot?.Save(@"E:\temp\sms\new\temp.png");
-            }*/
+            }
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)

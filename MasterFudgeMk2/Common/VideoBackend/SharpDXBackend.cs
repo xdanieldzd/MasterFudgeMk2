@@ -13,6 +13,10 @@ using Device = SharpDX.Direct3D11.Device;
 using FactoryD2D = SharpDX.Direct2D1.Factory;
 using FactoryDXGI = SharpDX.DXGI.Factory1;
 
+using DrawingRectangle = System.Drawing.Rectangle;
+using DrawingBitmap = System.Drawing.Bitmap;
+using DrawingBitmapData = System.Drawing.Imaging.BitmapData;
+
 using MasterFudgeMk2.Common.EventArguments;
 
 namespace MasterFudgeMk2.Common.VideoBackend
@@ -34,10 +38,12 @@ namespace MasterFudgeMk2.Common.VideoBackend
         Bitmap bitmap;
         RawRectangleF destinationRectangle, sourceRectangle;
 
+        byte[] lastFrameData;
+
         public override bool KeepAspectRatio { get { return keepAspectRatio; } set { keepAspectRatio = value; ResizeRenderTargetAndDestinationRectangle(); } }
         public override bool ForceSquarePixels { get { return forceSquarePixels; } set { forceSquarePixels = value; ResizeRenderTargetAndDestinationRectangle(); } }
         public override float AspectRatio { get { return aspectRatio; } set { aspectRatio = value; ResizeRenderTargetAndDestinationRectangle(); } }
-        public override System.Drawing.Rectangle ScreenViewport { get { return screenViewport; } set { screenViewport = value; ResizeRenderTargetAndDestinationRectangle(); } }
+        public override DrawingRectangle ScreenViewport { get { return screenViewport; } set { screenViewport = value; ResizeRenderTargetAndDestinationRectangle(); } }
 
         public SharpDXBackend(Control control) : base(control)
         {
@@ -103,6 +109,26 @@ namespace MasterFudgeMk2.Common.VideoBackend
             }
         }
 
+        public override DrawingBitmap GetRawScreenshot()
+        {
+            DrawingBitmap fullScreenshot = new DrawingBitmap((int)(sourceRectangle.Left + sourceRectangle.Right), (int)(sourceRectangle.Top + sourceRectangle.Bottom));
+            DrawingBitmapData bmpData = fullScreenshot.LockBits(new DrawingRectangle(0, 0, fullScreenshot.Width, fullScreenshot.Height), System.Drawing.Imaging.ImageLockMode.WriteOnly, fullScreenshot.PixelFormat);
+
+            byte[] pixelData = new byte[bmpData.Stride * bmpData.Height];
+            System.Buffer.BlockCopy(lastFrameData, 0, pixelData, 0, pixelData.Length);
+            System.Runtime.InteropServices.Marshal.Copy(pixelData, 0, bmpData.Scan0, pixelData.Length);
+
+            fullScreenshot.UnlockBits(bmpData);
+
+            DrawingBitmap screenshot = new DrawingBitmap(screenViewport.Width, screenViewport.Height);
+            using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(screenshot))
+            {
+                g.DrawImage(fullScreenshot, new DrawingRectangle(0, 0, screenshot.Width, screenshot.Height), screenViewport, System.Drawing.GraphicsUnit.Pixel);
+            }
+
+            return screenshot;
+        }
+
         private void ResizeRenderTargetAndDestinationRectangle()
         {
             sourceRectangle = new RawRectangleF(screenViewport.X, screenViewport.Y, (screenViewport.X + screenViewport.Width), (screenViewport.Y + screenViewport.Height));
@@ -144,7 +170,9 @@ namespace MasterFudgeMk2.Common.VideoBackend
             if (bitmap == null)
                 bitmap = new Bitmap(renderTarget, new Size2(e.Width, e.Height), new BitmapProperties(renderTarget.PixelFormat));
 
-            bitmap.CopyFromMemory(e.FrameData, e.Width * 4);
+            lastFrameData = e.FrameData;
+
+            bitmap.CopyFromMemory(lastFrameData, e.Width * 4);
             bitmapRenderTarget.BeginDraw();
             bitmapRenderTarget.Clear(Color.Black);
             bitmapRenderTarget.DrawBitmap(bitmap, 1.0f, BitmapInterpolationMode.NearestNeighbor);

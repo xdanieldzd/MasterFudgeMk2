@@ -63,12 +63,6 @@ namespace MasterFudgeMk2
             set { SettingsConfig.Set(nameof(LimitFps), value); }
         }
 
-        public bool MuteSound
-        {
-            get { return SettingsConfig.GetBoolean(nameof(MuteSound), true); }
-            set { SettingsConfig.Set(nameof(MuteSound), value); }
-        }
-
         public bool KeepAspectRatio
         {
             get { return SettingsConfig.GetBoolean(nameof(KeepAspectRatio), true); }

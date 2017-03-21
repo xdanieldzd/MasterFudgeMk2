@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Windows.Forms;
+using System.Drawing.Imaging;
 
 namespace MasterFudgeMk2
 {
@@ -43,6 +44,23 @@ namespace MasterFudgeMk2
                     return (Enum)Enum.Parse(classType, @enum);
             }
             return null;
+        }
+
+        public static void SetCommonImageFilter(this FileDialog fileDialog, string defaultExtension)
+        {
+            List<string> separateFilters = new List<string>();
+
+            List<ImageCodecInfo> codecs = ImageCodecInfo.GetImageEncoders().ToList();
+            string imageExtensions = string.Join(";", codecs.Select(ici => ici.FilenameExtension));
+            foreach (ImageCodecInfo codec in codecs)
+                separateFilters.Add(string.Format("{0} Files ({1})|{1}", codec.FormatDescription, codec.FilenameExtension.ToLowerInvariant()));
+
+            fileDialog.Filter = string.Format("{0}|Image Files ({1})|{1}|All Files (*.*)|*.*", string.Join("|", separateFilters), imageExtensions.ToLowerInvariant());
+
+            if (defaultExtension != null)
+                fileDialog.FilterIndex = (codecs.IndexOf(codecs.FirstOrDefault(x => x.FormatDescription.ToLowerInvariant().Contains(defaultExtension.ToLowerInvariant()))) + 1);
+            else
+                fileDialog.FilterIndex = (codecs.Count + 1);
         }
     }
 }

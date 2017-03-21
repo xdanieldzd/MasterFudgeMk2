@@ -52,7 +52,6 @@ namespace MasterFudgeMk2.Common.AudioBackend
         }
 
         /* Stubs, this is a .wav file writer after all! */
-        public float Volume { get; set; }
         public void Play() { }
         public void Stop() { }
         public void Reset() { }

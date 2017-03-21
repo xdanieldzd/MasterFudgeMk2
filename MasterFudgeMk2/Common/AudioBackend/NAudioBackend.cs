@@ -11,13 +11,7 @@ namespace MasterFudgeMk2.Common.AudioBackend
     {
         EmulatorWaveProvider waveProvider;
         WaveOut waveOutDevice;
-
-        public float Volume
-        {
-            get { return waveOutDevice.Volume; }
-            set { waveOutDevice.Volume = value; }
-        }
-
+        
         public NAudioBackend(int sampleRate, int numChannels) : base(sampleRate, numChannels)
         {
             waveProvider = new EmulatorWaveProvider(sampleRate, numChannels);
