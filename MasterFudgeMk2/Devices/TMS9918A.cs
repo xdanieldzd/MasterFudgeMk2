@@ -221,14 +221,27 @@ namespace MasterFudgeMk2.Devices
 
         protected virtual void ClearLine(int line)
         {
-            if ((line - virtualStartScanline) < 0 || (line - virtualStartScanline) >= NumVisibleLines)
+            if (line - virtualStartScanline < 0 || (line - virtualStartScanline) >= NumVisibleLines)
             {
+                // TODO: blanking approximation, same as SMS VDP, make less hacky?
+
+                bool doBlackBorder = ((line - (virtualStartScanline / 2) < 0) || (line >= NumScanlines - (virtualStartScanline / 2)));
+
                 for (int i = 0; i < NumPixelsPerLine; i++)
                 {
                     int outputY = (line * NumPixelsPerLine);
                     int outputX = (i % NumPixelsPerLine);
+                    int address = ((outputY + outputX) * 4);
 
-                    WriteColorToFramebuffer((byte)backgroundColor, ((outputY + outputX) * 4));
+                    if (!doBlackBorder)
+                        WriteColorToFramebuffer((byte)backgroundColor, address);
+                    else
+                    {
+                        outputFramebuffer[address] = 0x00;
+                        outputFramebuffer[address + 1] = 0x00;
+                        outputFramebuffer[address + 2] = 0x00;
+                        outputFramebuffer[address + 3] = 0xFF;
+                    }
                 }
             }
         }

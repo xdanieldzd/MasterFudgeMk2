@@ -233,12 +233,25 @@ namespace MasterFudgeMk2.Devices.Sega
         {
             if (line - virtualStartScanline < 0 || (line - virtualStartScanline) >= NumVisibleLines)
             {
+                // TODO: blanking approximation! make less hacky, as per msvdp-20021112.txt section 11, display timing? or is that overkill?
+
+                bool doBlackBorder = ((line - (virtualStartScanline / 2) < 0) || (line >= NumScanlines - (virtualStartScanline / 2)));
+
                 for (int i = 0; i < NumPixelsPerLine; i++)
                 {
                     int outputY = (line * NumPixelsPerLine);
                     int outputX = (i % NumPixelsPerLine);
+                    int address = ((outputY + outputX) * 4);
 
-                    WriteColorToFramebuffer(1, backgroundColor, ((outputY + outputX) * 4));
+                    if (!doBlackBorder)
+                        WriteColorToFramebuffer(1, backgroundColor, address);
+                    else
+                    {
+                        outputFramebuffer[address] = 0x00;
+                        outputFramebuffer[address + 1] = 0x00;
+                        outputFramebuffer[address + 2] = 0x00;
+                        outputFramebuffer[address + 3] = 0xFF;
+                    }
                 }
             }
         }
