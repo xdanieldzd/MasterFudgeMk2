@@ -152,33 +152,111 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
 
         private byte ReadMemory(ushort address)
         {
-            byte primarySlot = (byte)(ppi.ReadPort(0xA8) & 0x03);
+            /*            0-3   4-7   8-B   C-F   */
+            /* PSLOT=0 -> BIOS  BASIC N/A   N/A   */
+            /* PSLOT=1 -> CartA CartA CartA CartA */
+            /* PSLOT=2 -> CartB CartB CartB CartB */
+            /* PSLOT=3 -> RAM3  RAM2  RAM1  RAM0  */
 
-            if (primarySlot == 0x00)
+            // TODO: ram mirroring? or lack thereof?
+
+            byte primarySlot;
+
+            if (address >= 0x0000 && address <= 0x3FFF)
             {
-                /* Main ROM */
-                if (address >= 0x0000 && address <= 0x7FFF)
+                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 0) & 0x03);
+                if (primarySlot == 0x00)
                 {
-                    /* BIOS, BASIC */
+                    /* BIOS */
                     return bios[address & (bios.Length - 1)];
                 }
-            }
-            else if (primarySlot == 0x01)
-            {
-                /* Cartridge A */
-                if (cartridge != null)
+                else if (primarySlot == 0x01)
                 {
-                    return cartridge.Read(address);
+                    /* Cartridge A */
+                    if (cartridge != null) return cartridge.Read(address);
+                }
+                else if (primarySlot == 0x02)
+                {
+                    /* Cartridge B */
+                    return 0x00;
+                }
+                else if (primarySlot == 0x03)
+                {
+                    /* RAM3 */
+                    return wram[address & (ramSize - 1)];
                 }
             }
-            else if (primarySlot == 0x02)
+            else if (address >= 0x4000 && address <= 0x7FFF)
             {
-                /* Cartridge B */
+                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 2) & 0x03);
+                if (primarySlot == 0x00)
+                {
+                    /* BASIC */
+                    return bios[address & (bios.Length - 1)];
+                }
+                else if (primarySlot == 0x01)
+                {
+                    /* Cartridge A */
+                    if (cartridge != null) return cartridge.Read(address);
+                }
+                else if (primarySlot == 0x02)
+                {
+                    /* Cartridge B */
+                    return 0x00;
+                }
+                else if (primarySlot == 0x03)
+                {
+                    /* RAM2 */
+                    return wram[address & (ramSize - 1)];
+                }
             }
-            else if (primarySlot == 0x03)
+            else if (address >= 0x8000 && address <= 0xBFFF)
             {
-                /* Main RAM */
-                return wram[address & (ramSize - 1)];   // TODO: ram doesn't mirror? does it?
+                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 4) & 0x03);
+                if (primarySlot == 0x00)
+                {
+                    /* N/A */
+                    return 0x00;
+                }
+                else if (primarySlot == 0x01)
+                {
+                    /* Cartridge A */
+                    if (cartridge != null) return cartridge.Read(address);
+                }
+                else if (primarySlot == 0x02)
+                {
+                    /* Cartridge B */
+                    return 0x00;
+                }
+                else if (primarySlot == 0x03)
+                {
+                    /* RAM1 */
+                    return wram[address & (ramSize - 1)];
+                }
+            }
+            else if (address >= 0xC000 && address <= 0xFFFF)
+            {
+                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 6) & 0x03);
+                if (primarySlot == 0x00)
+                {
+                    /* N/A */
+                    return 0x00;
+                }
+                else if (primarySlot == 0x01)
+                {
+                    /* Cartridge A */
+                    if (cartridge != null) return cartridge.Read(address);
+                }
+                else if (primarySlot == 0x02)
+                {
+                    /* Cartridge B */
+                    return 0x00;
+                }
+                else if (primarySlot == 0x03)
+                {
+                    /* RAM0 */
+                    return wram[address & (ramSize - 1)];
+                }
             }
 
             return 0x00;
@@ -186,25 +264,103 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
 
         private void WriteMemory(ushort address, byte value)
         {
-            byte primarySlot = (byte)(ppi.ReadPort(0xA8) & 0x03);
+            byte primarySlot;
 
-            if (primarySlot == 0x00)
+            if (address >= 0x0000 && address <= 0x3FFF)
             {
-                /* Main ROM -- cannot write */
+                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 0) & 0x03);
+                if (primarySlot == 0x00)
+                {
+                    /* BIOS -- can't write */
+                    return;
+                }
+                else if (primarySlot == 0x01)
+                {
+                    /* Cartridge A */
+                    cartridge?.Write(address, value);
+                }
+                else if (primarySlot == 0x02)
+                {
+                    /* Cartridge B */
+                    return;
+                }
+                else if (primarySlot == 0x03)
+                {
+                    /* RAM3 */
+                    wram[address & (ramSize - 1)] = value; ;
+                }
             }
-            else if (primarySlot == 0x01)
+            else if (address >= 0x4000 && address <= 0x7FFF)
             {
-                /* Cartridge A */
-                cartridge?.Write(address, value);
+                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 2) & 0x03);
+                if (primarySlot == 0x00)
+                {
+                    /* BASIC -- can't write */
+                    return;
+                }
+                else if (primarySlot == 0x01)
+                {
+                    /* Cartridge A */
+                    cartridge?.Write(address, value);
+                }
+                else if (primarySlot == 0x02)
+                {
+                    /* Cartridge B */
+                    return;
+                }
+                else if (primarySlot == 0x03)
+                {
+                    /* RAM2 */
+                    wram[address & (ramSize - 1)] = value; ;
+                }
             }
-            else if (primarySlot == 0x02)
+            else if (address >= 0x8000 && address <= 0xBFFF)
             {
-                /* Cartridge B */
+                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 4) & 0x03);
+                if (primarySlot == 0x00)
+                {
+                    /* N/A */
+                    return;
+                }
+                else if (primarySlot == 0x01)
+                {
+                    /* Cartridge A */
+                    cartridge?.Write(address, value);
+                }
+                else if (primarySlot == 0x02)
+                {
+                    /* Cartridge B */
+                    return;
+                }
+                else if (primarySlot == 0x03)
+                {
+                    /* RAM1 */
+                    wram[address & (ramSize - 1)] = value; ;
+                }
             }
-            else if (primarySlot == 0x03)
+            else if (address >= 0xC000 && address <= 0xFFFF)
             {
-                /* Main RAM */
-                wram[address & (ramSize - 1)] = value;  // TODO: again, ram mirroring...?
+                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 6) & 0x03);
+                if (primarySlot == 0x00)
+                {
+                    /* N/A */
+                    return;
+                }
+                else if (primarySlot == 0x01)
+                {
+                    /* Cartridge A */
+                    cartridge?.Write(address, value);
+                }
+                else if (primarySlot == 0x02)
+                {
+                    /* Cartridge B */
+                    return;
+                }
+                else if (primarySlot == 0x03)
+                {
+                    /* RAM0 */
+                    wram[address & (ramSize - 1)] = value;
+                }
             }
         }
 
