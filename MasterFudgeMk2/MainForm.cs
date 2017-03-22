@@ -91,7 +91,7 @@ namespace MasterFudgeMk2
             Assembly assembly = Assembly.GetExecutingAssembly();
             var programName = (assembly.GetCustomAttributes(typeof(AssemblyProductAttribute), false).FirstOrDefault() as AssemblyProductAttribute).Product;
             var programVersion = new Version((assembly.GetCustomAttributes(typeof(AssemblyFileVersionAttribute), false).FirstOrDefault() as AssemblyFileVersionAttribute).Version);
-            programNameVersion = string.Format("{0} v{1}", programName, string.Format((programVersion.Major > 0 ? "{0}.{1:D2}" : "{1:D3}"), programVersion.Major, programVersion.Minor));
+            programNameVersion = string.Format("{0} v{1}.{2}", programName, string.Format((programVersion.Major > 0 ? "{0}.{1:D2}" : "{1:D3}"), programVersion.Major, programVersion.Minor), programVersion.Build);
 
             emuConfig = new EmulatorConfiguration();
 
