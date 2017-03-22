@@ -47,8 +47,9 @@ namespace MasterFudgeMk2.Media
                     media = (new StandardMapperCartridge() as IMedia);
                 }
             }
-            else if (machineManager is Machines.Coleco.ColecoVision.Manager)
+            else if (machineManager is Machines.Coleco.ColecoVision.Manager || machineManager is Machines.Various.MSX1.Manager)
             {
+                // TODO: make proper Coleco & MSX mappers and stuff
                 media = (new RomOnlyCartridge() as IMedia);
             }
             else

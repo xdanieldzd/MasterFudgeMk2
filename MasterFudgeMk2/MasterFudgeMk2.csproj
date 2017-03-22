@@ -95,6 +95,8 @@
     <Compile Include="Common\TupleListExtensions.cs" />
     <Compile Include="Common\UiStateBoolean.cs" />
     <Compile Include="Common\EventArguments\PollInputEventArgs.cs" />
+    <Compile Include="Machines\Various\MSX1\Configuration.cs" />
+    <Compile Include="Machines\Various\MSX1\Manager.cs" />
     <Compile Include="VideoBackends\BaseVideoBackend.cs" />
     <Compile Include="VideoBackends\IVideoBackend.cs" />
     <Compile Include="VideoBackends\NullVideoBackend.cs" />

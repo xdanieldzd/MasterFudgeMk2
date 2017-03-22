@@ -46,6 +46,11 @@ namespace MasterFudgeMk2.Machines
                 // TODO: meeeeeh, same as SG1000 & Coleco...
                 return typeof(Sega.SC3000.Manager);
             }
+            else if (romFile.Extension == ".rom")
+            {
+                // TODO: this is just ridiculous...
+                return typeof(Various.MSX1.Manager);
+            }
             else
             {
                 throw new Exception(string.Format("Could not identify machine from ROM '{0}'", romFile.Name));
