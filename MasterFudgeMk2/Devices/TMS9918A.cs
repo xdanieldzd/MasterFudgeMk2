@@ -17,6 +17,7 @@ namespace MasterFudgeMk2.Devices
         public const int NumActiveScanlines = 192;
         public const int NumActivePixelsPerScanline = 256;
 
+        // TODO: pixel-based renderer...? maybe not...
         protected const int pixelLeftBlanking1 = 0;
         protected const int pixelColorBurst = (pixelLeftBlanking1 + 2);
         protected const int pixelLeftBlanking2 = (pixelColorBurst + 14);
@@ -76,7 +77,7 @@ namespace MasterFudgeMk2.Devices
 
         public InterruptState InterruptLine { get; protected set; }
 
-        protected int scanlineTopBlanking, scanlineTopBorder, scanlineActiveDisplay, scanlineBottomBorder, scanlineBottomBlanking, scanlineVerticalBlanking;
+        protected int scanlineActiveDisplay, scanlineBottomBorder, scanlineBottomBlanking, scanlineVerticalBlanking, scanlineTopBlanking, scanlineTopBorder;
         protected int currentScanline;
 
         protected bool isDisplayBlanked { get { return !BitUtilities.IsBitSet(registers[0x01], 6); } }

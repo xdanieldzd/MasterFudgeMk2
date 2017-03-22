@@ -67,7 +67,15 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
 
         public override double RefreshRate { get { return refreshRate; } }
         public override float AspectRatio { get { return (576.0f / 486.0f); } }
-        public override Rectangle ScreenViewport { get { return new Rectangle(0, 0, TMS9918A.NumActivePixelsPerScanline, vdp.NumTotalScanlines); } }
+        public override Rectangle ScreenViewport
+        {
+            get
+            {
+                int screenHeight = (int)((vdp.NumTotalScanlines / 100.0f) * 93.0f);
+                int borderHeight = (vdp.NumTotalScanlines - screenHeight);
+                return new Rectangle(0, borderHeight, TMS9918A.NumActivePixelsPerScanline, (screenHeight - borderHeight));
+            }
+        }
 
         public override bool SupportsBootingWithoutMedia { get { return true; } }
         public override bool CanCurrentlyBootWithoutMedia { get { return File.Exists(configuration.BiosPath); } }
