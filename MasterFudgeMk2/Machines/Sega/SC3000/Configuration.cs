@@ -21,7 +21,7 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
         [Description("External RAM")]
         public ExternalRamSizes ExternalRam
         {
-            get { return (ExternalRamSizes)SettingsConfig.GetString(nameof(ExternalRam)).GetEnumFromFullyQualifiedName(); }
+            get { return (ExternalRamSizes)(SettingsConfig.GetString(nameof(ExternalRam)).GetEnumFromFullyQualifiedName() ?? ExternalRamSizes.ExtNone); }
             set { SettingsConfig.Set(nameof(ExternalRam), value.GetFullyQualifiedName()); }
         }
 

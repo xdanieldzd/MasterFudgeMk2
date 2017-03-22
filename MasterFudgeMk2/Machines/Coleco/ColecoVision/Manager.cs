@@ -161,7 +161,8 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
             vdp = new TMS9918A(vdpClock, refreshRate, false);
             psg = new SN76489(psgClock, refreshRate, (s, e) => { OnAddSampleData(e); });
 
-            bios = File.ReadAllBytes(configuration.BiosPath);
+            if (CanCurrentlyBootWithoutMedia)
+                bios = File.ReadAllBytes(configuration.BiosPath);
         }
 
         public override void Startup()

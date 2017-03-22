@@ -21,13 +21,13 @@ namespace MasterFudgeMk2
 
         public Type VideoBackend
         {
-            get { return Type.GetType(SettingsConfig.GetString(nameof(VideoBackend))); }
+            get { return Type.GetType(SettingsConfig.GetString(nameof(VideoBackend)) ?? typeof(VideoBackends.SharpDXBackend).AssemblyQualifiedName); }
             set { SettingsConfig.Set(nameof(VideoBackend), value.AssemblyQualifiedName); }
         }
 
         public Type AudioBackend
         {
-            get { return Type.GetType(SettingsConfig.GetString(nameof(AudioBackend))); }
+            get { return Type.GetType(SettingsConfig.GetString(nameof(AudioBackend)) ?? typeof(AudioBackends.NullAudioBackend).AssemblyQualifiedName); }
             set { SettingsConfig.Set(nameof(AudioBackend), value.AssemblyQualifiedName); }
         }
 
