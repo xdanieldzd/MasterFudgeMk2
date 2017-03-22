@@ -66,6 +66,23 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
 
         byte[] bios;
 
+        enum KeyboardKeys
+        {
+            D0, D1, D2, D3, D4, D5, D6, D7,
+            D8, D9, Minus, Equals, Backslash, BracketOpen, BracketClose, Semicolon,
+            Grave, Apostrophe, Comma, Period, Slash, DeadKey, A, B,
+            C, D, E, F, G, H, I, J,
+            K, L, M, N, O, P, Q, R,
+            S, T, U, V, W, X, Y, Z,
+            Shift, Ctrl, Graph, Cap, Code, F1, F2, F3,
+            F4, F5, Esc, Tab, Stop, BS, Select, Return,
+            Space, Home, Ins, Del, Left, Up, Down, Right,
+
+            NumMultiply, NumPlus, NumDivide, Num0, Num1, Num2, Num3, Num4,
+            Num5, Num6, Num7, Num8, Num9, NumMinus, NumComma, NumPeriod
+        }
+        bool[,] keyMatrix;
+
         byte portSystemControl, portAVControl;
 
         protected override int totalMasterClockCyclesInFrame { get { return (int)Math.Round(masterClock / refreshRate); } }
@@ -83,6 +100,8 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
             vdp = new TMS9918A(vdpClock, refreshRate, false);
             psg = null;
             ppi = new i8255();
+
+            keyMatrix = new bool[11, 8];
 
             if (CanCurrentlyBootWithoutMedia)
                 bios = File.ReadAllBytes(configuration.BiosPath);
@@ -105,6 +124,10 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
             //psg.Reset();
             vdp.Reset();
             ppi.Reset();
+
+            for (int i = 0; i < keyMatrix.GetLength(0); i++)
+                for (int j = 0; j < keyMatrix.GetLength(1); j++)
+                    keyMatrix[i, j] = false;
 
             portSystemControl = portAVControl = 0x00;
 
@@ -147,7 +170,29 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
 
         protected override void ParseInput(PollInputEventArgs input)
         {
+            SetKeyboardState(KeyboardKeys.D0, (input.Pressed.Contains(System.Windows.Forms.Keys.D0)));
+            SetKeyboardState(KeyboardKeys.D1, (input.Pressed.Contains(System.Windows.Forms.Keys.D1)));
+            SetKeyboardState(KeyboardKeys.D2, (input.Pressed.Contains(System.Windows.Forms.Keys.D2)));
+            SetKeyboardState(KeyboardKeys.D3, (input.Pressed.Contains(System.Windows.Forms.Keys.D3)));
+            SetKeyboardState(KeyboardKeys.A, (input.Pressed.Contains(System.Windows.Forms.Keys.A)));
+
             //
+        }
+
+        private void SetKeyboardState(KeyboardKeys key, bool state)
+        {
+            keyMatrix[((int)key / keyMatrix.GetLength(0)), ((int)key % keyMatrix.GetLength(1))] = state;
+        }
+
+        private void UpdateKeyboard()
+        {
+            int matrixLine = (ppi.PortCOutput & 0x0F);
+
+            byte rowState = 0xFF;
+            for (int i = 0; i < keyMatrix.GetLength(1); i++)
+                if (keyMatrix[matrixLine, i]) rowState &= (byte)~(1 << i);
+
+            ppi.PortBInput = rowState;
         }
 
         private byte ReadMemory(ushort address)
@@ -373,9 +418,9 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 case 0x99: return vdp.ReadControlPort();            /* Status flags */
 
                 /* PPI */
-                case 0xA8:
-                case 0xA9:
-                case 0xAA: return ppi.ReadPort(port);               /* Ports A, B, C */
+                case 0xA8:                                              /* Port A (PSLOT register) */
+                case 0xA9:                                              /* Port B (Keyboard matrix line status) */
+                case 0xAA: UpdateKeyboard(); return ppi.ReadPort(port); /* Port C (Keyboard, cassette, etc.) */
 
                 /* Special ports */
                 case 0xF7: return portAVControl;                    /* A/V control */
@@ -394,9 +439,9 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 case 0x99: vdp.WriteControlPort(value); break;      /* Control port */
 
                 /* PPI */
-                case 0xA8:
-                case 0xAA:
-                case 0xAB: ppi.WritePort(port, value); break;       /* Ports A, C and Control */
+                case 0xA8:                                          /* Port A (PSLOT register) */
+                case 0xAA:                                          /* Port C (Keyboard, cassette, etc.) */
+                case 0xAB: ppi.WritePort(port, value); break;       /* Control port */
 
                 /* Special ports */
                 case 0xF5: portSystemControl = value; break;        /* System control */
