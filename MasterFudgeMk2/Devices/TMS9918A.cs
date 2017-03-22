@@ -10,11 +10,21 @@ namespace MasterFudgeMk2.Devices
 {
     public class TMS9918A
     {
-        public const int NumScanlinesPal = 313;
-        public const int NumScanlinesNtsc = 262;
+        public const int NumTotalScanlinesPal = 313;
+        public const int NumTotalScanlinesNtsc = 262;
+        public const int NumTotalPixelsPerScanline = 342;
 
-        public const int NumVisibleLines = 192;
-        public const int NumPixelsPerLine = 256;
+        public const int NumActiveScanlines = 192;
+        public const int NumActivePixelsPerScanline = 256;
+
+        protected const int pixelLeftBlanking1 = 0;
+        protected const int pixelColorBurst = (pixelLeftBlanking1 + 2);
+        protected const int pixelLeftBlanking2 = (pixelColorBurst + 14);
+        protected const int pixelLeftBorder = (pixelLeftBlanking2 + 8);
+        protected const int pixelActiveDisplay = (pixelLeftBorder + 13);
+        protected const int pixelRightBorder = (pixelActiveDisplay + 256);
+        protected const int pixelRightBlanking = (pixelRightBorder + 15);
+        protected const int pixelHorizontalSync = (pixelRightBlanking + 8);
 
         public const int NumSpritesMax = 32;
 
@@ -36,7 +46,7 @@ namespace MasterFudgeMk2.Devices
             set { controlWord = (ushort)((codeRegister << 14) | (value & 0x3FFF)); }
         }
 
-        public virtual int NumScanlines { get { return (isPalChip ? NumScanlinesPal : NumScanlinesNtsc); } }
+        public virtual int NumTotalScanlines { get { return (isPalChip ? NumTotalScanlinesPal : NumTotalScanlinesNtsc); } }
 
         [Flags]
         protected enum StatusFlags : byte
@@ -66,7 +76,8 @@ namespace MasterFudgeMk2.Devices
 
         public InterruptState InterruptLine { get; protected set; }
 
-        protected int currentScanline, virtualStartScanline;
+        protected int scanlineTopBlanking, scanlineTopBorder, scanlineActiveDisplay, scanlineBottomBorder, scanlineBottomBlanking, scanlineVerticalBlanking;
+        protected int currentScanline;
 
         protected bool isDisplayBlanked { get { return !BitUtilities.IsBitSet(registers[0x01], 6); } }
 
@@ -136,11 +147,11 @@ namespace MasterFudgeMk2.Devices
             registers = new byte[0x10];
             vram = new byte[0x4000];
 
-            screenUsage = new byte[NumPixelsPerLine * NumScanlines];
+            screenUsage = new byte[NumActivePixelsPerScanline * NumTotalScanlines];
 
-            outputFramebuffer = new byte[(NumPixelsPerLine * NumScanlines) * 4];
+            outputFramebuffer = new byte[(NumActivePixelsPerScanline * NumTotalScanlines) * 4];
 
-            clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / NumScanlines);
+            clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / NumTotalScanlines);
         }
 
         public virtual void Startup()
@@ -158,12 +169,34 @@ namespace MasterFudgeMk2.Devices
 
             statusFlags = StatusFlags.None;
 
+            SetScanlineBoundaries();
             currentScanline = 0;
-            virtualStartScanline = ((NumScanlines - NumVisibleLines) / 2);
 
             ClearScreen();
 
             cycleCount = 0;
+        }
+
+        public virtual void SetScanlineBoundaries()
+        {
+            if (!isPalChip)
+            {
+                scanlineActiveDisplay = 0;
+                scanlineBottomBorder = (scanlineActiveDisplay + 192);
+                scanlineBottomBlanking = (scanlineBottomBorder + 24);
+                scanlineVerticalBlanking = (scanlineBottomBlanking + 3);
+                scanlineTopBlanking = (scanlineVerticalBlanking + 3);
+                scanlineTopBorder = (scanlineTopBlanking + 13);
+            }
+            else
+            {
+                scanlineActiveDisplay = 0;
+                scanlineBottomBorder = (scanlineActiveDisplay + 192);
+                scanlineBottomBlanking = (scanlineBottomBorder + 48);
+                scanlineVerticalBlanking = (scanlineBottomBlanking + 3);
+                scanlineTopBlanking = (scanlineVerticalBlanking + 3);
+                scanlineTopBorder = (scanlineTopBlanking + 13);
+            }
         }
 
         public virtual bool Step(int clockCyclesInStep)
@@ -176,15 +209,16 @@ namespace MasterFudgeMk2.Devices
             {
                 if (currentScanline == 0) ClearScreen();
 
-                ClearLine(currentScanline);
                 RenderLine(currentScanline);
                 currentScanline++;
 
-                if (currentScanline == (NumVisibleLines + 1))
+                if (currentScanline == (NumActiveScanlines + 1))
                     isFrameInterruptPending = true;
 
-                if (currentScanline == NumScanlines)
+                if (currentScanline == NumTotalScanlines)
                 {
+                    RearrangeFramebuffer();
+
                     currentScanline = 0;
                     drawScreen = true;
                 }
@@ -196,6 +230,17 @@ namespace MasterFudgeMk2.Devices
             }
 
             return drawScreen;
+        }
+
+        protected void RearrangeFramebuffer()
+        {
+            // TODO: a bit of a kludge, maybe rework somehow?
+            int bytesUntilDisplayEnd = ((scanlineTopBlanking * NumActivePixelsPerScanline) * 4);
+            byte[] pixelDataTop = new byte[((NumTotalScanlines - scanlineTopBlanking) * NumActivePixelsPerScanline) * 4];
+
+            Buffer.BlockCopy(outputFramebuffer, bytesUntilDisplayEnd, pixelDataTop, 0, pixelDataTop.Length);
+            Buffer.BlockCopy(outputFramebuffer, 0, outputFramebuffer, pixelDataTop.Length, bytesUntilDisplayEnd);
+            Buffer.BlockCopy(pixelDataTop, 0, outputFramebuffer, 0, pixelDataTop.Length);
         }
 
         protected virtual byte ReadVram(ushort address)
@@ -219,37 +264,11 @@ namespace MasterFudgeMk2.Devices
             for (int i = 0; i < screenUsage.Length; i++) screenUsage[i] = screenUsageEmpty;
         }
 
-        protected virtual void ClearLine(int line)
-        {
-            if (line - virtualStartScanline < 0 || (line - virtualStartScanline) >= NumVisibleLines)
-            {
-                // TODO: blanking approximation, same as SMS VDP, make less hacky?
-
-                bool doBlackBorder = ((line - (virtualStartScanline / 2) < 0) || (line >= NumScanlines - (virtualStartScanline / 2)));
-
-                for (int i = 0; i < NumPixelsPerLine; i++)
-                {
-                    int outputY = (line * NumPixelsPerLine);
-                    int outputX = (i % NumPixelsPerLine);
-                    int address = ((outputY + outputX) * 4);
-
-                    if (!doBlackBorder)
-                        WriteColorToFramebuffer((byte)backgroundColor, address);
-                    else
-                    {
-                        outputFramebuffer[address] = 0x00;
-                        outputFramebuffer[address + 1] = 0x00;
-                        outputFramebuffer[address + 2] = 0x00;
-                        outputFramebuffer[address + 3] = 0xFF;
-                    }
-                }
-            }
-        }
-
         protected virtual void RenderLine(int line)
         {
-            if (line < NumVisibleLines)
+            if (line < scanlineBottomBorder)
             {
+                /* Active display */
                 if (isModeGraphics1)
                 {
                     RenderGraphics1Background(line);
@@ -274,6 +293,45 @@ namespace MasterFudgeMk2.Devices
                     /* Undocumented mode, not emulated */
                 }
             }
+            else if (line < scanlineBottomBlanking)
+            {
+                /* Bottom border */
+                BlankLine(line, (byte)backgroundColor);
+            }
+            else if (line < scanlineVerticalBlanking)
+            {
+                /* Bottom blanking */
+                BlankLine(line, 0x08, 0x08, 0x08);
+            }
+            else if (line < scanlineTopBlanking)
+            {
+                /* Vertical blanking */
+                BlankLine(line, 0x00, 0x00, 0x00);
+            }
+            else if (line < scanlineTopBorder)
+            {
+                /* Top blanking */
+                BlankLine(line, 0x08, 0x08, 0x08);
+            }
+            else if (line < NumTotalScanlines)
+            {
+                /* Top border */
+                BlankLine(line, (byte)backgroundColor);
+            }
+        }
+
+        protected void BlankLine(int line, ushort colorValue)
+        {
+            int outputY = (line * NumActivePixelsPerScanline);
+            for (int x = 0; x < NumActivePixelsPerScanline; x++)
+                WriteColorToFramebuffer(colorValue, (outputY + (x % NumActivePixelsPerScanline)) * 4);
+        }
+
+        protected void BlankLine(int line, byte b, byte g, byte r)
+        {
+            int outputY = (line * NumActivePixelsPerScanline);
+            for (int x = 0; x < NumActivePixelsPerScanline; x++)
+                WriteColorToFramebuffer(b, g, r, (outputY + (x % NumActivePixelsPerScanline)) * 4);
         }
 
         protected void RenderGraphics1Background(int line)
@@ -308,8 +366,8 @@ namespace MasterFudgeMk2.Devices
                     if (c == 0 || isDisplayBlanked) c = (byte)backgroundColor;
 
                     /* Calculate output framebuffer location, get BGRA values from color table, write to framebuffer */
-                    int outputY = ((virtualStartScanline + (line % NumVisibleLines)) * NumPixelsPerLine);
-                    int outputX = (((tile * tileWidth) + pixel) % NumPixelsPerLine);
+                    int outputY = ((line % NumTotalScanlines) * NumActivePixelsPerScanline);
+                    int outputX = (((tile * tileWidth) + pixel) % NumActivePixelsPerScanline);
 
                     if (screenUsage[outputY + outputX] == screenUsageEmpty)
                     {
@@ -322,7 +380,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void RenderGraphics2Background(int line)
         {
-            int numTilesPerLine = (NumPixelsPerLine / 8);
+            int numTilesPerLine = (NumActivePixelsPerScanline / 8);
 
             /* Calculate some base addresses */
             ushort patternGeneratorBaseAddress = (ushort)((registers[0x04] & 0x04) << 11);
@@ -356,8 +414,8 @@ namespace MasterFudgeMk2.Devices
                     if (c == 0 || isDisplayBlanked) c = (byte)backgroundColor;
 
                     /* Calculate output framebuffer location, get BGRA values from color table, write to framebuffer */
-                    int outputY = ((virtualStartScanline + (line % NumVisibleLines)) * NumPixelsPerLine);
-                    int outputX = (((tile * 8) + pixel) % NumPixelsPerLine);
+                    int outputY = ((line % NumTotalScanlines) * NumActivePixelsPerScanline);
+                    int outputX = (((tile * 8) + pixel) % NumActivePixelsPerScanline);
 
                     if (screenUsage[outputY + outputX] == screenUsageEmpty)
                     {
@@ -378,11 +436,11 @@ namespace MasterFudgeMk2.Devices
             /* Draw left and right borders */
             for (int i = 0; i < 8; i++)
             {
-                int outputY = ((virtualStartScanline + (line % NumVisibleLines)) * NumPixelsPerLine);
-                int outputX = (i % NumPixelsPerLine);
+                int outputY = ((line % NumTotalScanlines) * NumActivePixelsPerScanline);
+                int outputX = (i % NumActivePixelsPerScanline);
 
                 WriteColorToFramebuffer((byte)backgroundColor, ((outputY + outputX) * 4));
-                WriteColorToFramebuffer((byte)backgroundColor, ((outputY + (outputX + (NumPixelsPerLine - 8))) * 4));
+                WriteColorToFramebuffer((byte)backgroundColor, ((outputY + (outputX + (NumActivePixelsPerScanline - 8))) * 4));
             }
 
             /* Calculate/set some variables we'll need */
@@ -411,8 +469,8 @@ namespace MasterFudgeMk2.Devices
                     byte c = (isDisplayBlanked ? (byte)backgroundColor : colorIndicesBackgroundText[((pixelLineData >> (7 - pixel)) & 0x01)]);
 
                     /* Calculate output framebuffer location, get BGRA values from color table, write to framebuffer */
-                    int outputY = ((virtualStartScanline + (line % NumVisibleLines)) * NumPixelsPerLine);
-                    int outputX = (8 + ((tile * tileWidth) + pixel) % NumPixelsPerLine);
+                    int outputY = ((line % NumTotalScanlines) * NumActivePixelsPerScanline);
+                    int outputX = (8 + ((tile * tileWidth) + pixel) % NumActivePixelsPerScanline);
 
                     if (screenUsage[outputY + outputX] == screenUsageEmpty)
                     {
@@ -450,7 +508,7 @@ namespace MasterFudgeMk2.Devices
 
                 /* Modify Y coord as needed */
                 yCoordinate++;
-                if (yCoordinate > NumVisibleLines)
+                if (yCoordinate > NumActiveScanlines)
                     yCoordinate -= 256;
 
                 /* Ignore this sprite if on incorrect lines */
@@ -509,11 +567,11 @@ namespace MasterFudgeMk2.Devices
             for (int pixel = 0; pixel < (8 * (zoomShift + 1)); pixel++)
             {
                 /* Check if a pixel needs to be drawn, and if we're outside the screen */
-                if (spriteColor == 0 || ((pixelLineData >> (7 - (pixel >> zoomShift))) & 0x01) == 0x00 || (xCoordinate + pixel) >= NumPixelsPerLine || (xCoordinate + pixel) < 0) continue;
+                if (spriteColor == 0 || ((pixelLineData >> (7 - (pixel >> zoomShift))) & 0x01) == 0x00 || (xCoordinate + pixel) >= NumActivePixelsPerScanline || (xCoordinate + pixel) < 0) continue;
 
                 /* Calculate output framebuffer coordinates */
-                int outputY = ((virtualStartScanline + yCoordinate) * NumPixelsPerLine);
-                int outputX = ((xCoordinate + pixel) % NumPixelsPerLine);
+                int outputY = ((yCoordinate + scanlineActiveDisplay) * NumActivePixelsPerScanline);
+                int outputX = ((xCoordinate + pixel) % NumActivePixelsPerScanline);
 
                 if ((screenUsage[outputY + outputX] & screenUsageSprite) == screenUsageSprite)
                 {
@@ -529,6 +587,14 @@ namespace MasterFudgeMk2.Devices
                 /* Note that there is a sprite here regardless */
                 screenUsage[outputY + outputX] |= screenUsageSprite;
             }
+        }
+
+        protected void WriteColorToFramebuffer(byte b, byte g, byte r, int address)
+        {
+            outputFramebuffer[address] = b;
+            outputFramebuffer[address + 1] = g;
+            outputFramebuffer[address + 2] = r;
+            outputFramebuffer[address + 3] = 0xFF;
         }
 
         protected virtual void WriteColorToFramebuffer(ushort colorValue, int address)

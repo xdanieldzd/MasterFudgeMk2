@@ -11,7 +11,7 @@ namespace MasterFudgeMk2.Devices.Sega
     /* Sega 315-5246, commonly found on SMS2 systems */
     public class SegaSMS2VDP : TMS9918A
     {
-        public const int NumVisibleLinesLow = NumVisibleLines;
+        public const int NumVisibleLinesLow = NumActiveScanlines;
         public const int NumVisibleLinesMed = 224;
         public const int NumVisibleLinesHigh = 240;
 
@@ -126,9 +126,9 @@ namespace MasterFudgeMk2.Devices.Sega
         {
             cram = new byte[0x20];
 
-            screenUsage = new byte[NumPixelsPerLine * NumScanlines];
+            screenUsage = new byte[NumActivePixelsPerScanline * NumTotalScanlines];
 
-            outputFramebuffer = new byte[(NumPixelsPerLine * NumScanlines) * 4];
+            outputFramebuffer = new byte[(NumActivePixelsPerScanline * NumTotalScanlines) * 4];
         }
 
         public override void Reset()
@@ -160,6 +160,78 @@ namespace MasterFudgeMk2.Devices.Sega
             UpdateViewport();
         }
 
+        public override void SetScanlineBoundaries()
+        {
+            if (!isPalChip)
+            {
+                /* NTSC */
+                if (screenHeight == NumVisibleLinesHigh)
+                {
+                    /* 240 active lines, invalid on NTSC (dummy values) */
+                    scanlineTopBlanking = 0;
+                    scanlineTopBorder = 0;
+                    scanlineActiveDisplay = 0;
+                    scanlineBottomBorder = 0;
+                    scanlineBottomBlanking = 0;
+                    scanlineVerticalBlanking = 0;
+                }
+                else if (screenHeight == NumVisibleLinesMed)
+                {
+                    /* 224 active lines */
+                    scanlineActiveDisplay = 0;
+                    scanlineBottomBorder = (scanlineActiveDisplay + 224);
+                    scanlineBottomBlanking = (scanlineBottomBorder + 8);
+                    scanlineVerticalBlanking = (scanlineBottomBlanking + 3);
+                    scanlineTopBlanking = (scanlineVerticalBlanking + 3);
+                    scanlineTopBorder = (scanlineTopBlanking + 13);
+                }
+                else
+                {
+                    /* 192 active lines */
+                    scanlineActiveDisplay = 0;
+                    scanlineBottomBorder = (scanlineActiveDisplay + 192);
+                    scanlineBottomBlanking = (scanlineBottomBorder + 24);
+                    scanlineVerticalBlanking = (scanlineBottomBlanking + 3);
+                    scanlineTopBlanking = (scanlineVerticalBlanking + 3);
+                    scanlineTopBorder = (scanlineTopBlanking + 13);
+                }
+            }
+            else
+            {
+                /* PAL */
+                if (screenHeight == NumVisibleLinesHigh)
+                {
+                    /* 240 active lines */
+                    scanlineActiveDisplay = 0;
+                    scanlineBottomBorder = (scanlineActiveDisplay + 240);
+                    scanlineBottomBlanking = (scanlineBottomBorder + 24);
+                    scanlineVerticalBlanking = (scanlineBottomBlanking + 3);
+                    scanlineTopBlanking = (scanlineVerticalBlanking + 3);
+                    scanlineTopBorder = (scanlineTopBlanking + 13);
+                }
+                else if (screenHeight == NumVisibleLinesMed)
+                {
+                    /* 224 active lines */
+                    scanlineActiveDisplay = 0;
+                    scanlineBottomBorder = (scanlineActiveDisplay + 224);
+                    scanlineBottomBlanking = (scanlineBottomBorder + 32);
+                    scanlineVerticalBlanking = (scanlineBottomBlanking + 3);
+                    scanlineTopBlanking = (scanlineVerticalBlanking + 3);
+                    scanlineTopBorder = (scanlineTopBlanking + 13);
+                }
+                else
+                {
+                    /* 192 active lines */
+                    scanlineActiveDisplay = 0;
+                    scanlineBottomBorder = (scanlineActiveDisplay + 192);
+                    scanlineBottomBlanking = (scanlineBottomBorder + 48);
+                    scanlineVerticalBlanking = (scanlineBottomBlanking + 3);
+                    scanlineTopBlanking = (scanlineVerticalBlanking + 3);
+                    scanlineTopBorder = (scanlineTopBlanking + 13);
+                }
+            }
+        }
+
         public override bool Step(int clockCyclesInStep)
         {
             bool drawScreen = false;
@@ -178,7 +250,6 @@ namespace MasterFudgeMk2.Devices.Sega
                     verticalScrollLatched = registers[0x09];
                 }
 
-                ClearLine(currentScanline);
                 RenderLine(currentScanline);
 
                 vCounter = AdjustVCounter(currentScanline);
@@ -199,8 +270,10 @@ namespace MasterFudgeMk2.Devices.Sega
                 if (vCounter == (screenHeight + 1))
                     isFrameInterruptPending = true;
 
-                if (currentScanline == NumScanlines)
+                if (currentScanline == NumTotalScanlines)
                 {
+                    RearrangeFramebuffer();
+
                     currentScanline = 0;
                     drawScreen = true;
                 }
@@ -229,38 +302,11 @@ namespace MasterFudgeMk2.Devices.Sega
             for (int i = 0; i < screenUsage.Length; i++) screenUsage[i] = screenUsageEmpty;
         }
 
-        protected override void ClearLine(int line)
-        {
-            if (line - virtualStartScanline < 0 || (line - virtualStartScanline) >= NumVisibleLines)
-            {
-                // TODO: blanking approximation! make less hacky, as per msvdp-20021112.txt section 11, display timing? or is that overkill?
-
-                bool doBlackBorder = ((line - (virtualStartScanline / 2) < 0) || (line >= NumScanlines - (virtualStartScanline / 2)));
-
-                for (int i = 0; i < NumPixelsPerLine; i++)
-                {
-                    int outputY = (line * NumPixelsPerLine);
-                    int outputX = (i % NumPixelsPerLine);
-                    int address = ((outputY + outputX) * 4);
-
-                    if (!doBlackBorder)
-                        WriteColorToFramebuffer(1, backgroundColor, address);
-                    else
-                    {
-                        outputFramebuffer[address] = 0x00;
-                        outputFramebuffer[address + 1] = 0x00;
-                        outputFramebuffer[address + 2] = 0x00;
-                        outputFramebuffer[address + 3] = 0xFF;
-                    }
-                }
-            }
-        }
-
         protected override void RenderLine(int line)
         {
-            if (currentScanline < screenHeight)
+            if (line < scanlineBottomBorder)
             {
-                /* Check mode */
+                /* Active display */
                 if (isMasterSystemMode)
                 {
                     RenderMode4Background(line);
@@ -290,6 +336,38 @@ namespace MasterFudgeMk2.Devices.Sega
                     /* Undocumented mode, not emulated */
                 }
             }
+            else if (line < scanlineBottomBlanking)
+            {
+                /* Bottom border */
+                BlankLine(line, 1, backgroundColor);
+            }
+            else if (line < scanlineVerticalBlanking)
+            {
+                /* Bottom blanking */
+                BlankLine(line, 0x08, 0x08, 0x08);
+            }
+            else if (line < scanlineTopBlanking)
+            {
+                /* Vertical blanking */
+                BlankLine(line, 0x00, 0x00, 0x00);
+            }
+            else if (line < scanlineTopBorder)
+            {
+                /* Top blanking */
+                BlankLine(line, 0x08, 0x08, 0x08);
+            }
+            else if (line < NumTotalScanlines)
+            {
+                /* Top border */
+                BlankLine(line, 1, backgroundColor);
+            }
+        }
+
+        protected void BlankLine(int line, int palette, int color)
+        {
+            int outputY = (line * NumActivePixelsPerScanline);
+            for (int x = 0; x < NumActivePixelsPerScanline; x++)
+                WriteColorToFramebuffer(cram[((palette * 16) + color)], (outputY + (x % NumActivePixelsPerScanline)) * 4);
         }
 
         private void RenderMode4Background(int line)
@@ -304,7 +382,7 @@ namespace MasterFudgeMk2.Devices.Sega
             /* Vertical scrolling (global) */
             int scrolledLine = line;
 
-            int numColumnsPerLine = (NumPixelsPerLine / 8);
+            int numColumnsPerLine = (NumActivePixelsPerScanline / 8);
             for (int column = 0; column < numColumnsPerLine; column++)
             {
                 /* Horizontal scroll (column) */
@@ -331,8 +409,8 @@ namespace MasterFudgeMk2.Devices.Sega
                 for (int pixel = 0; pixel < 8; pixel++)
                 {
                     /* Calculate output framebuffer location, determine column masking, write to framebuffer */
-                    int outputX = (horizontalOffset + (column * 8) + pixel);
-                    int outputY = ((virtualStartScanline + (line % screenHeight)) * NumPixelsPerLine);
+                    int outputX = ((horizontalOffset + (column * 8) + pixel) % NumActivePixelsPerScanline);
+                    int outputY = ((line % NumTotalScanlines) * NumActivePixelsPerScanline);
                     int hShift = (hFlip ? pixel : (7 - pixel));
 
                     int c = (((ReadVram((ushort)(tileAddress + 0)) >> hShift) & 0x1) << 0);
@@ -340,7 +418,7 @@ namespace MasterFudgeMk2.Devices.Sega
                     c |= (((ReadVram((ushort)(tileAddress + 2)) >> hShift) & 0x1) << 2);
                     c |= (((ReadVram((ushort)(tileAddress + 3)) >> hShift) & 0x1) << 3);
 
-                    if ((screenUsage[outputY + outputX] == screenUsageEmpty) && (outputX < NumPixelsPerLine))
+                    if (screenUsage[outputY + outputX] == screenUsageEmpty)
                     {
                         screenUsage[outputY + outputX] |= ((c != 0 && priority) ? screenUsageBgHighPriority : screenUsageBgLowPriority);
 
@@ -418,7 +496,7 @@ namespace MasterFudgeMk2.Devices.Sega
                     for (int pixel = 0; pixel < spriteWidth; pixel++)
                     {
                         /* Get output X position & check column 0 masking */
-                        int outputX = ((xCoordinate + pixel) % NumPixelsPerLine);
+                        int outputX = ((xCoordinate + pixel) % NumActivePixelsPerScanline);
                         if (isColumn0MaskEnabled && outputX < 8) continue;
 
                         /* Get color & check transparency and position */
@@ -426,9 +504,9 @@ namespace MasterFudgeMk2.Devices.Sega
                         c |= (((ReadVram((ushort)(tileAddress + 1)) >> (7 - (pixel >> zoomShift))) & 0x1) << 1);
                         c |= (((ReadVram((ushort)(tileAddress + 2)) >> (7 - (pixel >> zoomShift))) & 0x1) << 2);
                         c |= (((ReadVram((ushort)(tileAddress + 3)) >> (7 - (pixel >> zoomShift))) & 0x1) << 3);
-                        if (c == 0 || xCoordinate + pixel >= NumPixelsPerLine) continue;
+                        if (c == 0 || xCoordinate + pixel >= NumActivePixelsPerScanline) continue;
 
-                        int outputY = ((virtualStartScanline + (line % screenHeight)) * NumPixelsPerLine);
+                        int outputY = ((line % screenHeight) * NumActivePixelsPerScanline);
                         if ((screenUsage[outputY + outputX] & screenUsageSprite) == screenUsageSprite)
                         {
                             /* Set sprite collision flag */
@@ -526,7 +604,7 @@ namespace MasterFudgeMk2.Devices.Sega
                 nametableHeight = 224;
             }
 
-            virtualStartScanline = ((NumScanlines - screenHeight) / 2);
+            SetScanlineBoundaries();
         }
 
         protected virtual void WriteColorToFramebuffer(int palette, int color, int address)

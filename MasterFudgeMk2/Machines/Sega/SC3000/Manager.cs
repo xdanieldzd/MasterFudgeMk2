@@ -193,7 +193,7 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
 
         public override double RefreshRate { get { return refreshRate; } }
         public override float AspectRatio { get { return (!configuration.IsPalSystem ? (576.0f / 486.0f) : (720.0f / 486.0f)); } }
-        public override Rectangle ScreenViewport { get { return new Rectangle(0, 0, TMS9918A.NumPixelsPerLine, vdp.NumScanlines); } }
+        public override Rectangle ScreenViewport { get { return new Rectangle(0, 0, TMS9918A.NumActivePixelsPerScanline, vdp.NumTotalScanlines); } }
 
         public override bool SupportsBootingWithoutMedia { get { return false; } }
         public override bool CanCurrentlyBootWithoutMedia { get { return false; } }
@@ -351,7 +351,7 @@ namespace MasterFudgeMk2.Machines.Sega.SC3000
             double currentMasterClockCycles = (currentCpuClockCycles * 3.0);
 
             if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
-                OnRenderScreen(new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines, vdp.OutputFramebuffer));
+                OnRenderScreen(new RenderScreenEventArgs(TMS9918A.NumActivePixelsPerScanline, vdp.NumTotalScanlines, vdp.OutputFramebuffer));
 
             if (resetButtonPressed)
             {

@@ -14,7 +14,7 @@ namespace MasterFudgeMk2.Devices.Sega
         public const int ScreenViewportHeight = 144;
 
         /* NTSC only */
-        public override int NumScanlines { get { return NumScanlinesNtsc; } }
+        public override int NumTotalScanlines { get { return NumTotalScanlinesNtsc; } }
 
         ushort cramLatch;
 

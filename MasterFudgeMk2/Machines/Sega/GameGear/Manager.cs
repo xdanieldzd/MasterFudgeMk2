@@ -44,7 +44,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
 
         public override double RefreshRate { get { return refreshRate; } }
         public override float AspectRatio { get { return (576.0f / 486.0f); } }
-        public override Rectangle ScreenViewport { get { return new Rectangle(SegaGGVDP.ScreenViewportX, ((vdp.NumScanlines / 2) - (SegaGGVDP.ScreenViewportHeight) / 2), SegaGGVDP.ScreenViewportWidth, SegaGGVDP.ScreenViewportHeight); } }
+        public override Rectangle ScreenViewport { get { return new Rectangle(SegaGGVDP.ScreenViewportX, ((vdp.NumTotalScanlines / 2) - (SegaGGVDP.ScreenViewportHeight) / 2), SegaGGVDP.ScreenViewportWidth, SegaGGVDP.ScreenViewportHeight); } }
 
         public override bool SupportsBootingWithoutMedia { get { return false; } }
         public override bool CanCurrentlyBootWithoutMedia { get { return false; } }
@@ -197,7 +197,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             double currentMasterClockCycles = (currentCpuClockCycles * 3.0);
 
             if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
-                OnRenderScreen(new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, vdp.NumScanlines, vdp.OutputFramebuffer));
+                OnRenderScreen(new RenderScreenEventArgs(TMS9918A.NumActivePixelsPerScanline, vdp.NumTotalScanlines, vdp.OutputFramebuffer));
 
             cpu.SetInterruptLine(vdp.InterruptLine);
 
