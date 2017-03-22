@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.IO;
 using System.Globalization;
+using System.Reflection;
 
 using MasterFudgeMk2.AudioBackends;
 using MasterFudgeMk2.VideoBackends;
@@ -28,6 +29,7 @@ namespace MasterFudgeMk2
     {
         const int maxRecentFiles = 12;
 
+        string programNameVersion;
         EmulatorConfiguration emuConfig;
 
         Stopwatch stopWatch;
@@ -85,6 +87,11 @@ namespace MasterFudgeMk2
         public MainForm()
         {
             InitializeComponent();
+
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            var programName = (assembly.GetCustomAttributes(typeof(AssemblyProductAttribute), false).FirstOrDefault() as AssemblyProductAttribute).Product;
+            var programVersion = new Version((assembly.GetCustomAttributes(typeof(AssemblyFileVersionAttribute), false).FirstOrDefault() as AssemblyFileVersionAttribute).Version);
+            programNameVersion = string.Format("{0} v{1}", programName, string.Format((programVersion.Major > 0 ? "{0}.{1:D2}" : "{1:D3}"), programVersion.Major, programVersion.Minor));
 
             emuConfig = new EmulatorConfiguration();
 
@@ -165,7 +172,8 @@ namespace MasterFudgeMk2
                 {
                     if (soundOutput is FileWriterBackend)
                     {
-                        (soundOutput as FileWriterBackend).Save(@"E:\temp\sms\new\test.wav");
+                        if (Directory.Exists(@"E:\temp\sms\new\"))
+                            (soundOutput as FileWriterBackend).Save(@"E:\temp\sms\new\test.wav");
                     }
                     soundOutput.Dispose();
                 }
@@ -328,14 +336,14 @@ namespace MasterFudgeMk2
         {
             if (!emulationIsInitialized.IsTrue)
             {
-                Text = Application.ProductName;
+                Text = programNameVersion;
                 tsslFps.Text = "";
                 tsslStatus.Text = "Ready";
             }
             else
             {
                 string mediaName = (romFileInfo != null && romFileInfo.Exists ? romFileInfo.Name : "[No Media]");
-                Text = string.Format("{0} - {1} - {2}", Application.ProductName, machineManager.FriendlyShortName, mediaName);
+                Text = string.Format("{0} - {1} - {2}", programNameVersion, machineManager.FriendlyShortName, mediaName);
                 tsslStatus.Text = (emulationIsPaused ? "Paused" : "Running");
             }
         }
@@ -642,7 +650,17 @@ namespace MasterFudgeMk2
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show(string.Format("{0} by {1}", Application.ProductName, Application.CompanyName), "About", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Assembly assembly = Assembly.GetExecutingAssembly();
+
+            var description = (assembly.GetCustomAttributes(typeof(AssemblyDescriptionAttribute), false).FirstOrDefault() as AssemblyDescriptionAttribute).Description;
+            var copyright = (assembly.GetCustomAttributes(typeof(AssemblyCopyrightAttribute), false).FirstOrDefault() as AssemblyCopyrightAttribute).Copyright;
+
+            StringBuilder aboutBuilder = new StringBuilder();
+            aboutBuilder.AppendFormat("{0} - {1}", programNameVersion, description);
+            aboutBuilder.AppendLine();
+            aboutBuilder.AppendLine();
+            aboutBuilder.AppendLine(copyright);
+            MessageBox.Show(aboutBuilder.ToString(), "About", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }

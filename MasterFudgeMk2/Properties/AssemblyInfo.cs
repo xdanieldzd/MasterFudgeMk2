@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // Attribute gesteuert. Ändern Sie diese Attributwerte, um die Informationen zu ändern,
 // die einer Assembly zugeordnet sind.
 [assembly: AssemblyTitle("MasterFudgeMk2")]
-[assembly: AssemblyDescription("Game system emulator")]
+[assembly: AssemblyDescription("Classic game system emulator")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("xdaniel")]
 [assembly: AssemblyProduct("MasterFudgeMk2")]
-[assembly: AssemblyCopyright("Written 2017 by xdaniel")]
+[assembly: AssemblyCopyright("Written 2016-2017 by xdaniel")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
