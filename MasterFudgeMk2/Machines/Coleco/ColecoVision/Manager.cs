@@ -190,6 +190,16 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
             base.Reset();
         }
 
+        public override bool CanLoadMedia(FileInfo mediaFile)
+        {
+            byte[] romStart = new byte[2];
+            using (FileStream file = new FileStream(mediaFile.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                file.Read(romStart, 0, romStart.Length);
+            }
+            return ((romStart[0x00] == 0xAA && romStart[0x01] == 0x55) || (romStart[0x00] == 0x55 && romStart[0x01] == 0xAA));
+        }
+
         public override void LoadMedia(IMedia media)
         {
             cartridge = media;

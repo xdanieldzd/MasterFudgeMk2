@@ -62,7 +62,8 @@ namespace MasterFudgeMk2.Media.Sega
 
         public RomHeader(byte[] romData)
         {
-            int headerOffset = (romData.Length <= 0x8000 ? romData.Length - 0x10 : 0x7FF0);
+            int copierHeaderLength = (romData.Length & 0x200);
+            int headerOffset = (((romData.Length - copierHeaderLength) <= 0x8000 ? ((romData.Length - copierHeaderLength) - 0x10) : 0x7FF0) + copierHeaderLength);
 
             TMRSEGAString = Encoding.ASCII.GetString(romData, headerOffset, 8);
             Reserved = new byte[] { romData[headerOffset + 8], romData[headerOffset + 9] };

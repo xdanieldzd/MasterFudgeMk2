@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.ComponentModel;
 using System.Drawing;
+using System.IO;
 
 using MasterFudgeMk2.Common;
 using MasterFudgeMk2.Common.EventArguments;
@@ -161,6 +162,11 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
             pauseButtonPressed = pauseButtonToggle = false;
 
             base.Reset();
+        }
+
+        public override bool CanLoadMedia(FileInfo mediaFile)
+        {
+            return (mediaFile.Extension == ".sg");
         }
 
         public override void LoadMedia(IMedia media)

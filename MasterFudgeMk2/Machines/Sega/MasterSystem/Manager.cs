@@ -8,6 +8,7 @@ using System.Drawing;
 using MasterFudgeMk2.Common;
 using MasterFudgeMk2.Common.EventArguments;
 using MasterFudgeMk2.Media;
+using MasterFudgeMk2.Media.Sega;
 using MasterFudgeMk2.Devices;
 using MasterFudgeMk2.Devices.Sega;
 
@@ -199,6 +200,12 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             pauseButtonPressed = pauseButtonToggle = false;
 
             base.Reset();
+        }
+
+        public override bool CanLoadMedia(FileInfo mediaFile)
+        {
+            RomHeader romHeader = new RomHeader(File.ReadAllBytes(mediaFile.FullName));
+            return (romHeader.IsSEGAStringCorrect && !romHeader.IsGameGear);
         }
 
         public override void LoadMedia(IMedia media)

@@ -4,10 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
+using System.IO;
 
 using MasterFudgeMk2.Common;
 using MasterFudgeMk2.Common.EventArguments;
 using MasterFudgeMk2.Media;
+using MasterFudgeMk2.Media.Sega;
 using MasterFudgeMk2.Devices;
 using MasterFudgeMk2.Devices.Sega;
 using System.Drawing;
@@ -169,6 +171,12 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             portStereoControl = 0xFF;
 
             base.Reset();
+        }
+
+        public override bool CanLoadMedia(FileInfo mediaFile)
+        {
+            RomHeader romHeader = new RomHeader(File.ReadAllBytes(mediaFile.FullName));
+            return (romHeader.IsSEGAStringCorrect && romHeader.IsGameGear);
         }
 
         public override void LoadMedia(IMedia media)

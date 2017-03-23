@@ -7,6 +7,7 @@ using System.IO;
 
 using MasterFudgeMk2.Common;
 using MasterFudgeMk2.Media.Sega;
+using MasterFudgeMk2.Media.MSX;
 using MasterFudgeMk2.Machines;
 
 namespace MasterFudgeMk2.Media
@@ -47,10 +48,15 @@ namespace MasterFudgeMk2.Media
                     media = (new StandardMapperCartridge() as IMedia);
                 }
             }
-            else if (machineManager is Machines.Coleco.ColecoVision.Manager || machineManager is Machines.Various.MSX1.Manager)
+            else if (machineManager is Machines.Coleco.ColecoVision.Manager)
             {
-                // TODO: make proper Coleco & MSX mappers and stuff
+                // TODO: whatever mapper(s) there's on Coleco
                 media = (new RomOnlyCartridge() as IMedia);
+            }
+            else if (machineManager is Machines.Various.MSX1.Manager)
+            {
+                // TODO: more mappers!
+                media = (new RawRomCartridge() as IMedia);
             }
             else
             {

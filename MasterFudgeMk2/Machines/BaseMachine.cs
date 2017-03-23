@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 
 using MasterFudgeMk2.Common.EventArguments;
 using MasterFudgeMk2.Media;
@@ -47,6 +48,7 @@ namespace MasterFudgeMk2.Machines
             currentCyclesInLine = currentMasterClockCyclesInFrame = 0;
         }
 
+        public abstract bool CanLoadMedia(FileInfo mediaFile);
         public abstract void LoadMedia(IMedia media);
         public abstract void SaveMedia();
         public abstract void Shutdown();

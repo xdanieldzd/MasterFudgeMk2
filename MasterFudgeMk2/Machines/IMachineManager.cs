@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 
 using MasterFudgeMk2.Common.EventArguments;
 using MasterFudgeMk2.Media;
@@ -78,6 +79,12 @@ namespace MasterFudgeMk2.Machines
         /// Reset machine
         /// </summary>
         void Reset();
+        /// <summary>
+        /// Determine if machine can load media file
+        /// </summary>
+        /// <param name="mediaFile">File info for media file</param>
+        /// <returns>True if machine can handle media</returns>
+        bool CanLoadMedia(FileInfo mediaFile);
         /// <summary>
         /// Load media into machine
         /// </summary>

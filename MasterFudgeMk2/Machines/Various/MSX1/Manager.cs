@@ -8,6 +8,7 @@ using System.Drawing;
 using MasterFudgeMk2.Common;
 using MasterFudgeMk2.Common.EventArguments;
 using MasterFudgeMk2.Media;
+using MasterFudgeMk2.Media.MSX;
 using MasterFudgeMk2.Devices;
 
 namespace MasterFudgeMk2.Machines.Various.MSX1
@@ -346,6 +347,12 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
             portSystemControl = portAVControl = 0x00;
 
             base.Reset();
+        }
+
+        public override bool CanLoadMedia(FileInfo mediaFile)
+        {
+            RomHeader romHeader = new RomHeader(File.ReadAllBytes(mediaFile.FullName));
+            return romHeader.IsValidCartridge;
         }
 
         public override void LoadMedia(IMedia media)
