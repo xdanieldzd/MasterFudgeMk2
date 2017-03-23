@@ -11,11 +11,24 @@ using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Media.MSX;
 using MasterFudgeMk2.Devices;
 
-namespace MasterFudgeMk2.Machines.Various.MSX1
+namespace MasterFudgeMk2.Machines.Various.MSX
 {
     [TypeConverter(typeof(DescriptionTypeConverter))]
     public enum MachineInputs
     {
+        [Description("Joystick 1: Up")]
+        J1Up,
+        [Description("Joystick 1: Down")]
+        J1Down,
+        [Description("Joystick 1: Left")]
+        J1Left,
+        [Description("Joystick 1: Right")]
+        J1Right,
+        [Description("Joystick 1: Trigger A")]
+        J1TriggerA,
+        [Description("Joystick 1: Trigger B")]
+        J1TriggerB,
+
         [Description("Number 0")]
         D0,
         [Description("Number 1")]
@@ -262,15 +275,26 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
         const double psgClock = cpuClock;
 
         /* Devices on bus */
-        IMedia cartridge;
+        IMedia cartridgeA, cartridgeB;
         int ramSize;
         byte[] wram;
         Z80A cpu;
         TMS9918A vdp;
-        object psg; // TODO: General Instrument AY-3-8910, huh...
+        AY38910 psg;
         i8255 ppi;
 
         byte[] bios;
+
+        enum JoystickButtons
+        {
+            Up = (1 << 0),
+            Down = (1 << 1),
+            Left = (1 << 2),
+            Right = (1 << 3),
+            TriggerA = (1 << 4),
+            TriggerB = (1 << 5),
+            Mask = (((TriggerB << 1) - 1) - (Up - 1))
+        }
 
         enum KeyboardKeys
         {
@@ -308,12 +332,13 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 default: throw new Exception("Invalid internal RAM size");
             }
 
-            cartridge = null;
+            cartridgeA = null;
+            cartridgeB = null;
 
             cpu = new Z80A(cpuClock, refreshRate, ReadMemory, WriteMemory, ReadPort, WritePort);
             wram = new byte[ramSize];
             vdp = new TMS9918A(vdpClock, refreshRate, false);
-            psg = null;
+            psg = new AY38910(psgClock, refreshRate, (s, e) => { OnAddSampleData(e); });
             ppi = new i8255();
 
             keyMatrix = new bool[11, 8];
@@ -325,7 +350,7 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
         public override void Startup()
         {
             cpu.Startup();
-            //psg.Startup();
+            psg.Startup();
             vdp.Startup();
 
             Reset();
@@ -333,10 +358,11 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
 
         public override void Reset()
         {
-            cartridge?.Reset();
+            cartridgeA?.Reset();
+            cartridgeB?.Reset();
 
             cpu.Reset();
-            //psg.Reset();
+            psg.Reset();
             vdp.Reset();
             ppi.Reset();
 
@@ -357,7 +383,7 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
 
         public override void LoadMedia(IMedia media)
         {
-            cartridge = media;
+            cartridgeA = media;
         }
 
         public override void SaveMedia()
@@ -367,9 +393,10 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
 
         public override void Shutdown()
         {
-            cartridge?.Unload();
+            cartridgeA?.Unload();
+            cartridgeB?.Unload();
 
-            //psg?.Shutdown();
+            psg?.Shutdown();
         }
 
         public override void RunStep()
@@ -384,13 +411,26 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
 
             cpu.SetInterruptLine(vdp.InterruptLine);
 
-            //psg.Step((int)Math.Round(currentCpuClockCycles));
+            psg.Step((int)Math.Round(currentCpuClockCycles));
 
             currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
         }
 
         protected override void ParseInput(PollInputEventArgs input)
         {
+            /* Joystick */
+            // TODO: joystick select in IO port B
+            byte joyData = 0x00;
+            if (input.Pressed.Contains(configuration.J1Up)) joyData |= (byte)JoystickButtons.Up;
+            if (input.Pressed.Contains(configuration.J1Down)) joyData |= (byte)JoystickButtons.Down;
+            if (input.Pressed.Contains(configuration.J1Left)) joyData |= (byte)JoystickButtons.Left;
+            if (input.Pressed.Contains(configuration.J1Right)) joyData |= (byte)JoystickButtons.Right;
+            if (input.Pressed.Contains(configuration.J1TriggerA)) joyData |= (byte)JoystickButtons.TriggerA;
+            if (input.Pressed.Contains(configuration.J1TriggerB)) joyData |= (byte)JoystickButtons.TriggerB;
+            joyData = (byte)(~joyData & 0x7F);
+            psg.WriteDataDirect(0x0E, joyData);
+
+            /* Keyboard */
             SetKeyboardState(KeyboardKeys.D0, (input.Pressed.Contains(configuration.D0)));
             SetKeyboardState(KeyboardKeys.D1, (input.Pressed.Contains(configuration.D1)));
             SetKeyboardState(KeyboardKeys.D2, (input.Pressed.Contains(configuration.D2)));
@@ -505,8 +545,6 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
             /* PSLOT=2 -> CartB CartB CartB CartB */
             /* PSLOT=3 -> RAM3  RAM2  RAM1  RAM0  */
 
-            // TODO: ram mirroring? or lack thereof?
-
             byte primarySlot;
 
             if (address >= 0x0000 && address <= 0x3FFF)
@@ -520,12 +558,12 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 else if (primarySlot == 0x01)
                 {
                     /* Cartridge A */
-                    if (cartridge != null) return cartridge.Read(address);
+                    if (cartridgeA != null) return cartridgeA.Read(address);
                 }
                 else if (primarySlot == 0x02)
                 {
                     /* Cartridge B */
-                    return 0x00;
+                    if (cartridgeB != null) return cartridgeB.Read(address);
                 }
                 else if (primarySlot == 0x03)
                 {
@@ -545,12 +583,12 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 else if (primarySlot == 0x01)
                 {
                     /* Cartridge A */
-                    if (cartridge != null) return cartridge.Read(address);
+                    if (cartridgeA != null) return cartridgeA.Read(address);
                 }
                 else if (primarySlot == 0x02)
                 {
                     /* Cartridge B */
-                    return 0x00;
+                    if (cartridgeB != null) return cartridgeB.Read(address);
                 }
                 else if (primarySlot == 0x03)
                 {
@@ -570,12 +608,12 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 else if (primarySlot == 0x01)
                 {
                     /* Cartridge A */
-                    if (cartridge != null) return cartridge.Read(address);
+                    if (cartridgeA != null) return cartridgeA.Read(address);
                 }
                 else if (primarySlot == 0x02)
                 {
                     /* Cartridge B */
-                    return 0x00;
+                    if (cartridgeB != null) return cartridgeB.Read(address);
                 }
                 else if (primarySlot == 0x03)
                 {
@@ -595,12 +633,12 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 else if (primarySlot == 0x01)
                 {
                     /* Cartridge A */
-                    if (cartridge != null) return cartridge.Read(address);
+                    if (cartridgeA != null) return cartridgeA.Read(address);
                 }
                 else if (primarySlot == 0x02)
                 {
                     /* Cartridge B */
-                    return 0x00;
+                    if (cartridgeB != null) return cartridgeB.Read(address);
                 }
                 else if (primarySlot == 0x03)
                 {
@@ -628,12 +666,12 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 else if (primarySlot == 0x01)
                 {
                     /* Cartridge A */
-                    cartridge?.Write(address, value);
+                    cartridgeA?.Write(address, value);
                 }
                 else if (primarySlot == 0x02)
                 {
                     /* Cartridge B */
-                    return;
+                    cartridgeB?.Write(address, value);
                 }
                 else if (primarySlot == 0x03)
                 {
@@ -652,12 +690,12 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 else if (primarySlot == 0x01)
                 {
                     /* Cartridge A */
-                    cartridge?.Write(address, value);
+                    cartridgeA?.Write(address, value);
                 }
                 else if (primarySlot == 0x02)
                 {
                     /* Cartridge B */
-                    return;
+                    cartridgeB?.Write(address, value);
                 }
                 else if (primarySlot == 0x03)
                 {
@@ -676,12 +714,12 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 else if (primarySlot == 0x01)
                 {
                     /* Cartridge A */
-                    cartridge?.Write(address, value);
+                    cartridgeA?.Write(address, value);
                 }
                 else if (primarySlot == 0x02)
                 {
                     /* Cartridge B */
-                    return;
+                    cartridgeB?.Write(address, value);
                 }
                 else if (primarySlot == 0x03)
                 {
@@ -700,12 +738,12 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 else if (primarySlot == 0x01)
                 {
                     /* Cartridge A */
-                    cartridge?.Write(address, value);
+                    cartridgeA?.Write(address, value);
                 }
                 else if (primarySlot == 0x02)
                 {
                     /* Cartridge B */
-                    return;
+                    cartridgeB?.Write(address, value);
                 }
                 else if (primarySlot == 0x03)
                 {
@@ -722,6 +760,9 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 /* VDP */
                 case 0x98: return vdp.ReadDataPort();               /* Data port */
                 case 0x99: return vdp.ReadControlPort();            /* Status flags */
+
+                /* PSG */
+                case 0xA2: return psg.ReadData();                   /* Data */
 
                 /* PPI */
                 case 0xA8:                                              /* Port A (PSLOT register) */
@@ -743,6 +784,10 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 /* VDP */
                 case 0x98: vdp.WriteDataPort(value); break;         /* Data port */
                 case 0x99: vdp.WriteControlPort(value); break;      /* Control port */
+
+                /* PSG */
+                case 0xA0: psg.WriteIndex(value); break;            /* Index */
+                case 0xA1: psg.WriteData(value); break;             /* Data */
 
                 /* PPI */
                 case 0xA8:                                          /* Port A (PSLOT register) */

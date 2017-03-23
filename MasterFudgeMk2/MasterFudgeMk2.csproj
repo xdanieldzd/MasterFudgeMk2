@@ -95,8 +95,9 @@
     <Compile Include="Common\TupleListExtensions.cs" />
     <Compile Include="Common\UiStateBoolean.cs" />
     <Compile Include="Common\EventArguments\PollInputEventArgs.cs" />
-    <Compile Include="Machines\Various\MSX1\Configuration.cs" />
-    <Compile Include="Machines\Various\MSX1\Manager.cs" />
+    <Compile Include="Devices\AY38910.cs" />
+    <Compile Include="Machines\Various\MSX\Configuration.cs" />
+    <Compile Include="Machines\Various\MSX\Manager.cs" />
     <Compile Include="Media\MSX\BaseCartridge.cs" />
     <Compile Include="Media\MSX\RawRomCartridge.cs" />
     <Compile Include="Media\MSX\RomHeader.cs" />

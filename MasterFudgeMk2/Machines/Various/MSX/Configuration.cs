@@ -5,11 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
 
-namespace MasterFudgeMk2.Machines.Various.MSX1
+namespace MasterFudgeMk2.Machines.Various.MSX
 {
     public sealed class Configuration : MachineConfiguration
     {
-        public override sealed string Filename { get { return "MSX1.xml"; } }
+        public override sealed string Filename { get { return "MSX.xml"; } }
 
         /* Settings */
         [Description("BIOS Path")]
@@ -26,7 +26,44 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
             set { SettingsConfig.Set(nameof(InternalRam), value.GetFullyQualifiedName()); }
         }
 
-        /* Inputs */
+        /* Joysticks */
+        public Enum J1Up
+        {
+            get { return InputConfig.GetString(MachineInputs.J1Up.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
+            set { InputConfig.Set(MachineInputs.J1Up.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
+        }
+
+        public Enum J1Down
+        {
+            get { return InputConfig.GetString(MachineInputs.J1Down.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
+            set { InputConfig.Set(MachineInputs.J1Down.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
+        }
+
+        public Enum J1Left
+        {
+            get { return InputConfig.GetString(MachineInputs.J1Left.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
+            set { InputConfig.Set(MachineInputs.J1Left.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
+        }
+
+        public Enum J1Right
+        {
+            get { return InputConfig.GetString(MachineInputs.J1Right.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
+            set { InputConfig.Set(MachineInputs.J1Right.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
+        }
+
+        public Enum J1TriggerA
+        {
+            get { return InputConfig.GetString(MachineInputs.J1TriggerA.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
+            set { InputConfig.Set(MachineInputs.J1TriggerA.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
+        }
+
+        public Enum J1TriggerB
+        {
+            get { return InputConfig.GetString(MachineInputs.J1TriggerB.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
+            set { InputConfig.Set(MachineInputs.J1TriggerB.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
+        }
+
+        /* Keyboard */
         public Enum D0
         {
             get { return InputConfig.GetString(MachineInputs.D0.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
