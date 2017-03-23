@@ -12,6 +12,211 @@ using MasterFudgeMk2.Devices;
 
 namespace MasterFudgeMk2.Machines.Various.MSX1
 {
+    [TypeConverter(typeof(DescriptionTypeConverter))]
+    public enum MachineInputs
+    {
+        [Description("Number 0")]
+        D0,
+        [Description("Number 1")]
+        D1,
+        [Description("Number 2")]
+        D2,
+        [Description("Number 3")]
+        D3,
+        [Description("Number 4")]
+        D4,
+        [Description("Number 5")]
+        D5,
+        [Description("Number 6")]
+        D6,
+        [Description("Number 7")]
+        D7,
+
+        [Description("Number 8")]
+        D8,
+        [Description("Number 9")]
+        D9,
+
+        [Description("Minus Key")]
+        Minus,
+        [Description("Equals Key")]
+        EqualSign,
+        [Description("Backslash Key")]
+        Backslash,
+        [Description("\"[\" Key")]
+        BracketOpen,
+        [Description("\"]\" Key")]
+        BracketClose,
+        [Description("Semicolon Key")]
+        Semicolon,
+
+        [Description("Grave Key")]
+        Grave,
+        [Description("Apostrophe Key")]
+        Apostrophe,
+        [Description("Comma Key")]
+        Comma,
+        [Description("Period Key")]
+        Period,
+        [Description("Slash Key")]
+        Slash,
+        [Description("Dead Key/Modifier")]
+        DeadKey,
+        [Description("A Key")]
+        A,
+        [Description("B Key")]
+        B,
+
+        [Description("C Key")]
+        C,
+        [Description("D Key")]
+        D,
+        [Description("E Key")]
+        E,
+        [Description("F Key")]
+        F,
+        [Description("G Key")]
+        G,
+        [Description("H Key")]
+        H,
+        [Description("I Key")]
+        I,
+        [Description("J Key")]
+        J,
+
+        [Description("K Key")]
+        K,
+        [Description("L Key")]
+        L,
+        [Description("M Key")]
+        M,
+        [Description("N Key")]
+        N,
+        [Description("O Key")]
+        O,
+        [Description("P Key")]
+        P,
+        [Description("Q Key")]
+        Q,
+        [Description("R Key")]
+        R,
+
+        [Description("S Key")]
+        S,
+        [Description("T Key")]
+        T,
+        [Description("U Key")]
+        U,
+        [Description("V Key")]
+        V,
+        [Description("W Key")]
+        W,
+        [Description("X Key")]
+        X,
+        [Description("Y Key")]
+        Y,
+        [Description("Z Key")]
+        Z,
+
+        [Description("Shift Key")]
+        Shift,
+        [Description("Ctrl Key")]
+        Ctrl,
+        [Description("Graph Key")]
+        Graph,
+        [Description("Cap Key")]
+        Cap,
+        [Description("Code Key")]
+        Code,
+        [Description("F1-6 Key")]
+        F1,
+        [Description("F2-7 Key")]
+        F2,
+        [Description("F3-8 Key")]
+        F3,
+
+        [Description("F4-9 Key")]
+        F4,
+        [Description("F5-10 Key")]
+        F5,
+        [Description("Esc Key")]
+        Esc,
+        [Description("Tab Key")]
+        Tab,
+        [Description("Stop Key")]
+        Stop,
+        [Description("Backspace Key")]
+        BS,
+        [Description("Select Key")]
+        Select,
+        [Description("Return Key")]
+        Return,
+
+        [Description("Spacebar")]
+        Space,
+        [Description("Home Key")]
+        Home,
+        [Description("Ins Key")]
+        Ins,
+        [Description("Del Key")]
+        Del,
+        [Description("Cursor Left")]
+        Left,
+        [Description("Cursor Up")]
+        Up,
+        [Description("Cursor Down")]
+        Down,
+        [Description("Cursor Right")]
+        Right,
+
+        [Description("Numpad: Multiply")]
+        NumMultiply,
+        [Description("Numpad: Plus")]
+        NumPlus,
+        [Description("Numpad: Divide")]
+        NumDivide,
+        [Description("Numpad: 0")]
+        Num0,
+        [Description("Numpad: 1")]
+        Num1,
+        [Description("Numpad: 2")]
+        Num2,
+        [Description("Numpad: 3")]
+        Num3,
+        [Description("Numpad: 4")]
+        Num4,
+
+        [Description("Numpad: 5")]
+        Num5,
+        [Description("Numpad: 6")]
+        Num6,
+        [Description("Numpad: 7")]
+        Num7,
+        [Description("Numpad: 8")]
+        Num8,
+        [Description("Numpad: 9")]
+        Num9,
+        [Description("Numpad: Minus")]
+        NumMinus,
+        [Description("Numpad: Comma")]
+        NumComma,
+        [Description("Numpad: Period")]
+        NumPeriod
+    }
+
+    [TypeConverter(typeof(DescriptionTypeConverter))]
+    public enum InternalRamSizes
+    {
+        [Description("8 Kilobyte")]
+        Ext8Kilobyte,
+        [Description("16 Kilobyte")]
+        Ext16Kilobyte,
+        [Description("32 Kilobyte")]
+        Ext32Kilobyte,
+        [Description("64 Kilobyte")]
+        Ext64Kilobyte
+    }
+
     class Manager : BaseMachine
     {
         public override string FriendlyName { get { return "Generic MSX"; } }
@@ -50,7 +255,6 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
         /* Constants */
         const double masterClock = 10738635;
         const double refreshRate = 59.922743;
-        const int ramSize = 1 * 65536;  // TODO: 64k atm, make selectable in settings (8/16/32/64k)
 
         const double cpuClock = (masterClock / 3.0);
         const double vdpClock = (masterClock / 1.0);
@@ -58,6 +262,7 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
 
         /* Devices on bus */
         IMedia cartridge;
+        int ramSize;
         byte[] wram;
         Z80A cpu;
         TMS9918A vdp;
@@ -68,18 +273,18 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
 
         enum KeyboardKeys
         {
-            D0, D1, D2, D3, D4, D5, D6, D7,
-            D8, D9, Minus, Equals, Backslash, BracketOpen, BracketClose, Semicolon,
-            Grave, Apostrophe, Comma, Period, Slash, DeadKey, A, B,
-            C, D, E, F, G, H, I, J,
-            K, L, M, N, O, P, Q, R,
-            S, T, U, V, W, X, Y, Z,
-            Shift, Ctrl, Graph, Cap, Code, F1, F2, F3,
-            F4, F5, Esc, Tab, Stop, BS, Select, Return,
-            Space, Home, Ins, Del, Left, Up, Down, Right,
-
-            NumMultiply, NumPlus, NumDivide, Num0, Num1, Num2, Num3, Num4,
-            Num5, Num6, Num7, Num8, Num9, NumMinus, NumComma, NumPeriod
+            /* Column 0-7 */
+            D0 = (8 * 0), D1, D2, D3, D4, D5, D6, D7,                                               /* Line 0 */
+            D8 = (8 * 1), D9, Minus, EqualSign, Backslash, BracketOpen, BracketClose, Semicolon,    /* Line 1 */
+            Grave = (8 * 2), Apostrophe, Comma, Period, Slash, DeadKey, A, B,                       /* Line 2 */
+            C = (8 * 3), D, E, F, G, H, I, J,                                                       /* Line 3 */
+            K = (8 * 4), L, M, N, O, P, Q, R,                                                       /* Line 4 */
+            S = (8 * 5), T, U, V, W, X, Y, Z,                                                       /* Line 5 */
+            Shift = (8 * 6), Ctrl, Graph, Cap, Code, F1, F2, F3,                                    /* Line 6 */
+            F4 = (8 * 7), F5, Esc, Tab, Stop, BS, Select, Return,                                   /* Line 7 */
+            Space = (8 * 8), Home, Ins, Del, Left, Up, Down, Right,                                 /* Line 8 */
+            NumMultiply = (8 * 9), NumPlus, NumDivide, Num0, Num1, Num2, Num3, Num4,                /* Line 9 */
+            Num5 = (8 * 10), Num6, Num7, Num8, Num9, NumMinus, NumComma, NumPeriod                  /* Line 10 */
         }
         bool[,] keyMatrix;
 
@@ -92,6 +297,15 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
         public Manager()
         {
             configuration = new Configuration();
+
+            switch (configuration.InternalRam)
+            {
+                case InternalRamSizes.Ext8Kilobyte: ramSize = 1 * 8192; break;
+                case InternalRamSizes.Ext16Kilobyte: ramSize = 1 * 16384; break;
+                case InternalRamSizes.Ext32Kilobyte: ramSize = 1 * 32768; break;
+                case InternalRamSizes.Ext64Kilobyte: ramSize = 1 * 65536; break;
+                default: throw new Exception("Invalid internal RAM size");
+            }
 
             cartridge = null;
 
@@ -170,18 +384,99 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
 
         protected override void ParseInput(PollInputEventArgs input)
         {
-            SetKeyboardState(KeyboardKeys.D0, (input.Pressed.Contains(System.Windows.Forms.Keys.D0)));
-            SetKeyboardState(KeyboardKeys.D1, (input.Pressed.Contains(System.Windows.Forms.Keys.D1)));
-            SetKeyboardState(KeyboardKeys.D2, (input.Pressed.Contains(System.Windows.Forms.Keys.D2)));
-            SetKeyboardState(KeyboardKeys.D3, (input.Pressed.Contains(System.Windows.Forms.Keys.D3)));
-            SetKeyboardState(KeyboardKeys.A, (input.Pressed.Contains(System.Windows.Forms.Keys.A)));
-
-            //
+            SetKeyboardState(KeyboardKeys.D0, (input.Pressed.Contains(configuration.D0)));
+            SetKeyboardState(KeyboardKeys.D1, (input.Pressed.Contains(configuration.D1)));
+            SetKeyboardState(KeyboardKeys.D2, (input.Pressed.Contains(configuration.D2)));
+            SetKeyboardState(KeyboardKeys.D3, (input.Pressed.Contains(configuration.D3)));
+            SetKeyboardState(KeyboardKeys.D4, (input.Pressed.Contains(configuration.D4)));
+            SetKeyboardState(KeyboardKeys.D5, (input.Pressed.Contains(configuration.D5)));
+            SetKeyboardState(KeyboardKeys.D6, (input.Pressed.Contains(configuration.D6)));
+            SetKeyboardState(KeyboardKeys.D7, (input.Pressed.Contains(configuration.D7)));
+            SetKeyboardState(KeyboardKeys.D8, (input.Pressed.Contains(configuration.D8)));
+            SetKeyboardState(KeyboardKeys.D9, (input.Pressed.Contains(configuration.D9)));
+            SetKeyboardState(KeyboardKeys.Minus, (input.Pressed.Contains(configuration.Minus)));
+            SetKeyboardState(KeyboardKeys.EqualSign, (input.Pressed.Contains(configuration.EqualSign)));
+            SetKeyboardState(KeyboardKeys.Backslash, (input.Pressed.Contains(configuration.Backslash)));
+            SetKeyboardState(KeyboardKeys.BracketOpen, (input.Pressed.Contains(configuration.BracketOpen)));
+            SetKeyboardState(KeyboardKeys.BracketClose, (input.Pressed.Contains(configuration.BracketClose)));
+            SetKeyboardState(KeyboardKeys.Semicolon, (input.Pressed.Contains(configuration.Semicolon)));
+            SetKeyboardState(KeyboardKeys.Grave, (input.Pressed.Contains(configuration.Grave)));
+            SetKeyboardState(KeyboardKeys.Apostrophe, (input.Pressed.Contains(configuration.Apostrophe)));
+            SetKeyboardState(KeyboardKeys.Comma, (input.Pressed.Contains(configuration.Comma)));
+            SetKeyboardState(KeyboardKeys.Period, (input.Pressed.Contains(configuration.Period)));
+            SetKeyboardState(KeyboardKeys.Slash, (input.Pressed.Contains(configuration.Slash)));
+            SetKeyboardState(KeyboardKeys.DeadKey, (input.Pressed.Contains(configuration.DeadKey)));
+            SetKeyboardState(KeyboardKeys.A, (input.Pressed.Contains(configuration.A)));
+            SetKeyboardState(KeyboardKeys.B, (input.Pressed.Contains(configuration.B)));
+            SetKeyboardState(KeyboardKeys.C, (input.Pressed.Contains(configuration.C)));
+            SetKeyboardState(KeyboardKeys.D, (input.Pressed.Contains(configuration.D)));
+            SetKeyboardState(KeyboardKeys.E, (input.Pressed.Contains(configuration.E)));
+            SetKeyboardState(KeyboardKeys.F, (input.Pressed.Contains(configuration.F)));
+            SetKeyboardState(KeyboardKeys.G, (input.Pressed.Contains(configuration.G)));
+            SetKeyboardState(KeyboardKeys.H, (input.Pressed.Contains(configuration.H)));
+            SetKeyboardState(KeyboardKeys.I, (input.Pressed.Contains(configuration.I)));
+            SetKeyboardState(KeyboardKeys.J, (input.Pressed.Contains(configuration.J)));
+            SetKeyboardState(KeyboardKeys.K, (input.Pressed.Contains(configuration.K)));
+            SetKeyboardState(KeyboardKeys.L, (input.Pressed.Contains(configuration.L)));
+            SetKeyboardState(KeyboardKeys.M, (input.Pressed.Contains(configuration.M)));
+            SetKeyboardState(KeyboardKeys.N, (input.Pressed.Contains(configuration.N)));
+            SetKeyboardState(KeyboardKeys.O, (input.Pressed.Contains(configuration.O)));
+            SetKeyboardState(KeyboardKeys.P, (input.Pressed.Contains(configuration.P)));
+            SetKeyboardState(KeyboardKeys.Q, (input.Pressed.Contains(configuration.Q)));
+            SetKeyboardState(KeyboardKeys.R, (input.Pressed.Contains(configuration.R)));
+            SetKeyboardState(KeyboardKeys.S, (input.Pressed.Contains(configuration.S)));
+            SetKeyboardState(KeyboardKeys.T, (input.Pressed.Contains(configuration.T)));
+            SetKeyboardState(KeyboardKeys.U, (input.Pressed.Contains(configuration.U)));
+            SetKeyboardState(KeyboardKeys.V, (input.Pressed.Contains(configuration.V)));
+            SetKeyboardState(KeyboardKeys.W, (input.Pressed.Contains(configuration.W)));
+            SetKeyboardState(KeyboardKeys.X, (input.Pressed.Contains(configuration.X)));
+            SetKeyboardState(KeyboardKeys.Y, (input.Pressed.Contains(configuration.Y)));
+            SetKeyboardState(KeyboardKeys.Z, (input.Pressed.Contains(configuration.Z)));
+            SetKeyboardState(KeyboardKeys.Shift, (input.Pressed.Contains(configuration.Shift)));
+            SetKeyboardState(KeyboardKeys.Ctrl, (input.Pressed.Contains(configuration.Ctrl)));
+            SetKeyboardState(KeyboardKeys.Graph, (input.Pressed.Contains(configuration.Graph)));
+            SetKeyboardState(KeyboardKeys.Cap, (input.Pressed.Contains(configuration.Cap)));
+            SetKeyboardState(KeyboardKeys.Code, (input.Pressed.Contains(configuration.Code)));
+            SetKeyboardState(KeyboardKeys.F1, (input.Pressed.Contains(configuration.F1)));
+            SetKeyboardState(KeyboardKeys.F2, (input.Pressed.Contains(configuration.F2)));
+            SetKeyboardState(KeyboardKeys.F3, (input.Pressed.Contains(configuration.F3)));
+            SetKeyboardState(KeyboardKeys.F4, (input.Pressed.Contains(configuration.F4)));
+            SetKeyboardState(KeyboardKeys.F5, (input.Pressed.Contains(configuration.F5)));
+            SetKeyboardState(KeyboardKeys.Esc, (input.Pressed.Contains(configuration.Esc)));
+            SetKeyboardState(KeyboardKeys.Tab, (input.Pressed.Contains(configuration.Tab)));
+            SetKeyboardState(KeyboardKeys.Stop, (input.Pressed.Contains(configuration.Stop)));
+            SetKeyboardState(KeyboardKeys.BS, (input.Pressed.Contains(configuration.BS)));
+            SetKeyboardState(KeyboardKeys.Select, (input.Pressed.Contains(configuration.Select)));
+            SetKeyboardState(KeyboardKeys.Return, (input.Pressed.Contains(configuration.Return)));
+            SetKeyboardState(KeyboardKeys.Space, (input.Pressed.Contains(configuration.Space)));
+            SetKeyboardState(KeyboardKeys.Home, (input.Pressed.Contains(configuration.Home)));
+            SetKeyboardState(KeyboardKeys.Ins, (input.Pressed.Contains(configuration.Ins)));
+            SetKeyboardState(KeyboardKeys.Del, (input.Pressed.Contains(configuration.Del)));
+            SetKeyboardState(KeyboardKeys.Left, (input.Pressed.Contains(configuration.Left)));
+            SetKeyboardState(KeyboardKeys.Up, (input.Pressed.Contains(configuration.Up)));
+            SetKeyboardState(KeyboardKeys.Down, (input.Pressed.Contains(configuration.Down)));
+            SetKeyboardState(KeyboardKeys.Right, (input.Pressed.Contains(configuration.Right)));
+            SetKeyboardState(KeyboardKeys.NumMultiply, (input.Pressed.Contains(configuration.NumMultiply)));
+            SetKeyboardState(KeyboardKeys.NumPlus, (input.Pressed.Contains(configuration.NumPlus)));
+            SetKeyboardState(KeyboardKeys.NumDivide, (input.Pressed.Contains(configuration.NumDivide)));
+            SetKeyboardState(KeyboardKeys.Num0, (input.Pressed.Contains(configuration.Num0)));
+            SetKeyboardState(KeyboardKeys.Num1, (input.Pressed.Contains(configuration.Num1)));
+            SetKeyboardState(KeyboardKeys.Num2, (input.Pressed.Contains(configuration.Num2)));
+            SetKeyboardState(KeyboardKeys.Num3, (input.Pressed.Contains(configuration.Num3)));
+            SetKeyboardState(KeyboardKeys.Num4, (input.Pressed.Contains(configuration.Num4)));
+            SetKeyboardState(KeyboardKeys.Num5, (input.Pressed.Contains(configuration.Num5)));
+            SetKeyboardState(KeyboardKeys.Num6, (input.Pressed.Contains(configuration.Num6)));
+            SetKeyboardState(KeyboardKeys.Num7, (input.Pressed.Contains(configuration.Num7)));
+            SetKeyboardState(KeyboardKeys.Num8, (input.Pressed.Contains(configuration.Num8)));
+            SetKeyboardState(KeyboardKeys.Num9, (input.Pressed.Contains(configuration.Num9)));
+            SetKeyboardState(KeyboardKeys.NumMinus, (input.Pressed.Contains(configuration.NumMinus)));
+            SetKeyboardState(KeyboardKeys.NumComma, (input.Pressed.Contains(configuration.NumComma)));
+            SetKeyboardState(KeyboardKeys.NumPeriod, (input.Pressed.Contains(configuration.NumPeriod)));
         }
 
         private void SetKeyboardState(KeyboardKeys key, bool state)
         {
-            keyMatrix[((int)key / keyMatrix.GetLength(0)), ((int)key % keyMatrix.GetLength(1))] = state;
+            keyMatrix[(int)key / 8, (int)key % 8] = state;
         }
 
         private void UpdateKeyboard()
@@ -228,7 +523,8 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 else if (primarySlot == 0x03)
                 {
                     /* RAM3 */
-                    return wram[address & (ramSize - 1)];
+                    if (address >= (ushort)((0xFFFF - ramSize) + 1))
+                        return wram[address & (ramSize - 1)];
                 }
             }
             else if (address >= 0x4000 && address <= 0x7FFF)
@@ -252,7 +548,8 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 else if (primarySlot == 0x03)
                 {
                     /* RAM2 */
-                    return wram[address & (ramSize - 1)];
+                    if (address >= (ushort)((0xFFFF - ramSize) + 1))
+                        return wram[address & (ramSize - 1)];
                 }
             }
             else if (address >= 0x8000 && address <= 0xBFFF)
@@ -276,7 +573,8 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 else if (primarySlot == 0x03)
                 {
                     /* RAM1 */
-                    return wram[address & (ramSize - 1)];
+                    if (address >= (ushort)((0xFFFF - ramSize) + 1))
+                        return wram[address & (ramSize - 1)];
                 }
             }
             else if (address >= 0xC000 && address <= 0xFFFF)
@@ -300,7 +598,8 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 else if (primarySlot == 0x03)
                 {
                     /* RAM0 */
-                    return wram[address & (ramSize - 1)];
+                    if (address >= (ushort)((0xFFFF - ramSize) + 1))
+                        return wram[address & (ramSize - 1)];
                 }
             }
 
