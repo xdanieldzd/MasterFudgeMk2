@@ -638,7 +638,7 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 else if (primarySlot == 0x03)
                 {
                     /* RAM3 */
-                    wram[address & (ramSize - 1)] = value; ;
+                    wram[address & (ramSize - 1)] = value;
                 }
             }
             else if (address >= 0x4000 && address <= 0x7FFF)
@@ -662,7 +662,7 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 else if (primarySlot == 0x03)
                 {
                     /* RAM2 */
-                    wram[address & (ramSize - 1)] = value; ;
+                    wram[address & (ramSize - 1)] = value;
                 }
             }
             else if (address >= 0x8000 && address <= 0xBFFF)
@@ -686,7 +686,7 @@ namespace MasterFudgeMk2.Machines.Various.MSX1
                 else if (primarySlot == 0x03)
                 {
                     /* RAM1 */
-                    wram[address & (ramSize - 1)] = value; ;
+                    wram[address & (ramSize - 1)] = value;
                 }
             }
             else if (address >= 0xC000 && address <= 0xFFFF)
