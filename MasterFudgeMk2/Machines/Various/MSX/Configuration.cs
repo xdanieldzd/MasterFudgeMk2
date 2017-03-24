@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.ComponentModel;
 
 namespace MasterFudgeMk2.Machines.Various.MSX
@@ -592,26 +588,6 @@ namespace MasterFudgeMk2.Machines.Various.MSX
             set { InputConfig.Set(MachineInputs.NumPeriod.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
         }
 
-
-        public Configuration() : base()
-        {
-            return;
-
-            StringBuilder sb = new StringBuilder();
-
-            foreach (var ev in Enum.GetValues(typeof(MachineInputs)))
-            {
-                /*sb.AppendFormat(@"
-        public Enum {0}
-        {{
-            get {{ return InputConfig.GetString(MachineInputs.{0}.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }}
-            set {{ InputConfig.Set(MachineInputs.{0}.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }}
-        }}
-", ev);*/
-                sb.AppendFormat(@"SetKeyboardState(KeyboardKeys.{0}, (input.Pressed.Contains(configuration.{0})));
-", ev);
-            }
-            System.Windows.Forms.Clipboard.SetText(sb.ToString());
-        }
+        public Configuration() : base() { }
     }
 }
