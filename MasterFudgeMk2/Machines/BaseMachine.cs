@@ -20,6 +20,8 @@ namespace MasterFudgeMk2.Machines
 
         public abstract bool SupportsBootingWithoutMedia { get; }
         public abstract bool CanCurrentlyBootWithoutMedia { get; }
+        public abstract string[] MediaSlots { get; }
+
         public abstract MachineConfiguration Configuration { get; set; }
 
         public abstract List<Tuple<string, Type, double>> DebugChipInformation { get; }
@@ -49,7 +51,7 @@ namespace MasterFudgeMk2.Machines
         }
 
         public abstract bool CanLoadMedia(FileInfo mediaFile);
-        public abstract void LoadMedia(IMedia media);
+        public abstract void LoadMedia(int slotNumber, IMedia media);
         public abstract void SaveMedia();
         public abstract void Shutdown();
 

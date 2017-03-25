@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Windows.Forms;
 using System.Drawing.Imaging;
+using System.Reflection;
 
 namespace MasterFudgeMk2
 {
@@ -61,6 +62,12 @@ namespace MasterFudgeMk2
                 fileDialog.FilterIndex = (codecs.IndexOf(codecs.FirstOrDefault(x => x.FormatDescription.ToLowerInvariant().Contains(defaultExtension.ToLowerInvariant()))) + 1);
             else
                 fileDialog.FilterIndex = (codecs.Count + 1);
+        }
+
+        public static IEnumerable<Type> GetImplementationsFromAssembly(this Type type)
+        {
+            if (!type.IsInterface) throw new Exception("Type is not interface");
+            return AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => type.IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);
         }
     }
 }

@@ -14,9 +14,11 @@ namespace MasterFudgeMk2
         [STAThread]
         static void Main()
         {
+            bool tempNewUi = false;
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            Application.Run(tempNewUi ? (new NewMainForm() as Form) : (new MainForm() as Form));
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.ComponentModel;
 
 using MasterFudgeMk2.Common;
+using MasterFudgeMk2.Common.EventArguments;
 
 namespace MasterFudgeMk2.AudioBackends
 {
@@ -21,7 +22,7 @@ namespace MasterFudgeMk2.AudioBackends
             if (disposing) { }
         }
 
-        public void AddSampleData(short[] samples) { }
+        public void OnAddSampleData(object sender, AddSampleDataEventArgs e) { }
         public void Play() { }
         public void Stop() { }
         public void Reset() { }

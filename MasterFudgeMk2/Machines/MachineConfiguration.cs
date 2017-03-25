@@ -31,6 +31,12 @@ namespace MasterFudgeMk2.Machines
             }
         }
 
+        public string LastDirectory
+        {
+            get { return SettingsConfig.GetString(nameof(LastDirectory), string.Empty); }
+            set { SettingsConfig.Set(nameof(LastDirectory), value); }
+        }
+
         public MachineConfiguration() : base() { }
     }
 }

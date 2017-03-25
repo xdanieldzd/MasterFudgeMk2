@@ -1,11 +1,12 @@
 ﻿using System.Windows.Forms;
 using System.Drawing;
 
+using MasterFudgeMk2.Common;
 using MasterFudgeMk2.Common.EventArguments;
 
 namespace MasterFudgeMk2.VideoBackends
 {
-    public abstract class BaseVideoBackend : IVideoBackend
+    public abstract class BaseVideoBackend : MustInitialize<Control>, IVideoBackend
     {
         protected Control outputControl;
 

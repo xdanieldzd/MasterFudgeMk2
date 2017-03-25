@@ -442,7 +442,7 @@ namespace MasterFudgeMk2
             machineManager.RenderScreen += renderer.OnRenderScreen;
             machineManager.PollInput += MachineManager_OnPollInput;
             machineManager.FrameEnded += MachineManager_FrameEnded;
-            machineManager.AddSampleData += MachineManager_OnAddSampleData;
+            machineManager.AddSampleData += soundOutput.OnAddSampleData;
 
             renderer.AspectRatio = machineManager.AspectRatio;
             renderer.ScreenViewport = machineManager.ScreenViewport;
@@ -468,7 +468,7 @@ namespace MasterFudgeMk2
             StartMachine(MachineLoader.DetectMachine(fileInfo));
 
             IMedia media = MediaLoader.LoadMedia(machineManager, fileInfo);
-            machineManager?.LoadMedia(media);
+            machineManager?.LoadMedia(0, media);
             machineManager?.Reset();
 
             soundOutput?.Reset();
@@ -549,11 +549,6 @@ namespace MasterFudgeMk2
                     scScreen.Text = "no controller";
                 }
             }
-        }
-
-        private void MachineManager_OnAddSampleData(object sender, AddSampleDataEventArgs e)
-        {
-            soundOutput.AddSampleData(e.Samples);
         }
 
         private void MachineManager_FrameEnded(object sender, EventArgs e)

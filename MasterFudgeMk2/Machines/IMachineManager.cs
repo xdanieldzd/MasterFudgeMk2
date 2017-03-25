@@ -45,6 +45,11 @@ namespace MasterFudgeMk2.Machines
         /// </summary>
         bool CanCurrentlyBootWithoutMedia { get; }
         /// <summary>
+        /// Get media slot names
+        /// </summary>
+        string[] MediaSlots { get; }
+
+        /// <summary>
         /// Get or set machine configuration data
         /// </summary>
         MachineConfiguration Configuration { get; set; }
@@ -89,7 +94,7 @@ namespace MasterFudgeMk2.Machines
         /// Load media into machine
         /// </summary>
         /// <param name="media">Media to load</param>
-        void LoadMedia(IMedia media);
+        void LoadMedia(int slotNumber, IMedia media);
         /// <summary>
         /// Save ex. cartridge RAM
         /// </summary>

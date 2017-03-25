@@ -65,6 +65,8 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
 
         public override bool SupportsBootingWithoutMedia { get { return false; } }
         public override bool CanCurrentlyBootWithoutMedia { get { return false; } }
+        public override string[] MediaSlots { get { return new string[] { "Cartridge Slot" }; } }
+
         public override MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
 
         public override List<Tuple<string, Type, double>> DebugChipInformation
@@ -169,9 +171,13 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
             return (mediaFile.Extension == ".sg");
         }
 
-        public override void LoadMedia(IMedia media)
+        public override void LoadMedia(int slotNumber, IMedia media)
         {
-            cartridge = media;
+            switch (slotNumber)
+            {
+                case 0: cartridge = media; break;
+                default: throw new ArgumentException("Invalid slot number");
+            }
         }
 
         public override void SaveMedia()

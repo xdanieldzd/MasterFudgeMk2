@@ -79,6 +79,8 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
 
         public override bool SupportsBootingWithoutMedia { get { return true; } }
         public override bool CanCurrentlyBootWithoutMedia { get { return File.Exists(configuration.BiosPath); } }
+        public override string[] MediaSlots { get { return new string[] { "Cartridge Slot" }; } }
+
         public override MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
 
         public override List<Tuple<string, Type, double>> DebugChipInformation
@@ -200,9 +202,13 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
             return ((romStart[0x00] == 0xAA && romStart[0x01] == 0x55) || (romStart[0x00] == 0x55 && romStart[0x01] == 0xAA));
         }
 
-        public override void LoadMedia(IMedia media)
+        public override void LoadMedia(int slotNumber, IMedia media)
         {
-            cartridge = media;
+            switch (slotNumber)
+            {
+                case 0: cartridge = media; break;
+                default: throw new ArgumentException("Invalid slot number");
+            }
         }
 
         public override void SaveMedia()

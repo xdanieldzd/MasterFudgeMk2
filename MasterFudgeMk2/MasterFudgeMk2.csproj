@@ -101,6 +101,12 @@
     <Compile Include="Media\MSX\BaseCartridge.cs" />
     <Compile Include="Media\MSX\RawRomCartridge.cs" />
     <Compile Include="Media\MSX\RomHeader.cs" />
+    <Compile Include="NewMainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="NewMainForm.Designer.cs">
+      <DependentUpon>NewMainForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="VideoBackends\BaseVideoBackend.cs" />
     <Compile Include="VideoBackends\IVideoBackend.cs" />
     <Compile Include="VideoBackends\NullVideoBackend.cs" />
@@ -178,6 +184,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NewMainForm.resx">
+      <DependentUpon>NewMainForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

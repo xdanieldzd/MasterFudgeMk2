@@ -5,6 +5,7 @@ using System.ComponentModel;
 using NAudio.Wave;
 
 using MasterFudgeMk2.Common;
+using MasterFudgeMk2.Common.EventArguments;
 
 namespace MasterFudgeMk2.AudioBackends
 {
@@ -13,7 +14,7 @@ namespace MasterFudgeMk2.AudioBackends
     {
         EmulatorWaveProvider waveProvider;
         WaveOut waveOutDevice;
-        
+
         public NAudioBackend(int sampleRate, int numChannels) : base(sampleRate, numChannels)
         {
             waveProvider = new EmulatorWaveProvider(sampleRate, numChannels);
@@ -44,9 +45,9 @@ namespace MasterFudgeMk2.AudioBackends
             }
         }
 
-        public void AddSampleData(short[] samples)
+        public void OnAddSampleData(object sender, AddSampleDataEventArgs e)
         {
-            waveProvider?.AddSampleData(samples);
+            waveProvider?.AddSampleData(e.Samples);
         }
 
         public void Play()

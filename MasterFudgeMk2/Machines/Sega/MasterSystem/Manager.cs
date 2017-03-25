@@ -69,6 +69,8 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
 
         public override bool SupportsBootingWithoutMedia { get { return true; } }
         public override bool CanCurrentlyBootWithoutMedia { get { return (File.Exists(configuration.BootstrapPath) && configuration.UseBootstrap); } }
+        public override string[] MediaSlots { get { return new string[] { "Cartridge Slot", "Card Slot" }; } }
+
         public override MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
 
         public override List<Tuple<string, Type, double>> DebugChipInformation
@@ -208,9 +210,14 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             return (romHeader.IsSEGAStringCorrect && !romHeader.IsGameGear);
         }
 
-        public override void LoadMedia(IMedia media)
+        public override void LoadMedia(int slotNumber, IMedia media)
         {
-            cartridge = media;
+            switch (slotNumber)
+            {
+                case 0: cartridge = media; break;
+                case 1: card = media; break;
+                default: throw new ArgumentException("Invalid slot number");
+            }
         }
 
         public override void SaveMedia()

@@ -251,6 +251,8 @@ namespace MasterFudgeMk2.Machines.Various.MSX
 
         public override bool SupportsBootingWithoutMedia { get { return true; } }
         public override bool CanCurrentlyBootWithoutMedia { get { return File.Exists(configuration.BiosPath); } }
+        public override string[] MediaSlots { get { return new string[] { "Cartridge Slot A", "Cartridge Slot B" }; } }
+
         public override MachineConfiguration Configuration { get { return configuration; } set { configuration = (value as Configuration); } }
 
         public override List<Tuple<string, Type, double>> DebugChipInformation
@@ -381,9 +383,14 @@ namespace MasterFudgeMk2.Machines.Various.MSX
             return romHeader.IsValidCartridge;
         }
 
-        public override void LoadMedia(IMedia media)
+        public override void LoadMedia(int slotNumber, IMedia media)
         {
-            cartridgeA = media;
+            switch (slotNumber)
+            {
+                case 0: cartridgeA = media; break;
+                case 1: cartridgeB = media; break;
+                default: throw new ArgumentException("Invalid slot number");
+            }
         }
 
         public override void SaveMedia()

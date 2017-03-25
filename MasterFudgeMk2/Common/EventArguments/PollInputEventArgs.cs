@@ -9,7 +9,7 @@ namespace MasterFudgeMk2.Common.EventArguments
 
         public PollInputEventArgs()
         {
-            Pressed = null;
+            Pressed = new List<Enum>();
         }
     }
 }
