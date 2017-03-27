@@ -11,6 +11,7 @@ using System.Reflection;
 using System.IO;
 using System.Diagnostics;
 using System.Threading;
+using System.Text.RegularExpressions;
 
 using MasterFudgeMk2.AudioBackends;
 using MasterFudgeMk2.VideoBackends;
@@ -64,6 +65,7 @@ namespace MasterFudgeMk2
             CreateBootSystemMenu(bootSystemToolStripMenuItem);
             CreateBackendsMenu(videoBackendToolStripMenuItem, typeof(IVideoBackend));
             CreateBackendsMenu(audioBackendToolStripMenuItem, typeof(IAudioBackend));
+            CreateRecentFilesMenu(recentFilesToolStripMenuItem);
 
             /* Initialize backends */
             SwitchVideoBackend(emuConfig.VideoBackend);
@@ -211,6 +213,9 @@ namespace MasterFudgeMk2
                                 activeMachine.Configuration.LastDirectory = Path.GetDirectoryName(openFileDialog.FileName);
 
                                 InitializeMediaSlot(slotNumber, media);
+
+                                AddToRecentFilesList(machineType, slotNumber, mediaFileInfo.FullName);
+                                CreateRecentFilesMenu(recentFilesToolStripMenuItem);
                             }
                         }
                     }
@@ -239,6 +244,65 @@ namespace MasterFudgeMk2
                 ToolStripMenuItem backendMenuItem = new ToolStripMenuItem() { Text = backendName, Tag = backendType };
                 backendMenuItem.Click += (s, e) => { SwitchBackend((s as ToolStripMenuItem).Tag as Type); };
                 rootMenuItem.DropDownItems.Add(backendMenuItem);
+            }
+        }
+
+        private void CreateRecentFilesMenu(ToolStripMenuItem rootMenuItem)
+        {
+            /* Sanity checks */
+            if (rootMenuItem == null)
+                throw new ArgumentNullException(nameof(rootMenuItem));
+
+            /* Clear menu */
+            rootMenuItem.DropDownItems.Clear();
+
+            /* Add "clear list" option */
+            ToolStripMenuItem clearListMenuItem = new ToolStripMenuItem() { Text = "&Clear List" };
+            clearListMenuItem.Click += (s, e) =>
+            {
+                for (int i = 0; i < emuConfig.RecentFilesNew.Length; i++)
+                    emuConfig.RecentFilesNew[i] = string.Empty;
+
+                // TODO: update here
+            };
+            rootMenuItem.DropDownItems.Add(clearListMenuItem);
+            rootMenuItem.DropDownItems.Add(new ToolStripSeparator());
+
+            for (int i = 0; i < maxRecentFiles; i++)
+            {
+                if (i < emuConfig.RecentFilesNew.Length)
+                {
+                    /* Valid recent file entry */
+                    var match = Regex.Match(emuConfig.RecentFilesNew[i], @"^(?<machine>.*)\/(?<slot>.*)\/(?<file>.*)");
+
+                    var machineType = Assembly.GetExecutingAssembly().GetType(match.Groups["machine"].Value);
+                    var slotNumber = int.Parse(match.Groups["slot"].Value);
+                    var mediaFileName = match.Groups["file"].Value;
+
+                    ToolStripMenuItem recentFileMenuItem = new ToolStripMenuItem()
+                    {
+                        Text = mediaFileName,
+                        Tag = new Tuple<Type, int, string>(machineType, slotNumber, mediaFileName),
+                        ShortcutKeys = (Keys.Control | (Keys.F1 + i))
+                    };
+                    recentFileMenuItem.Click += (s, e) =>
+                    {
+                        var recentFileInfo = ((s as ToolStripMenuItem).Tag as Tuple<Type, int, string>);
+
+                        InitializeMachineManager(recentFileInfo.Item1);
+                        InitializeFrameLimiter(activeMachine.RefreshRate);
+                        InitializeMediaSlot(recentFileInfo.Item2, MediaLoader.LoadMedia(activeMachine, new FileInfo(recentFileInfo.Item3)));
+
+                        AddToRecentFilesList(recentFileInfo.Item1, recentFileInfo.Item2, recentFileInfo.Item3);
+                        CreateRecentFilesMenu(recentFilesToolStripMenuItem);
+                    };
+                    rootMenuItem.DropDownItems.Add(recentFileMenuItem);
+                }
+                else
+                {
+                    /* Dummy entry */
+                    rootMenuItem.DropDownItems.Add(new ToolStripMenuItem() { Text = "-", ShortcutKeys = (Keys.Control | (Keys.F1 + i)), Enabled = false });
+                }
             }
         }
 
@@ -315,6 +379,21 @@ namespace MasterFudgeMk2
                 menuItem.Checked = ((menuItem.Tag as Type) == audioBackendType);
 
             emuConfig.AudioBackend = audioBackendType;
+        }
+
+        #endregion
+
+        #region Recent Files Handling
+
+        private void AddToRecentFilesList(Type machineType, int slotNumber, string mediaFileName)
+        {
+            string recentFileString = string.Format("{0}/{1}/{2}", machineType.FullName, slotNumber, mediaFileName);
+
+            List<string> recentFiles = emuConfig.RecentFilesNew.ToList();
+            if (recentFiles.Contains(recentFileString)) recentFiles.RemoveAll(x => (x == recentFileString));
+            recentFiles.Insert(0, recentFileString);
+
+            emuConfig.RecentFilesNew = recentFiles.ToArray();
         }
 
         #endregion

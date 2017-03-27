@@ -86,5 +86,11 @@ namespace MasterFudgeMk2
             get { return SettingsConfig.GetString(nameof(RecentFiles), string.Empty).Split('|'); }
             set { SettingsConfig.Set(nameof(RecentFiles), string.Join("|", value)); }
         }
+
+        public string[] RecentFilesNew
+        {
+            get { return SettingsConfig.GetString(nameof(RecentFilesNew), string.Empty).Split('|'); }
+            set { SettingsConfig.Set(nameof(RecentFilesNew), string.Join("|", value)); }
+        }
     }
 }

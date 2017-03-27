@@ -34,22 +34,24 @@
             this.loadMediaToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.dummyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
-            this.takeScreenshotToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.recentFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
+            this.takeScreenshotToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.emulationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pauseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.resetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
-            this.configureSystemToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem4 = new System.Windows.Forms.ToolStripSeparator();
+            this.configureSystemToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
             this.infoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.optionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.limitFPSToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem5 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolStripMenuItem6 = new System.Windows.Forms.ToolStripSeparator();
             this.videoBackendToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.audioBackendToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItem6 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripSeparator();
             this.videoSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.keepAspectRatioToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.stretchToFillToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -78,8 +80,10 @@
             this.bootSystemToolStripMenuItem,
             this.loadMediaToolStripMenuItem,
             this.toolStripMenuItem1,
-            this.takeScreenshotToolStripMenuItem,
+            this.recentFilesToolStripMenuItem,
             this.toolStripMenuItem2,
+            this.takeScreenshotToolStripMenuItem,
+            this.toolStripMenuItem3,
             this.exitToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
@@ -111,6 +115,17 @@
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
             this.toolStripMenuItem1.Size = new System.Drawing.Size(166, 6);
             // 
+            // recentFilesToolStripMenuItem
+            // 
+            this.recentFilesToolStripMenuItem.Name = "recentFilesToolStripMenuItem";
+            this.recentFilesToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
+            this.recentFilesToolStripMenuItem.Text = "&Recent Files...";
+            // 
+            // toolStripMenuItem2
+            // 
+            this.toolStripMenuItem2.Name = "toolStripMenuItem2";
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(166, 6);
+            // 
             // takeScreenshotToolStripMenuItem
             // 
             this.takeScreenshotToolStripMenuItem.Enabled = false;
@@ -118,10 +133,10 @@
             this.takeScreenshotToolStripMenuItem.Size = new System.Drawing.Size(169, 22);
             this.takeScreenshotToolStripMenuItem.Text = "&Take Screenshot...";
             // 
-            // toolStripMenuItem2
+            // toolStripMenuItem3
             // 
-            this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(166, 6);
+            this.toolStripMenuItem3.Name = "toolStripMenuItem3";
+            this.toolStripMenuItem3.Size = new System.Drawing.Size(166, 6);
             // 
             // exitToolStripMenuItem
             // 
@@ -134,9 +149,9 @@
             this.emulationToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.pauseToolStripMenuItem,
             this.resetToolStripMenuItem,
-            this.toolStripMenuItem3,
-            this.configureSystemToolStripMenuItem,
             this.toolStripMenuItem4,
+            this.configureSystemToolStripMenuItem,
+            this.toolStripMenuItem5,
             this.infoToolStripMenuItem});
             this.emulationToolStripMenuItem.Enabled = false;
             this.emulationToolStripMenuItem.Name = "emulationToolStripMenuItem";
@@ -157,10 +172,10 @@
             this.resetToolStripMenuItem.Size = new System.Drawing.Size(177, 22);
             this.resetToolStripMenuItem.Text = "&Reset";
             // 
-            // toolStripMenuItem3
+            // toolStripMenuItem4
             // 
-            this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-            this.toolStripMenuItem3.Size = new System.Drawing.Size(174, 6);
+            this.toolStripMenuItem4.Name = "toolStripMenuItem4";
+            this.toolStripMenuItem4.Size = new System.Drawing.Size(174, 6);
             // 
             // configureSystemToolStripMenuItem
             // 
@@ -168,10 +183,10 @@
             this.configureSystemToolStripMenuItem.Size = new System.Drawing.Size(177, 22);
             this.configureSystemToolStripMenuItem.Text = "&Configure System...";
             // 
-            // toolStripMenuItem4
+            // toolStripMenuItem5
             // 
-            this.toolStripMenuItem4.Name = "toolStripMenuItem4";
-            this.toolStripMenuItem4.Size = new System.Drawing.Size(174, 6);
+            this.toolStripMenuItem5.Name = "toolStripMenuItem5";
+            this.toolStripMenuItem5.Size = new System.Drawing.Size(174, 6);
             // 
             // infoToolStripMenuItem
             // 
@@ -183,10 +198,10 @@
             // 
             this.optionsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.limitFPSToolStripMenuItem,
-            this.toolStripMenuItem5,
+            this.toolStripMenuItem6,
             this.videoBackendToolStripMenuItem,
             this.audioBackendToolStripMenuItem,
-            this.toolStripMenuItem6,
+            this.toolStripMenuItem7,
             this.videoSettingsToolStripMenuItem});
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
             this.optionsToolStripMenuItem.Size = new System.Drawing.Size(61, 20);
@@ -198,10 +213,10 @@
             this.limitFPSToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
             this.limitFPSToolStripMenuItem.Text = "&Limit FPS";
             // 
-            // toolStripMenuItem5
+            // toolStripMenuItem6
             // 
-            this.toolStripMenuItem5.Name = "toolStripMenuItem5";
-            this.toolStripMenuItem5.Size = new System.Drawing.Size(160, 6);
+            this.toolStripMenuItem6.Name = "toolStripMenuItem6";
+            this.toolStripMenuItem6.Size = new System.Drawing.Size(160, 6);
             // 
             // videoBackendToolStripMenuItem
             // 
@@ -215,10 +230,10 @@
             this.audioBackendToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
             this.audioBackendToolStripMenuItem.Text = "&Audio Backend...";
             // 
-            // toolStripMenuItem6
+            // toolStripMenuItem7
             // 
-            this.toolStripMenuItem6.Name = "toolStripMenuItem6";
-            this.toolStripMenuItem6.Size = new System.Drawing.Size(160, 6);
+            this.toolStripMenuItem7.Name = "toolStripMenuItem7";
+            this.toolStripMenuItem7.Size = new System.Drawing.Size(160, 6);
             // 
             // videoSettingsToolStripMenuItem
             // 
@@ -274,6 +289,7 @@
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "NewMainForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "NewMainForm";
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
@@ -295,16 +311,16 @@
         private System.Windows.Forms.ToolStripMenuItem emulationToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem pauseToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem resetToolStripMenuItem;
-        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
-        private System.Windows.Forms.ToolStripMenuItem configureSystemToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem4;
+        private System.Windows.Forms.ToolStripMenuItem configureSystemToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem5;
         private System.Windows.Forms.ToolStripMenuItem infoToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem optionsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem limitFPSToolStripMenuItem;
-        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem5;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem6;
         private System.Windows.Forms.ToolStripMenuItem videoBackendToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem audioBackendToolStripMenuItem;
-        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem6;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem7;
         private System.Windows.Forms.ToolStripMenuItem videoSettingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
@@ -312,5 +328,7 @@
         private System.Windows.Forms.ToolStripMenuItem keepAspectRatioToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem stretchToFillToolStripMenuItem;
         private Common.ScreenControl scScreen;
+        private System.Windows.Forms.ToolStripMenuItem recentFilesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
     }
 }
