@@ -28,7 +28,7 @@ namespace MasterFudgeMk2.VideoBackends
      */
 
     [Description("Direct2D (SharpDX)")]
-    public class SharpDXBackend : BaseVideoBackend
+    public class Direct2DBackend : BaseVideoBackend
     {
         Device device;
         SwapChain swapChain;
@@ -45,7 +45,7 @@ namespace MasterFudgeMk2.VideoBackends
         public override float AspectRatio { get { return aspectRatio; } set { aspectRatio = value; ResizeRenderTargetAndDestinationRectangle(); } }
         public override DrawingRectangle ScreenViewport { get { return screenViewport; } set { screenViewport = value; ResizeRenderTargetAndDestinationRectangle(); } }
 
-        public SharpDXBackend(Control control) : base(control)
+        public Direct2DBackend(Control control) : base(control)
         {
             var swapChainDesc = new SwapChainDescription()
             {

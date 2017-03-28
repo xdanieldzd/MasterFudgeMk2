@@ -6,20 +6,7 @@
         /// Required designer variable.
         /// </summary>
         private System.ComponentModel.IContainer components = null;
-
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing && (components != null))
-            {
-                components.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
+        
         #region Windows Form Designer generated code
 
         /// <summary>
@@ -58,6 +45,7 @@
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.scScreen = new MasterFudgeMk2.Common.ScreenControl();
+            this.inputBackendToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -201,6 +189,7 @@
             this.toolStripMenuItem6,
             this.videoBackendToolStripMenuItem,
             this.audioBackendToolStripMenuItem,
+            this.inputBackendToolStripMenuItem,
             this.toolStripMenuItem7,
             this.videoSettingsToolStripMenuItem});
             this.optionsToolStripMenuItem.Name = "optionsToolStripMenuItem";
@@ -280,6 +269,12 @@
             this.scScreen.TabIndex = 1;
             this.scScreen.Text = "screenControl1";
             // 
+            // inputBackendToolStripMenuItem
+            // 
+            this.inputBackendToolStripMenuItem.Name = "inputBackendToolStripMenuItem";
+            this.inputBackendToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.inputBackendToolStripMenuItem.Text = "&Input Backend...";
+            // 
             // NewMainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -330,5 +325,6 @@
         private Common.ScreenControl scScreen;
         private System.Windows.Forms.ToolStripMenuItem recentFilesToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
+        private System.Windows.Forms.ToolStripMenuItem inputBackendToolStripMenuItem;
     }
 }

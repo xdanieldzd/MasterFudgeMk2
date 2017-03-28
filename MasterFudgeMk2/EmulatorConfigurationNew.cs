@@ -1,13 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Drawing;
 
 using Nini.Config;
 
 namespace MasterFudgeMk2
 {
-    public sealed class EmulatorConfiguration : ConfigFile
+    public sealed class EmulatorConfigurationNew : ConfigFile
     {
-        public override sealed string Filename { get { return "Emulator.xml"; } }
+        public override sealed string Filename { get { return "EmulatorNew.xml"; } }
 
         const string sectionSettings = "Settings";
         public IConfig SettingsConfig
@@ -30,31 +32,11 @@ namespace MasterFudgeMk2
             get { return Type.GetType(SettingsConfig.GetString(nameof(AudioBackend)) ?? typeof(AudioBackends.NullAudioBackend).AssemblyQualifiedName); }
             set { SettingsConfig.Set(nameof(AudioBackend), value.AssemblyQualifiedName); }
         }
-        
-        public Point WindowLocation
-        {
-            get
-            {
-                string[] coords = SettingsConfig.GetString(nameof(WindowLocation), "0;0").Split(';');
-                return new Point(int.Parse(coords[0]), int.Parse(coords[1]));
-            }
-            set
-            {
-                SettingsConfig.Set(nameof(WindowLocation), string.Format("{0};{1}", value.X, value.Y));
-            }
-        }
 
-        public Size WindowSize
+        public Type InputBackend
         {
-            get
-            {
-                string[] coords = SettingsConfig.GetString(nameof(WindowSize), "528;526").Split(';');
-                return new Size(int.Parse(coords[0]), int.Parse(coords[1]));
-            }
-            set
-            {
-                SettingsConfig.Set(nameof(WindowSize), string.Format("{0};{1}", value.Width, value.Height));
-            }
+            get { return Type.GetType(SettingsConfig.GetString(nameof(InputBackend)) ?? typeof(InputBackends.DirectInputBackend).AssemblyQualifiedName); }
+            set { SettingsConfig.Set(nameof(InputBackend), value.AssemblyQualifiedName); }
         }
 
         public bool LimitFps
@@ -81,16 +63,12 @@ namespace MasterFudgeMk2
             set { SettingsConfig.Set(nameof(DebugMode), value); }
         }
 
-        public string[] RecentFiles
+        public List<string> RecentFiles
         {
-            get { return SettingsConfig.GetString(nameof(RecentFiles), string.Empty).Split('|'); }
+            get { return SettingsConfig.GetString(nameof(RecentFiles), string.Empty).Split('|').ToList(); }
             set { SettingsConfig.Set(nameof(RecentFiles), string.Join("|", value)); }
         }
 
-        public string[] RecentFilesNew
-        {
-            get { return SettingsConfig.GetString(nameof(RecentFilesNew), string.Empty).Split('|'); }
-            set { SettingsConfig.Set(nameof(RecentFilesNew), string.Join("|", value)); }
-        }
+        public EmulatorConfigurationNew() : base() { }
     }
 }

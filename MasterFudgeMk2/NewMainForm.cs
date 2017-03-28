@@ -14,10 +14,8 @@ using System.Threading;
 using System.Text.RegularExpressions;
 
 using MasterFudgeMk2.AudioBackends;
+using MasterFudgeMk2.InputBackends;
 using MasterFudgeMk2.VideoBackends;
-using MasterFudgeMk2.Common;
-using MasterFudgeMk2.Common.EventArguments;
-using MasterFudgeMk2.Common.XInput;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Machines;
 
@@ -34,12 +32,13 @@ namespace MasterFudgeMk2
         #region Misc. Variables
 
         string programNameVersion;
-        EmulatorConfiguration emuConfig;
+        EmulatorConfigurationNew emulatorConfig;
 
         Dictionary<Type, string> machineNames;
 
         IVideoBackend activeVideoBackend;
         IAudioBackend activeAudioBackend;
+        IInputBackend activeInputBackend;
         IMachineManager activeMachine;
 
         long startTime, frameCounter, interval;
@@ -48,7 +47,7 @@ namespace MasterFudgeMk2
 
         #endregion
 
-        #region Constructor
+        #region Constructor & Disposal
 
         public NewMainForm()
         {
@@ -65,16 +64,32 @@ namespace MasterFudgeMk2
             CreateBootSystemMenu(bootSystemToolStripMenuItem);
             CreateBackendsMenu(videoBackendToolStripMenuItem, typeof(IVideoBackend));
             CreateBackendsMenu(audioBackendToolStripMenuItem, typeof(IAudioBackend));
+            CreateBackendsMenu(inputBackendToolStripMenuItem, typeof(IInputBackend));
             CreateRecentFilesMenu(recentFilesToolStripMenuItem);
 
             /* Initialize backends */
-            SwitchVideoBackend(emuConfig.VideoBackend);
-            SwitchAudioBackend(emuConfig.AudioBackend);
+            SwitchVideoBackend(emulatorConfig.VideoBackend);
+            SwitchAudioBackend(emulatorConfig.AudioBackend);
+            SwitchInputBackend(emulatorConfig.InputBackend);
 
             /* Initialize Application.Idle event as main loop */
             InitializeIdleEvent();
 
             // TODO: a LOT more, databinding, more menu shit, etc etc
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (components != null) components.Dispose();
+
+                if (activeInputBackend != null) activeInputBackend.Dispose();
+                if (activeAudioBackend != null) activeAudioBackend.Dispose();
+                if (activeVideoBackend != null) activeVideoBackend.Dispose();
+            }
+
+            base.Dispose(disposing);
         }
 
         #endregion
@@ -93,7 +108,7 @@ namespace MasterFudgeMk2
                 programVersion.Build);
 
             /* Read emulator configuration */
-            emuConfig = new EmulatorConfiguration();
+            emulatorConfig = new EmulatorConfigurationNew();
         }
 
         private Dictionary<Type, string> GetMachineNames()
@@ -122,7 +137,7 @@ namespace MasterFudgeMk2
                     startTime = stopWatch.ElapsedMilliseconds;
                     activeMachine.RunFrame();
 
-                    while (emuConfig.LimitFps && (stopWatch.ElapsedMilliseconds - startTime) < interval)
+                    while (emulatorConfig.LimitFps && (stopWatch.ElapsedMilliseconds - startTime) < interval)
                         Thread.Sleep(1);
 
                     frameCounter++;
@@ -260,20 +275,18 @@ namespace MasterFudgeMk2
             ToolStripMenuItem clearListMenuItem = new ToolStripMenuItem() { Text = "&Clear List" };
             clearListMenuItem.Click += (s, e) =>
             {
-                for (int i = 0; i < emuConfig.RecentFilesNew.Length; i++)
-                    emuConfig.RecentFilesNew[i] = string.Empty;
-
-                // TODO: update here
+                emulatorConfig.RecentFiles = new List<string>();
+                CreateRecentFilesMenu((s as ToolStripMenuItem).OwnerItem as ToolStripMenuItem);
             };
             rootMenuItem.DropDownItems.Add(clearListMenuItem);
             rootMenuItem.DropDownItems.Add(new ToolStripSeparator());
 
             for (int i = 0; i < maxRecentFiles; i++)
             {
-                if (i < emuConfig.RecentFilesNew.Length)
+                if (i < emulatorConfig.RecentFiles.Count && emulatorConfig.RecentFiles[i] != string.Empty)
                 {
-                    /* Valid recent file entry */
-                    var match = Regex.Match(emuConfig.RecentFilesNew[i], @"^(?<machine>.*)\/(?<slot>.*)\/(?<file>.*)");
+                    /* Valid recent file entry; extract information */
+                    var match = Regex.Match(emulatorConfig.RecentFiles[i], @"^(?<machine>.*)\/(?<slot>.*)\/(?<file>.*)");
 
                     var machineType = Assembly.GetExecutingAssembly().GetType(match.Groups["machine"].Value);
                     var slotNumber = int.Parse(match.Groups["slot"].Value);
@@ -287,21 +300,35 @@ namespace MasterFudgeMk2
                     };
                     recentFileMenuItem.Click += (s, e) =>
                     {
-                        var recentFileInfo = ((s as ToolStripMenuItem).Tag as Tuple<Type, int, string>);
+                        var menuItem = (s as ToolStripMenuItem);
+                        var recentFileInfo = (menuItem.Tag as Tuple<Type, int, string>);
 
+                        /* Initialize machine and load media */
                         InitializeMachineManager(recentFileInfo.Item1);
                         InitializeFrameLimiter(activeMachine.RefreshRate);
                         InitializeMediaSlot(recentFileInfo.Item2, MediaLoader.LoadMedia(activeMachine, new FileInfo(recentFileInfo.Item3)));
 
+                        /* Handle recent files updates */
                         AddToRecentFilesList(recentFileInfo.Item1, recentFileInfo.Item2, recentFileInfo.Item3);
-                        CreateRecentFilesMenu(recentFilesToolStripMenuItem);
+                        CreateRecentFilesMenu(menuItem.OwnerItem as ToolStripMenuItem);
+
+                        /* Create load media menu */
+                        CreateLoadMediaMenu(loadMediaToolStripMenuItem, recentFileInfo.Item1);
+
+                        /* Enable disabled menus */
+                        takeScreenshotToolStripMenuItem.Enabled = emulationToolStripMenuItem.Enabled = true;
                     };
                     rootMenuItem.DropDownItems.Add(recentFileMenuItem);
                 }
                 else
                 {
                     /* Dummy entry */
-                    rootMenuItem.DropDownItems.Add(new ToolStripMenuItem() { Text = "-", ShortcutKeys = (Keys.Control | (Keys.F1 + i)), Enabled = false });
+                    rootMenuItem.DropDownItems.Add(new ToolStripMenuItem()
+                    {
+                        Text = "-",
+                        ShortcutKeys = (Keys.Control | (Keys.F1 + i)),
+                        Enabled = false
+                    });
                 }
             }
         }
@@ -314,6 +341,7 @@ namespace MasterFudgeMk2
         {
             if (typeof(IVideoBackend).IsAssignableFrom(backendType)) SwitchVideoBackend(backendType);
             else if (typeof(IAudioBackend).IsAssignableFrom(backendType)) SwitchAudioBackend(backendType);
+            else if (typeof(IInputBackend).IsAssignableFrom(backendType)) SwitchInputBackend(backendType);
             else throw new ArgumentException(string.Format("Given type {0} is not a known backend type", backendType.AssemblyQualifiedName));
         }
 
@@ -324,6 +352,9 @@ namespace MasterFudgeMk2
 
             if (activeVideoBackend != null)
             {
+                /* Don't try to switch backends if already using it */
+                if (activeVideoBackend.GetType() == videoBackendType) return;
+
                 /* Clean up currently active backend */
                 if (activeMachine != null)
                     activeMachine.RenderScreen -= activeVideoBackend.OnRenderScreen;
@@ -348,7 +379,7 @@ namespace MasterFudgeMk2
             foreach (ToolStripMenuItem menuItem in videoBackendToolStripMenuItem.DropDownItems)
                 menuItem.Checked = ((menuItem.Tag as Type) == videoBackendType);
 
-            emuConfig.VideoBackend = videoBackendType;
+            emulatorConfig.VideoBackend = videoBackendType;
         }
 
         private void SwitchAudioBackend(Type audioBackendType)
@@ -358,7 +389,13 @@ namespace MasterFudgeMk2
 
             if (activeAudioBackend != null)
             {
+                /* Don't try to switch backends if already using it */
+                if (activeAudioBackend.GetType() == audioBackendType) return;
+
                 /* Clean up currently active backend */
+                if (activeMachine != null)
+                    activeMachine.AddSampleData -= activeAudioBackend.OnAddSampleData;
+
                 activeAudioBackend.Stop();
 
                 activeAudioBackend.Dispose();
@@ -378,7 +415,41 @@ namespace MasterFudgeMk2
             foreach (ToolStripMenuItem menuItem in audioBackendToolStripMenuItem.DropDownItems)
                 menuItem.Checked = ((menuItem.Tag as Type) == audioBackendType);
 
-            emuConfig.AudioBackend = audioBackendType;
+            emulatorConfig.AudioBackend = audioBackendType;
+        }
+
+        private void SwitchInputBackend(Type inputBackendType)
+        {
+            if (!typeof(IInputBackend).IsAssignableFrom(inputBackendType))
+                throw new ArgumentException(string.Format("Given type {0} is not a input backend", inputBackendType.AssemblyQualifiedName));
+
+            if (activeInputBackend != null)
+            {
+                /* Don't try to switch backends if already using it */
+                if (activeInputBackend.GetType() == inputBackendType) return;
+
+                /* Clean up currently active backend */
+                if (activeMachine != null)
+                    activeMachine.PollInput -= activeInputBackend.OnPollInput;
+
+                activeInputBackend.Dispose();
+                activeInputBackend = null;
+            }
+
+            /* Create new backend */
+            activeInputBackend = (Activator.CreateInstance(inputBackendType, new object[] { }) as IInputBackend);
+
+            if (activeMachine != null)
+            {
+                /* Configure new backend & attach to active machine */
+                activeMachine.PollInput += activeInputBackend.OnPollInput;
+            }
+
+            /* Handle UI & emulation config updates */
+            foreach (ToolStripMenuItem menuItem in inputBackendToolStripMenuItem.DropDownItems)
+                menuItem.Checked = ((menuItem.Tag as Type) == inputBackendType);
+
+            emulatorConfig.InputBackend = inputBackendType;
         }
 
         #endregion
@@ -387,13 +458,19 @@ namespace MasterFudgeMk2
 
         private void AddToRecentFilesList(Type machineType, int slotNumber, string mediaFileName)
         {
+            if (!typeof(IMachineManager).IsAssignableFrom(machineType))
+                throw new ArgumentException(string.Format("Given type {0} is not machine manager", machineType.AssemblyQualifiedName));
+
+            if (!File.Exists(mediaFileName))
+                throw new FileNotFoundException("Trying to add non-existent file to recent list");
+
             string recentFileString = string.Format("{0}/{1}/{2}", machineType.FullName, slotNumber, mediaFileName);
 
-            List<string> recentFiles = emuConfig.RecentFilesNew.ToList();
+            List<string> recentFiles = emulatorConfig.RecentFiles;
             if (recentFiles.Contains(recentFileString)) recentFiles.RemoveAll(x => (x == recentFileString));
             recentFiles.Insert(0, recentFileString);
 
-            emuConfig.RecentFilesNew = recentFiles.ToArray();
+            emulatorConfig.RecentFiles = recentFiles;
         }
 
         #endregion
@@ -402,6 +479,9 @@ namespace MasterFudgeMk2
 
         private void InitializeMachineManager(Type machineType)
         {
+            if (!typeof(IMachineManager).IsAssignableFrom(machineType))
+                throw new ArgumentException(string.Format("Given type {0} is not machine manager", machineType.AssemblyQualifiedName));
+
             if (activeVideoBackend == null)
                 throw new Exception("Active video backend is null; something went wrong, can't reset");
 
@@ -414,14 +494,16 @@ namespace MasterFudgeMk2
             activeVideoBackend.AspectRatio = activeMachine.AspectRatio;
             activeVideoBackend.ScreenViewport = activeMachine.ScreenViewport;
 
-            /* Video backends events */
+            /* Video backend events */
             activeMachine.RenderScreen += activeVideoBackend.OnRenderScreen;
 
             /* Audio backend events */
             activeMachine.AddSampleData += activeAudioBackend.OnAddSampleData;
 
+            /* Input backend events */
+            activeMachine.PollInput += activeInputBackend.OnPollInput;
+
             /* Form events */
-            activeMachine.PollInput += ActiveMachine_OnPollInput;
             activeMachine.FrameEnded += ActiveMachine_FrameEnded;
 
             /* Ensure clean slate */
@@ -471,11 +553,6 @@ namespace MasterFudgeMk2
         #endregion
 
         #region Machine Events
-
-        private void ActiveMachine_OnPollInput(object sender, PollInputEventArgs e)
-        {
-            // TODO: input stuff, unless we transfer input stuff into a backend like a/v?
-        }
 
         private void ActiveMachine_FrameEnded(object sender, EventArgs e)
         {
