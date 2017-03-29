@@ -8,8 +8,9 @@ using MasterFudgeMk2.Common.EventArguments;
 
 namespace MasterFudgeMk2.InputBackends
 {
-    interface IInputBackend : IDisposable
+    public interface IInputBackend : IDisposable
     {
+        IEnumerable<Enum> GetInputValues();
         string GetInputDescription(Enum input, int value);
         void OnPollInput(object sender, PollInputEventArgs e);
     }

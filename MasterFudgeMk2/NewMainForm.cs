@@ -483,10 +483,13 @@ namespace MasterFudgeMk2
                 throw new ArgumentException(string.Format("Given type {0} is not machine manager", machineType.AssemblyQualifiedName));
 
             if (activeVideoBackend == null)
-                throw new Exception("Active video backend is null; something went wrong, can't reset");
+                throw new Exception("Active video backend is null; something went wrong, can't initialize machine");
 
             if (activeAudioBackend == null)
-                throw new Exception("Active audio backend is null; something went wrong, can't reset");
+                throw new Exception("Active audio backend is null; something went wrong, can't initialize machine");
+
+            if (activeInputBackend == null)
+                throw new Exception("Active input backend is null; something went wrong, can't initialize machine");
 
             activeMachine = (Activator.CreateInstance(machineType) as IMachineManager);
             activeMachine.Startup();
@@ -545,6 +548,9 @@ namespace MasterFudgeMk2
             if (activeAudioBackend == null)
                 throw new Exception("Active audio backend is null; something went wrong, can't reset");
 
+            if (activeInputBackend == null)
+                throw new Exception("Active input backend is null; something went wrong, can't reset");
+
             activeAudioBackend.Stop();
             activeMachine.Reset();
             activeAudioBackend.Play();
@@ -564,7 +570,28 @@ namespace MasterFudgeMk2
 
         #region Form Events
 
-        //
+        private void configureSystemToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (activeMachine == null)
+                throw new Exception("Active machine is null; can't change configuration");
+
+            if (activeVideoBackend == null)
+                throw new Exception("Active video backend is null; can't change configuration");
+
+            if (activeAudioBackend == null)
+                throw new Exception("Active audio backend is null; can't change configuration");
+
+            if (activeInputBackend == null)
+                throw new Exception("Active input backend is null; can't change configuration");
+
+            using (NewConfigForm configForm = new NewConfigForm(activeMachine.Configuration, activeVideoBackend, activeAudioBackend, activeInputBackend))
+            {
+                if (configForm.ShowDialog() == DialogResult.OK)
+                {
+                    //
+                }
+            }
+        }
 
         #endregion
     }

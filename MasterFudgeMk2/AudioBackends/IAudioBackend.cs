@@ -4,7 +4,7 @@ using MasterFudgeMk2.Common.EventArguments;
 
 namespace MasterFudgeMk2.AudioBackends
 {
-    interface IAudioBackend : IDisposable
+    public interface IAudioBackend : IDisposable
     {
         void OnAddSampleData(object sender, AddSampleDataEventArgs e);
 

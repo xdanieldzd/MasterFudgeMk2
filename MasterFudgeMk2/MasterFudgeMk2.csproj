@@ -108,6 +108,12 @@
     <Compile Include="Media\MSX\BaseCartridge.cs" />
     <Compile Include="Media\MSX\RawRomCartridge.cs" />
     <Compile Include="Media\MSX\RomHeader.cs" />
+    <Compile Include="NewConfigForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="NewConfigForm.Designer.cs">
+      <DependentUpon>NewConfigForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="NewMainForm.cs">
       <SubType>Form</SubType>
     </Compile>

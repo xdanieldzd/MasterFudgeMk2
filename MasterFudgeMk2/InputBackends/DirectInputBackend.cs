@@ -56,6 +56,14 @@ namespace MasterFudgeMk2.InputBackends
             }
         }
 
+        public IEnumerable<Enum> GetInputValues()
+        {
+            List<Enum> values = new List<Enum>();
+            values.AddRange(Enum.GetValues(typeof(JoystickOffset)).Cast<Enum>());
+            values.AddRange(Enum.GetValues(typeof(Key)).Cast<Enum>());
+            return values;
+        }
+
         public string GetInputDescription(Enum input, int value)
         {
             string description = string.Empty;

@@ -5,7 +5,7 @@ using MasterFudgeMk2.Common.EventArguments;
 
 namespace MasterFudgeMk2.VideoBackends
 {
-    interface IVideoBackend : IDisposable
+    public interface IVideoBackend : IDisposable
     {
         bool KeepAspectRatio { get; set; }
         bool ForceSquarePixels { get; set; }

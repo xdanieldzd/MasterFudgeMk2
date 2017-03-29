@@ -38,6 +38,7 @@
             this.toolStripMenuItem6 = new System.Windows.Forms.ToolStripSeparator();
             this.videoBackendToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.audioBackendToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.inputBackendToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripSeparator();
             this.videoSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.keepAspectRatioToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -45,7 +46,6 @@
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.scScreen = new MasterFudgeMk2.Common.ScreenControl();
-            this.inputBackendToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -170,6 +170,7 @@
             this.configureSystemToolStripMenuItem.Name = "configureSystemToolStripMenuItem";
             this.configureSystemToolStripMenuItem.Size = new System.Drawing.Size(177, 22);
             this.configureSystemToolStripMenuItem.Text = "&Configure System...";
+            this.configureSystemToolStripMenuItem.Click += new System.EventHandler(this.configureSystemToolStripMenuItem_Click);
             // 
             // toolStripMenuItem5
             // 
@@ -218,6 +219,12 @@
             this.audioBackendToolStripMenuItem.Name = "audioBackendToolStripMenuItem";
             this.audioBackendToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
             this.audioBackendToolStripMenuItem.Text = "&Audio Backend...";
+            // 
+            // inputBackendToolStripMenuItem
+            // 
+            this.inputBackendToolStripMenuItem.Name = "inputBackendToolStripMenuItem";
+            this.inputBackendToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
+            this.inputBackendToolStripMenuItem.Text = "&Input Backend...";
             // 
             // toolStripMenuItem7
             // 
@@ -268,12 +275,6 @@
             this.scScreen.Size = new System.Drawing.Size(484, 438);
             this.scScreen.TabIndex = 1;
             this.scScreen.Text = "screenControl1";
-            // 
-            // inputBackendToolStripMenuItem
-            // 
-            this.inputBackendToolStripMenuItem.Name = "inputBackendToolStripMenuItem";
-            this.inputBackendToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
-            this.inputBackendToolStripMenuItem.Text = "&Input Backend...";
             // 
             // NewMainForm
             // 
