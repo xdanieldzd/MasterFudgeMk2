@@ -55,7 +55,7 @@ namespace MasterFudgeMk2
                     CheckBox checkBox = new CheckBox() { Text = settingDescription, Dock = DockStyle.Fill, AutoSize = true, TextAlign = ContentAlignment.MiddleLeft, Margin = new Padding(6, 3, 3, 3) };
                     checkBox.DataBindings.Add("Checked", Configuration, prop.Name, false, DataSourceUpdateMode.OnPropertyChanged);
                     tlpMainConfig.Controls.Add(checkBox, 0, i);
-                    tlpMainConfig.SetColumnSpan(checkBox, 2);
+                    tlpMainConfig.SetColumnSpan(checkBox, 3);
                 }
                 else
                 {
@@ -71,6 +71,8 @@ namespace MasterFudgeMk2
                             textBox.ReadOnly = true;
                             Button browseButton = new Button() { Text = "...", ClientSize = new Size(25, textBox.Height), Tag = textBox };
                             tlpMainConfig.Controls.Add(browseButton, 2, i);
+                            Button clearButton = new Button() { Text = "Clear", ClientSize = new Size(40, textBox.Height), Tag = textBox };
+                            tlpMainConfig.Controls.Add(clearButton, 3, i);
                             tlpMainConfig.SetColumnSpan(textBox, 1);
 
                             browseButton.Click += (s, e) =>
@@ -81,9 +83,14 @@ namespace MasterFudgeMk2
                                         ((s as Button).Tag as TextBox).Text = ofd.FileName;
                                 }
                             };
+
+                            clearButton.Click += (s, e) =>
+                            {
+                                ((s as Button).Tag as TextBox).Text = string.Empty;
+                            };
                         }
                         else
-                            tlpMainConfig.SetColumnSpan(textBox, 2);
+                            tlpMainConfig.SetColumnSpan(textBox, 3);
                     }
                     else if (prop.PropertyType.BaseType == typeof(Enum))
                     {
@@ -102,7 +109,7 @@ namespace MasterFudgeMk2
 
                         comboBox.DataBindings.Add("SelectedValue", Configuration, prop.Name, false, DataSourceUpdateMode.OnPropertyChanged);
                         tlpMainConfig.Controls.Add(comboBox, 1, i);
-                        tlpMainConfig.SetColumnSpan(comboBox, 2);
+                        tlpMainConfig.SetColumnSpan(comboBox, 3);
                     }
                 }
             }

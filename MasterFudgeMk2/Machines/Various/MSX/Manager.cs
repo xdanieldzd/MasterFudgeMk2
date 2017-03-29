@@ -222,13 +222,13 @@ namespace MasterFudgeMk2.Machines.Various.MSX
     public enum InternalRamSizes
     {
         [Description("8 Kilobyte")]
-        Ext8Kilobyte,
+        Int8Kilobyte,
         [Description("16 Kilobyte")]
-        Ext16Kilobyte,
+        Int16Kilobyte,
         [Description("32 Kilobyte")]
-        Ext32Kilobyte,
+        Int32Kilobyte,
         [Description("64 Kilobyte")]
-        Ext64Kilobyte
+        Int64Kilobyte
     }
 
     class Manager : BaseMachine
@@ -277,7 +277,7 @@ namespace MasterFudgeMk2.Machines.Various.MSX
         const double psgClock = cpuClock;
 
         /* Devices on bus */
-        IMedia cartridgeA, cartridgeB;
+        IMedia optionalRom, cartridgeA, cartridgeB;
         int ramSize;
         byte[] wram;
         Z80A cpu;
@@ -327,13 +327,14 @@ namespace MasterFudgeMk2.Machines.Various.MSX
 
             switch (configuration.InternalRam)
             {
-                case InternalRamSizes.Ext8Kilobyte: ramSize = 1 * 8192; break;
-                case InternalRamSizes.Ext16Kilobyte: ramSize = 1 * 16384; break;
-                case InternalRamSizes.Ext32Kilobyte: ramSize = 1 * 32768; break;
-                case InternalRamSizes.Ext64Kilobyte: ramSize = 1 * 65536; break;
+                case InternalRamSizes.Int8Kilobyte: ramSize = 1 * 8192; break;
+                case InternalRamSizes.Int16Kilobyte: ramSize = 1 * 16384; break;
+                case InternalRamSizes.Int32Kilobyte: ramSize = 1 * 32768; break;
+                case InternalRamSizes.Int64Kilobyte: ramSize = 1 * 65536; break;
                 default: throw new Exception("Invalid internal RAM size");
             }
 
+            optionalRom = null;
             cartridgeA = null;
             cartridgeB = null;
 
@@ -347,6 +348,9 @@ namespace MasterFudgeMk2.Machines.Various.MSX
 
             if (CanCurrentlyBootWithoutMedia)
                 bios = File.ReadAllBytes(configuration.BiosPath);
+
+            if (File.Exists(configuration.OptionalRomPath))
+                optionalRom = MediaLoader.LoadMedia(this, new FileInfo(configuration.OptionalRomPath));
         }
 
         public override void Startup()
@@ -360,6 +364,7 @@ namespace MasterFudgeMk2.Machines.Various.MSX
 
         public override void Reset()
         {
+            optionalRom?.Reset();
             cartridgeA?.Reset();
             cartridgeB?.Reset();
 
@@ -400,6 +405,7 @@ namespace MasterFudgeMk2.Machines.Various.MSX
 
         public override void Shutdown()
         {
+            optionalRom?.Unload();
             cartridgeA?.Unload();
             cartridgeB?.Unload();
 
@@ -609,8 +615,9 @@ namespace MasterFudgeMk2.Machines.Various.MSX
                 primarySlot = (byte)((ppi.ReadPort(0xA8) >> 4) & 0x03);
                 if (primarySlot == 0x00)
                 {
-                    /* N/A */
-                    return 0x00;
+                    /* Internal software ROM (ex. Sony HitBit HB-75x) */
+                    // TODO: other machines w/ internal software & do they work the same?
+                    if (optionalRom != null) return optionalRom.Read(address);
                 }
                 else if (primarySlot == 0x01)
                 {
@@ -715,8 +722,8 @@ namespace MasterFudgeMk2.Machines.Various.MSX
                 primarySlot = (byte)((ppi.ReadPort(0xA8) >> 4) & 0x03);
                 if (primarySlot == 0x00)
                 {
-                    /* N/A */
-                    return;
+                    /* Internal software */
+                    optionalRom?.Write(address, value);
                 }
                 else if (primarySlot == 0x01)
                 {

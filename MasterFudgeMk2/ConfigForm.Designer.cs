@@ -33,15 +33,15 @@
             this.tlpInputConfig = new System.Windows.Forms.TableLayoutPanel();
             this.tcConfig = new System.Windows.Forms.TabControl();
             this.tpMainConfig = new System.Windows.Forms.TabPage();
+            this.panel1 = new System.Windows.Forms.Panel();
             this.tlpMainConfig = new System.Windows.Forms.TableLayoutPanel();
             this.tpInputConfig = new System.Windows.Forms.TabPage();
             this.pnlInputConfig = new System.Windows.Forms.Panel();
-            this.panel1 = new System.Windows.Forms.Panel();
             this.tcConfig.SuspendLayout();
             this.tpMainConfig.SuspendLayout();
+            this.panel1.SuspendLayout();
             this.tpInputConfig.SuspendLayout();
             this.pnlInputConfig.SuspendLayout();
-            this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnOkay
@@ -106,13 +106,24 @@
             this.tpMainConfig.Text = "Main";
             this.tpMainConfig.UseVisualStyleBackColor = true;
             // 
+            // panel1
+            // 
+            this.panel1.AutoScroll = true;
+            this.panel1.Controls.Add(this.tlpMainConfig);
+            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panel1.Location = new System.Drawing.Point(3, 3);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(366, 275);
+            this.panel1.TabIndex = 6;
+            // 
             // tlpMainConfig
             // 
             this.tlpMainConfig.AutoSize = true;
             this.tlpMainConfig.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.tlpMainConfig.ColumnCount = 3;
+            this.tlpMainConfig.ColumnCount = 4;
             this.tlpMainConfig.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.tlpMainConfig.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tlpMainConfig.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.tlpMainConfig.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.tlpMainConfig.Dock = System.Windows.Forms.DockStyle.Top;
             this.tlpMainConfig.Location = new System.Drawing.Point(0, 0);
@@ -143,16 +154,6 @@
             this.pnlInputConfig.Size = new System.Drawing.Size(366, 275);
             this.pnlInputConfig.TabIndex = 5;
             // 
-            // panel1
-            // 
-            this.panel1.AutoScroll = true;
-            this.panel1.Controls.Add(this.tlpMainConfig);
-            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panel1.Location = new System.Drawing.Point(3, 3);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(366, 275);
-            this.panel1.TabIndex = 6;
-            // 
             // ConfigForm
             // 
             this.AcceptButton = this.btnOkay;
@@ -172,11 +173,11 @@
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ConfigForm_FormClosing);
             this.tcConfig.ResumeLayout(false);
             this.tpMainConfig.ResumeLayout(false);
+            this.panel1.ResumeLayout(false);
+            this.panel1.PerformLayout();
             this.tpInputConfig.ResumeLayout(false);
             this.pnlInputConfig.ResumeLayout(false);
             this.pnlInputConfig.PerformLayout();
-            this.panel1.ResumeLayout(false);
-            this.panel1.PerformLayout();
             this.ResumeLayout(false);
 
         }

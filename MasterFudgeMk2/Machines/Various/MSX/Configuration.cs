@@ -8,17 +8,24 @@ namespace MasterFudgeMk2.Machines.Various.MSX
         public override sealed string Filename { get { return "MSX.xml"; } }
 
         /* Settings */
-        [Description("BIOS Path")]
+        [Description("BIOS/BASIC Path")]
         public string BiosPath
         {
             get { return SettingsConfig.GetString(nameof(BiosPath), string.Empty); }
             set { SettingsConfig.Set(nameof(BiosPath), value); }
         }
 
+        [Description("Optional ROM Path")]
+        public string OptionalRomPath
+        {
+            get { return SettingsConfig.GetString(nameof(OptionalRomPath), string.Empty); }
+            set { SettingsConfig.Set(nameof(OptionalRomPath), value); }
+        }
+
         [Description("Internal RAM")]
         public InternalRamSizes InternalRam
         {
-            get { return (InternalRamSizes)(SettingsConfig.GetString(nameof(InternalRam)).GetEnumFromFullyQualifiedName() ?? InternalRamSizes.Ext8Kilobyte); }
+            get { return (InternalRamSizes)(SettingsConfig.GetString(nameof(InternalRam)).GetEnumFromFullyQualifiedName() ?? InternalRamSizes.Int8Kilobyte); }
             set { SettingsConfig.Set(nameof(InternalRam), value.GetFullyQualifiedName()); }
         }
 
