@@ -1,7 +1,6 @@
 ﻿namespace MasterFudgeMk2.Media.MSX
 {
-    /* http://problemkaputt.de/portar.htm#cartridgememorymappers -- "Raw ROM without Mapper" */
-
+    /* Raw ROM without Mapper */
     public class RawRomCartridge : BaseCartridge
     {
         public RawRomCartridge() : base() { }

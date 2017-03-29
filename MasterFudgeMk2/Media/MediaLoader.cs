@@ -55,8 +55,10 @@ namespace MasterFudgeMk2.Media
             }
             else if (machineManager is Machines.Various.MSX.Manager)
             {
-                // TODO: more mappers!
-                media = (new RawRomCartridge() as IMedia);
+                if (fileInfo.Length <= 0x8000)
+                    media = (new RawRomCartridge() as IMedia);
+                else
+                    media = (Activator.CreateInstance(IdentifyMsxMapper(fileInfo)) as IMedia);
             }
             else
             {
@@ -66,6 +68,49 @@ namespace MasterFudgeMk2.Media
             media?.Load(fileInfo);
 
             return media;
+        }
+
+        private static Type IdentifyMsxMapper(FileInfo fileInfo)
+        {
+            /* http://problemkaputt.de/portar.htm#cartridgememorymappers, check for writes to cartridge */
+            // TODO: ASCII 8k/16k mappers
+
+            /* Opcode to look for; LD (nnnn), A */
+            const byte opcodeCheckLd = 0x32;
+
+            /* Initialize type dictionary */
+            var mapperTypeProbabilities = new Dictionary<Type, int>()
+            {
+                { typeof(Konami8kCartridge), -1 },
+                { typeof(Konami8kSccCartridge), -1 }
+            };
+
+            using (BinaryReader reader = new BinaryReader(fileInfo.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
+            {
+                while (reader.BaseStream.Position < reader.BaseStream.Length)
+                {
+                    /* Check for opcode */
+                    byte opcode = reader.ReadByte();
+                    if (opcode == opcodeCheckLd)
+                    {
+                        /* Check for bankswitching addresses, as per Portar */
+                        ushort address = reader.ReadUInt16();
+                        switch (address)
+                        {
+                            case 0x5000: mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++; break;
+                            case 0x6000: mapperTypeProbabilities[typeof(Konami8kCartridge)]++; break;
+                            case 0x7000: mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++; break;
+                            case 0x8000: mapperTypeProbabilities[typeof(Konami8kCartridge)]++; break;
+                            case 0x9000: mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++; break;
+                            case 0xA000: mapperTypeProbabilities[typeof(Konami8kCartridge)]++; break;
+                            case 0xB000: mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++; break;
+                        }
+                    }
+                }
+            }
+
+            /* Get mapper type with highest probability */
+            return mapperTypeProbabilities.OrderByDescending(x => x.Value).FirstOrDefault().Key;
         }
     }
 }

@@ -106,6 +106,8 @@
     <Compile Include="Machines\Various\MSX\Configuration.cs" />
     <Compile Include="Machines\Various\MSX\Manager.cs" />
     <Compile Include="Media\MSX\BaseCartridge.cs" />
+    <Compile Include="Media\MSX\Konami8kSccCartridge.cs" />
+    <Compile Include="Media\MSX\Konami8kCartridge.cs" />
     <Compile Include="Media\MSX\RawRomCartridge.cs" />
     <Compile Include="Media\MSX\RomHeader.cs" />
     <Compile Include="NewConfigForm.cs">
