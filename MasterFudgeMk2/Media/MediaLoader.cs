@@ -72,8 +72,10 @@ namespace MasterFudgeMk2.Media
 
         private static Type IdentifyMsxMapper(FileInfo fileInfo)
         {
-            /* http://problemkaputt.de/portar.htm#cartridgememorymappers, check for writes to cartridge */
-            // TODO: ASCII 8k/16k mappers
+            /* Check for writes to cartridge
+             *  http://problemkaputt.de/portar.htm#cartridgememorymappers
+             *  http://bifi.msxnet.org/msxnet/tech/megaroms
+             */
 
             /* Opcode to look for; LD (nnnn), A */
             const byte opcodeCheckLd = 0x32;
@@ -81,29 +83,68 @@ namespace MasterFudgeMk2.Media
             /* Initialize type dictionary */
             var mapperTypeProbabilities = new Dictionary<Type, int>()
             {
-                { typeof(Konami8kCartridge), -1 },
-                { typeof(Konami8kSccCartridge), -1 }
+                { typeof(Konami8kCartridge), 0 },
+                { typeof(Konami8kSccCartridge), 0 },
+                { typeof(Ascii8kCartridge), 1 },    /* Give ASCII mappers more weight, seem less reliable to detect...? */
+                { typeof(Ascii16kCartridge), 2 }
             };
 
-            using (BinaryReader reader = new BinaryReader(fileInfo.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite)))
+            /* Load & check the first ~16k of the given file */
+            byte[] romData = new byte[Math.Min(0x4000, fileInfo.Length)];
+            using (FileStream file = fileInfo.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) { file.Read(romData, 0, romData.Length); }
+
+            for (int i = 0x10; i < Math.Min(0x4000, romData.Length) - 3; i++)
             {
-                while (reader.BaseStream.Position < reader.BaseStream.Length)
+                /* Check for opcode */
+                byte opcode = romData[i];
+                if (opcode == opcodeCheckLd)
                 {
-                    /* Check for opcode */
-                    byte opcode = reader.ReadByte();
-                    if (opcode == opcodeCheckLd)
+                    /* Check for bankswitching addresses, as per Portar */
+                    ushort address = (ushort)(romData[i + 2] << 8 | (romData[i + 1]));
+
+                    if (address >= 0x4000 && address <= 0xBFFF)
                     {
-                        /* Check for bankswitching addresses, as per Portar */
-                        ushort address = reader.ReadUInt16();
-                        switch (address)
+                        if (address >= 0x5000 && address <= 0x57FF)
                         {
-                            case 0x5000: mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++; break;
-                            case 0x6000: mapperTypeProbabilities[typeof(Konami8kCartridge)]++; break;
-                            case 0x7000: mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++; break;
-                            case 0x8000: mapperTypeProbabilities[typeof(Konami8kCartridge)]++; break;
-                            case 0x9000: mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++; break;
-                            case 0xA000: mapperTypeProbabilities[typeof(Konami8kCartridge)]++; break;
-                            case 0xB000: mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++; break;
+                            mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++;
+                        }
+                        else if (address >= 0x6000 && address <= 0x67FF)
+                        {
+                            if (address == 0x6000)
+                                mapperTypeProbabilities[typeof(Konami8kCartridge)]++;
+
+                            mapperTypeProbabilities[typeof(Ascii8kCartridge)]++;
+                            mapperTypeProbabilities[typeof(Ascii16kCartridge)]++;
+                        }
+                        else if (address >= 0x6800 && address <= 0x6FFF)
+                        {
+                            mapperTypeProbabilities[typeof(Ascii8kCartridge)]++;
+                        }
+                        else if (address >= 0x7000 && address <= 0x77FF)
+                        {
+                            mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++;
+                            mapperTypeProbabilities[typeof(Ascii8kCartridge)]++;
+                            mapperTypeProbabilities[typeof(Ascii16kCartridge)]++;
+                        }
+                        else if (address >= 0x7800 && address <= 0x7FFF)
+                        {
+                            mapperTypeProbabilities[typeof(Ascii8kCartridge)]++;
+                        }
+                        else if (address == 0x8000)
+                        {
+                            mapperTypeProbabilities[typeof(Konami8kCartridge)]++;
+                        }
+                        else if (address >= 0x9000 && address <= 0x97FF)
+                        {
+                            mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++;
+                        }
+                        else if (address == 0xA000)
+                        {
+                            mapperTypeProbabilities[typeof(Konami8kCartridge)]++;
+                        }
+                        else if (address >= 0xB000 && address <= 0xB7FF)
+                        {
+                            mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++;
                         }
                     }
                 }
