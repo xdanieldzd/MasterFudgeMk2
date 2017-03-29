@@ -102,6 +102,7 @@ namespace MasterFudgeMk2
 
                         comboBox.DataBindings.Add("SelectedValue", Configuration, prop.Name, false, DataSourceUpdateMode.OnPropertyChanged);
                         tlpMainConfig.Controls.Add(comboBox, 1, i);
+                        tlpMainConfig.SetColumnSpan(comboBox, 2);
                     }
                 }
             }
