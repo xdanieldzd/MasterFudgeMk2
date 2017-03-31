@@ -53,7 +53,7 @@ namespace MasterFudgeMk2.Media
                 // TODO: whatever mapper(s) there's on Coleco
                 media = (new RomOnlyCartridge() as IMedia);
             }
-            else if (machineManager is Machines.Various.MSX.Manager)
+            else if (machineManager is Machines.Various.MSX.Manager || machineManager is Machines.Various.MSX2.Manager)
             {
                 if (fileInfo.Length <= 0x8000)
                     media = (new RawRomCartridge() as IMedia);

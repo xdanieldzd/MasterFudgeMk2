@@ -100,9 +100,12 @@
     <Compile Include="Common\UiStateBoolean.cs" />
     <Compile Include="Common\EventArguments\PollInputEventArgs.cs" />
     <Compile Include="Devices\AY38910.cs" />
+    <Compile Include="Devices\V9938.cs" />
     <Compile Include="EmulatorConfigurationNew.cs" />
     <Compile Include="InputBackends\DirectInputBackend.cs" />
     <Compile Include="InputBackends\IInputBackend.cs" />
+    <Compile Include="Machines\Various\MSX2\Configuration.cs" />
+    <Compile Include="Machines\Various\MSX2\Manager.cs" />
     <Compile Include="Machines\Various\MSX\Configuration.cs" />
     <Compile Include="Machines\Various\MSX\Manager.cs" />
     <Compile Include="Media\MSX\Ascii16kCartridge.cs" />

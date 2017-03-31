@@ -11,7 +11,7 @@ using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Media.MSX;
 using MasterFudgeMk2.Devices;
 
-namespace MasterFudgeMk2.Machines.Various.MSX
+namespace MasterFudgeMk2.Machines.Various.MSX2
 {
     [TypeConverter(typeof(DescriptionTypeConverter))]
     public enum MachineInputs
@@ -221,21 +221,19 @@ namespace MasterFudgeMk2.Machines.Various.MSX
     [TypeConverter(typeof(DescriptionTypeConverter))]
     public enum InternalRamSizes
     {
-        [Description("8 Kilobyte")]
-        Int8Kilobyte,
-        [Description("16 Kilobyte")]
-        Int16Kilobyte,
-        [Description("32 Kilobyte")]
-        Int32Kilobyte,
         [Description("64 Kilobyte")]
-        Int64Kilobyte
+        Int64Kilobyte,
+        [Description("128 Kilobyte")]
+        Int128Kilobyte,
+        [Description("256 Kilobyte")]
+        Int256Kilobyte
     }
 
     class Manager : BaseMachine
     {
-        public override string FriendlyName { get { return "Generic MSX"; } }
-        public override string FriendlyShortName { get { return "MSX"; } }
-        public override string FileFilter { get { return "MSX ROMs (*.rom)|*.rom"; } }
+        public override string FriendlyName { get { return "Generic MSX2"; } }
+        public override string FriendlyShortName { get { return "MSX2"; } }
+        public override string FileFilter { get { return "MSX2 ROMs (*.mx2;*.rom)|*.mx2;*.rom"; } }
 
         public override double RefreshRate { get { return refreshRate; } }
         public override float AspectRatio { get { return (576.0f / 486.0f); } }
@@ -277,15 +275,22 @@ namespace MasterFudgeMk2.Machines.Various.MSX
         const double psgClock = cpuClock;
 
         /* Devices on bus */
-        IMedia optionalRom, cartridgeA, cartridgeB;
+        IMedia cartridgeA, cartridgeB, subRom, diskRom;
         int ramSize;
         byte[] wram;
         Z80A cpu;
-        TMS9918A vdp;
+        V9938 vdp;
         AY38910 psg;
         i8255 ppi;
 
         byte[] bios;
+
+        byte[] secondarySlots, ramBankNumbers;
+        delegate byte ReadMemoryPageDelegate(ushort address);
+        delegate void WriteMemoryPageDelegate(ushort address, byte value);
+
+        ReadMemoryPageDelegate[] readMemoryPages;
+        WriteMemoryPageDelegate[] writeMemoryPages;
 
         enum JoystickButtons
         {
@@ -327,20 +332,20 @@ namespace MasterFudgeMk2.Machines.Various.MSX
 
             switch (configuration.InternalRam)
             {
-                case InternalRamSizes.Int8Kilobyte: ramSize = 1 * 8192; break;
-                case InternalRamSizes.Int16Kilobyte: ramSize = 1 * 16384; break;
-                case InternalRamSizes.Int32Kilobyte: ramSize = 1 * 32768; break;
                 case InternalRamSizes.Int64Kilobyte: ramSize = 1 * 65536; break;
+                case InternalRamSizes.Int128Kilobyte: ramSize = 1 * 131070; break;
+                case InternalRamSizes.Int256Kilobyte: ramSize = 1 * 262140; break;
                 default: throw new Exception("Invalid internal RAM size");
             }
 
-            optionalRom = null;
             cartridgeA = null;
             cartridgeB = null;
+            subRom = null;
+            diskRom = null;
 
             cpu = new Z80A(cpuClock, refreshRate, ReadMemory, WriteMemory, ReadPort, WritePort);
             wram = new byte[ramSize];
-            vdp = new TMS9918A(vdpClock, refreshRate, false);
+            vdp = new V9938(vdpClock, refreshRate, false);
             psg = new AY38910(psgClock, refreshRate, (s, e) => { OnAddSampleData(e); });
             ppi = new i8255();
 
@@ -349,8 +354,26 @@ namespace MasterFudgeMk2.Machines.Various.MSX
             if (CanCurrentlyBootWithoutMedia)
                 bios = File.ReadAllBytes(configuration.BiosPath);
 
-            if (File.Exists(configuration.OptionalRomPath))
-                optionalRom = MediaLoader.LoadMedia(this, new FileInfo(configuration.OptionalRomPath));
+            if (File.Exists(configuration.SubRomPath))
+                subRom = MediaLoader.LoadMedia(this, new FileInfo(configuration.SubRomPath));
+
+            if (File.Exists(configuration.DiskRomPath))
+                diskRom = MediaLoader.LoadMedia(this, new FileInfo(configuration.DiskRomPath));
+
+            secondarySlots = new byte[4];
+            ramBankNumbers = new byte[4];
+
+            readMemoryPages = new ReadMemoryPageDelegate[4];
+            readMemoryPages[0] = ReadMemoryPage0;
+            readMemoryPages[1] = ReadMemoryPage1;
+            readMemoryPages[2] = ReadMemoryPage2;
+            readMemoryPages[3] = ReadMemoryPage3;
+
+            writeMemoryPages = new WriteMemoryPageDelegate[4];
+            writeMemoryPages[0] = WriteMemoryPage0;
+            writeMemoryPages[1] = WriteMemoryPage1;
+            writeMemoryPages[2] = WriteMemoryPage2;
+            writeMemoryPages[3] = WriteMemoryPage3;
         }
 
         public override void Startup()
@@ -364,9 +387,10 @@ namespace MasterFudgeMk2.Machines.Various.MSX
 
         public override void Reset()
         {
-            optionalRom?.Reset();
             cartridgeA?.Reset();
             cartridgeB?.Reset();
+            diskRom?.Reset();
+            subRom?.Reset();
 
             cpu.Reset();
             psg.Reset();
@@ -385,7 +409,7 @@ namespace MasterFudgeMk2.Machines.Various.MSX
         public override bool CanLoadMedia(FileInfo mediaFile)
         {
             RomHeader romHeader = new RomHeader(File.ReadAllBytes(mediaFile.FullName));
-            return (mediaFile.Extension != ".mx2" && romHeader.IsValidCartridge);
+            return (mediaFile.Extension == ".mx2" && romHeader.IsValidCartridge);
         }
 
         public override void LoadMedia(int slotNumber, IMedia media)
@@ -405,9 +429,10 @@ namespace MasterFudgeMk2.Machines.Various.MSX
 
         public override void Shutdown()
         {
-            optionalRom?.Unload();
             cartridgeA?.Unload();
             cartridgeB?.Unload();
+            diskRom?.Unload();
+            subRom?.Unload();
 
             psg?.Shutdown();
         }
@@ -550,220 +575,407 @@ namespace MasterFudgeMk2.Machines.Various.MSX
             ppi.PortBInput = rowState;
         }
 
+        /*              0-3   4-7   8-B   C-F   */
+        /* PSLOT=0 ->   BIOS  BASIC N/A   N/A   */
+        /* PSLOT=1 ->   CartA CartA CartA CartA */
+        /* PSLOT=2 ->   CartB CartB CartB CartB */
+
+        /* PSLOT=3 ->   ...                     */
+        /*   SSLOT=0 -> N/A   N/A   N/A   N/A   */
+        /*   SSLOT=1 -> SUB   DISK  N/A   N/A   */
+        /*   SSLOT=2 -> RAM3  RAM2  RAM1  RAM0  */
+        /*   SSLOT=3 -> N/A   N/A   N/A   N/A   */
+
         private byte ReadMemory(ushort address)
         {
-            /*            0-3   4-7   8-B   C-F   */
-            /* PSLOT=0 -> BIOS  BASIC N/A   N/A   */
-            /* PSLOT=1 -> CartA CartA CartA CartA */
-            /* PSLOT=2 -> CartB CartB CartB CartB */
-            /* PSLOT=3 -> RAM3  RAM2  RAM1  RAM0  */
+            return readMemoryPages[address >> 14](address);
+        }
 
-            byte primarySlot;
+        private byte ReadMemoryPage0(ushort address)
+        {
+            byte primarySlot = (byte)((ppi.ReadPort(0xA8) >> 0) & 0x03);
+            byte secondarySlot = secondarySlots[0];
 
-            if (address >= 0x0000 && address <= 0x3FFF)
+            if (primarySlot == 0x00)
             {
-                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 0) & 0x03);
-                if (primarySlot == 0x00)
-                {
-                    /* BIOS */
-                    return (bios != null ? bios[address & (bios.Length - 1)] : (byte)0x00);
-                }
-                else if (primarySlot == 0x01)
-                {
-                    /* Cartridge A */
-                    if (cartridgeA != null) return cartridgeA.Read(address);
-                }
-                else if (primarySlot == 0x02)
-                {
-                    /* Cartridge B */
-                    if (cartridgeB != null) return cartridgeB.Read(address);
-                }
-                else if (primarySlot == 0x03)
-                {
-                    /* RAM3 */
-                    if (address >= (ushort)((0xFFFF - ramSize) + 1))
-                        return wram[address & (ramSize - 1)];
-                }
+                /* BIOS */
+                return (bios != null ? bios[address & (bios.Length - 1)] : (byte)0x00);
             }
-            else if (address >= 0x4000 && address <= 0x7FFF)
+            else if (primarySlot == 0x01)
             {
-                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 2) & 0x03);
-                if (primarySlot == 0x00)
-                {
-                    /* BASIC */
-                    return (bios != null ? bios[address & (bios.Length - 1)] : (byte)0x00);
-                }
-                else if (primarySlot == 0x01)
-                {
-                    /* Cartridge A */
-                    if (cartridgeA != null) return cartridgeA.Read(address);
-                }
-                else if (primarySlot == 0x02)
-                {
-                    /* Cartridge B */
-                    if (cartridgeB != null) return cartridgeB.Read(address);
-                }
-                else if (primarySlot == 0x03)
-                {
-                    /* RAM2 */
-                    if (address >= (ushort)((0xFFFF - ramSize) + 1))
-                        return wram[address & (ramSize - 1)];
-                }
+                /* Cartridge A */
+                if (cartridgeA != null) return cartridgeA.Read(address);
             }
-            else if (address >= 0x8000 && address <= 0xBFFF)
+            else if (primarySlot == 0x02)
             {
-                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 4) & 0x03);
-                if (primarySlot == 0x00)
-                {
-                    /* Internal software ROM (ex. Sony HitBit HB-75x) */
-                    // TODO: other machines w/ internal software & do they work the same?
-                    if (optionalRom != null) return optionalRom.Read(address);
-                }
-                else if (primarySlot == 0x01)
-                {
-                    /* Cartridge A */
-                    if (cartridgeA != null) return cartridgeA.Read(address);
-                }
-                else if (primarySlot == 0x02)
-                {
-                    /* Cartridge B */
-                    if (cartridgeB != null) return cartridgeB.Read(address);
-                }
-                else if (primarySlot == 0x03)
-                {
-                    /* RAM1 */
-                    if (address >= (ushort)((0xFFFF - ramSize) + 1))
-                        return wram[address & (ramSize - 1)];
-                }
+                /* Cartridge B */
+                if (cartridgeB != null) return cartridgeB.Read(address);
             }
-            else if (address >= 0xC000 && address <= 0xFFFF)
+            else if (primarySlot == 0x03)
             {
-                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 6) & 0x03);
-                if (primarySlot == 0x00)
+                if (secondarySlot == 0x00)
                 {
                     /* N/A */
                     return 0x00;
                 }
-                else if (primarySlot == 0x01)
+                else if (secondarySlot == 0x01)
                 {
-                    /* Cartridge A */
-                    if (cartridgeA != null) return cartridgeA.Read(address);
+                    /* SUB ROM */
+                    if (subRom != null) return subRom.Read(address);
                 }
-                else if (primarySlot == 0x02)
+                else if (secondarySlot == 0x02)
                 {
-                    /* Cartridge B */
-                    if (cartridgeB != null) return cartridgeB.Read(address);
+                    /* RAM3 */
+                    int ramAddress = ((ramBankNumbers[0] << 15) | (address & 0x3FFF));
+                    return wram[ramAddress & (ramSize - 1)];
                 }
-                else if (primarySlot == 0x03)
+                else if (secondarySlot == 0x03)
                 {
-                    /* RAM0 */
-                    if (address >= (ushort)((0xFFFF - ramSize) + 1))
-                        return wram[address & (ramSize - 1)];
+                    /* N/A */
+                    return 0x00;
                 }
             }
+            return 0x00;
+        }
 
+        private byte ReadMemoryPage1(ushort address)
+        {
+            byte primarySlot = (byte)((ppi.ReadPort(0xA8) >> 2) & 0x03);
+            byte secondarySlot = secondarySlots[1];
+
+            if (primarySlot == 0x00)
+            {
+                /* BASIC */
+                return (bios != null ? bios[address & (bios.Length - 1)] : (byte)0x00);
+            }
+            else if (primarySlot == 0x01)
+            {
+                /* Cartridge A */
+                if (cartridgeA != null) return cartridgeA.Read(address);
+            }
+            else if (primarySlot == 0x02)
+            {
+                /* Cartridge B */
+                if (cartridgeB != null) return cartridgeB.Read(address);
+            }
+            else if (primarySlot == 0x03)
+            {
+                if (secondarySlot == 0x00)
+                {
+                    /* N/A */
+                    return 0x00;
+                }
+                else if (secondarySlot == 0x01)
+                {
+                    /* DISK ROM */
+                    if (diskRom != null) return diskRom.Read(address);
+                }
+                else if (secondarySlot == 0x02)
+                {
+                    /* RAM2 */
+                    int ramAddress = ((ramBankNumbers[1] << 15) | (address & 0x3FFF));
+                    return wram[ramAddress & (ramSize - 1)];
+                }
+                else if (secondarySlot == 0x03)
+                {
+                    /* N/A */
+                    return 0x00;
+                }
+            }
+            return 0x00;
+        }
+
+        private byte ReadMemoryPage2(ushort address)
+        {
+            byte primarySlot = (byte)((ppi.ReadPort(0xA8) >> 4) & 0x03);
+            byte secondarySlot = secondarySlots[2];
+
+            if (primarySlot == 0x00)
+            {
+                /* N/A */
+                return 0x00;
+            }
+            else if (primarySlot == 0x01)
+            {
+                /* Cartridge A */
+                if (cartridgeA != null) return cartridgeA.Read(address);
+            }
+            else if (primarySlot == 0x02)
+            {
+                /* Cartridge B */
+                if (cartridgeB != null) return cartridgeB.Read(address);
+            }
+            else if (primarySlot == 0x03)
+            {
+                if (secondarySlot == 0x00)
+                {
+                    /* N/A */
+                    return 0x00;
+                }
+                else if (secondarySlot == 0x01)
+                {
+                    /* N/A */
+                    return 0x00;
+                }
+                else if (secondarySlot == 0x02)
+                {
+                    /* RAM1 */
+                    int ramAddress = ((ramBankNumbers[2] << 15) | (address & 0x3FFF));
+                    return wram[ramAddress & (ramSize - 1)];
+                }
+                else if (secondarySlot == 0x03)
+                {
+                    /* N/A */
+                    return 0x00;
+                }
+            }
+            return 0x00;
+        }
+
+        private byte ReadMemoryPage3(ushort address)
+        {
+            byte primarySlot = (byte)((ppi.ReadPort(0xA8) >> 6) & 0x03);
+            byte secondarySlot = secondarySlots[3];
+
+            if (primarySlot == 0x00)
+            {
+                /* N/A */
+                return 0x00;
+            }
+            else if (primarySlot == 0x01)
+            {
+                /* Cartridge A */
+                if (cartridgeA != null) return cartridgeA.Read(address);
+            }
+            else if (primarySlot == 0x02)
+            {
+                /* Cartridge B */
+                if (cartridgeB != null) return cartridgeB.Read(address);
+            }
+            else if (primarySlot == 0x03)
+            {
+                if (secondarySlot == 0x00)
+                {
+                    /* N/A */
+                    return 0x00;
+                }
+                else if (secondarySlot == 0x01)
+                {
+                    /* N/A */
+                    return 0x00;
+                }
+                else if (secondarySlot == 0x02)
+                {
+                    /* RAM0 */
+                    int ramAddress = ((ramBankNumbers[3] << 15) | (address & 0x3FFF));
+                    return wram[ramAddress & (ramSize - 1)];
+                }
+                else if (secondarySlot == 0x03)
+                {
+                    /* N/A */
+                    return 0x00;
+                }
+            }
             return 0x00;
         }
 
         private void WriteMemory(ushort address, byte value)
         {
-            byte primarySlot;
+            writeMemoryPages[address >> 14](address, value);
+        }
 
-            if (address >= 0x0000 && address <= 0x3FFF)
+        private void WriteMemoryPage0(ushort address, byte value)
+        {
+            byte primarySlot = (byte)((ppi.ReadPort(0xA8) >> 0) & 0x03);
+            byte secondarySlot = secondarySlots[0];
+
+            if (primarySlot == 0x00)
             {
-                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 0) & 0x03);
-                if (primarySlot == 0x00)
-                {
-                    /* BIOS -- can't write */
-                    return;
-                }
-                else if (primarySlot == 0x01)
-                {
-                    /* Cartridge A */
-                    cartridgeA?.Write(address, value);
-                }
-                else if (primarySlot == 0x02)
-                {
-                    /* Cartridge B */
-                    cartridgeB?.Write(address, value);
-                }
-                else if (primarySlot == 0x03)
-                {
-                    /* RAM3 */
-                    wram[address & (ramSize - 1)] = value;
-                }
+                /* BIOS -- can't write */
+                return;
             }
-            else if (address >= 0x4000 && address <= 0x7FFF)
+            else if (primarySlot == 0x01)
             {
-                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 2) & 0x03);
-                if (primarySlot == 0x00)
-                {
-                    /* BASIC -- can't write */
-                    return;
-                }
-                else if (primarySlot == 0x01)
-                {
-                    /* Cartridge A */
-                    cartridgeA?.Write(address, value);
-                }
-                else if (primarySlot == 0x02)
-                {
-                    /* Cartridge B */
-                    cartridgeB?.Write(address, value);
-                }
-                else if (primarySlot == 0x03)
-                {
-                    /* RAM2 */
-                    wram[address & (ramSize - 1)] = value;
-                }
+                /* Cartridge A */
+                cartridgeA?.Write(address, value);
             }
-            else if (address >= 0x8000 && address <= 0xBFFF)
+            else if (primarySlot == 0x02)
             {
-                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 4) & 0x03);
-                if (primarySlot == 0x00)
-                {
-                    /* Internal software */
-                    optionalRom?.Write(address, value);
-                }
-                else if (primarySlot == 0x01)
-                {
-                    /* Cartridge A */
-                    cartridgeA?.Write(address, value);
-                }
-                else if (primarySlot == 0x02)
-                {
-                    /* Cartridge B */
-                    cartridgeB?.Write(address, value);
-                }
-                else if (primarySlot == 0x03)
-                {
-                    /* RAM1 */
-                    wram[address & (ramSize - 1)] = value;
-                }
+                /* Cartridge B */
+                cartridgeB?.Write(address, value);
             }
-            else if (address >= 0xC000 && address <= 0xFFFF)
+            else if (primarySlot == 0x03)
             {
-                primarySlot = (byte)((ppi.ReadPort(0xA8) >> 6) & 0x03);
-                if (primarySlot == 0x00)
+                if (secondarySlot == 0x00)
                 {
                     /* N/A */
                     return;
                 }
-                else if (primarySlot == 0x01)
+                else if (secondarySlot == 0x01)
                 {
-                    /* Cartridge A */
-                    cartridgeA?.Write(address, value);
+                    /* SUB ROM */
+                    subRom?.Write(address, value);
+                    return;
                 }
-                else if (primarySlot == 0x02)
+                else if (secondarySlot == 0x02)
                 {
-                    /* Cartridge B */
-                    cartridgeB?.Write(address, value);
+                    /* RAM3 */
+                    int ramAddress = ((ramBankNumbers[0] << 15) | (address & 0x3FFF));
+                    wram[ramAddress & (ramSize - 1)] = value;
                 }
-                else if (primarySlot == 0x03)
+                else if (secondarySlot == 0x03)
+                {
+                    /* N/A */
+                    return;
+                }
+            }
+        }
+
+        private void WriteMemoryPage1(ushort address, byte value)
+        {
+            byte primarySlot = (byte)((ppi.ReadPort(0xA8) >> 2) & 0x03);
+            byte secondarySlot = secondarySlots[1];
+
+            if (primarySlot == 0x00)
+            {
+                /* BASIC -- can't write */
+                return;
+            }
+            else if (primarySlot == 0x01)
+            {
+                /* Cartridge A */
+                cartridgeA?.Write(address, value);
+            }
+            else if (primarySlot == 0x02)
+            {
+                /* Cartridge B */
+                cartridgeB?.Write(address, value);
+            }
+            else if (primarySlot == 0x03)
+            {
+                if (secondarySlot == 0x00)
+                {
+                    /* N/A */
+                    return;
+                }
+                else if (secondarySlot == 0x01)
+                {
+                    /* DISK ROM */
+                    diskRom?.Write(address, value);
+                    return;
+                }
+                else if (secondarySlot == 0x02)
+                {
+                    /* RAM2 */
+                    int ramAddress = ((ramBankNumbers[1] << 15) | (address & 0x3FFF));
+                    wram[ramAddress & (ramSize - 1)] = value;
+                }
+                else if (secondarySlot == 0x03)
+                {
+                    /* N/A */
+                    return;
+                }
+            }
+        }
+
+        private void WriteMemoryPage2(ushort address, byte value)
+        {
+            byte primarySlot = (byte)((ppi.ReadPort(0xA8) >> 4) & 0x03);
+            byte secondarySlot = secondarySlots[2];
+
+            if (primarySlot == 0x00)
+            {
+                /* N/A -- can't write */
+                return;
+            }
+            else if (primarySlot == 0x01)
+            {
+                /* Cartridge A */
+                cartridgeA?.Write(address, value);
+            }
+            else if (primarySlot == 0x02)
+            {
+                /* Cartridge B */
+                cartridgeB?.Write(address, value);
+            }
+            else if (primarySlot == 0x03)
+            {
+                if (secondarySlot == 0x00)
+                {
+                    /* N/A */
+                    return;
+                }
+                else if (secondarySlot == 0x01)
+                {
+                    /* N/A */
+                    return;
+                }
+                else if (secondarySlot == 0x02)
+                {
+                    /* RAM1 */
+                    int ramAddress = ((ramBankNumbers[2] << 15) | (address & 0x3FFF));
+                    wram[ramAddress & (ramSize - 1)] = value;
+                }
+                else if (secondarySlot == 0x03)
+                {
+                    /* N/A */
+                    return;
+                }
+            }
+        }
+
+        private void WriteMemoryPage3(ushort address, byte value)
+        {
+            byte primarySlot = (byte)((ppi.ReadPort(0xA8) >> 6) & 0x03);
+            byte secondarySlot = secondarySlots[3];
+
+            if (primarySlot == 0x00)
+            {
+                /* N/A */
+                return;
+            }
+            else if (primarySlot == 0x01)
+            {
+                /* Cartridge A */
+                cartridgeA?.Write(address, value);
+            }
+            else if (primarySlot == 0x02)
+            {
+                /* Cartridge B */
+                cartridgeB?.Write(address, value);
+            }
+            else if (primarySlot == 0x03)
+            {
+                if (secondarySlot == 0x00)
+                {
+                    /* N/A */
+                    return;
+                }
+                else if (secondarySlot == 0x01)
+                {
+                    /* N/A */
+                    return;
+                }
+                else if (secondarySlot == 0x02)
                 {
                     /* RAM0 */
-                    wram[address & (ramSize - 1)] = value;
+                    int ramAddress = ((ramBankNumbers[0] << 15) | (address & 0x3FFF));
+                    wram[ramAddress & (ramSize - 1)] = value;
                 }
+                else if (secondarySlot == 0x03)
+                {
+                    /* N/A */
+                    return;
+                }
+            }
+
+            /* Secondary slot */
+            if (address == 0xFFFF)
+            {
+                secondarySlots[0] = (byte)(((value >> 0) ^ 0xFF) & 0x03);
+                secondarySlots[1] = (byte)(((value >> 2) ^ 0xFF) & 0x03);
+                secondarySlots[2] = (byte)(((value >> 4) ^ 0xFF) & 0x03);
+                secondarySlots[3] = (byte)(((value >> 6) ^ 0xFF) & 0x03);
             }
         }
 
@@ -785,6 +997,12 @@ namespace MasterFudgeMk2.Machines.Various.MSX
 
                 /* Special ports */
                 case 0xF7: return portAVControl;                    /* A/V control */
+
+                /* Memory mapper */
+                case 0xFC: return ramBankNumbers[0];                /* RAM bank for 0000-3FFF */
+                case 0xFD: return ramBankNumbers[1];                /* RAM bank for 4000-7FFF */
+                case 0xFE: return ramBankNumbers[2];                /* RAM bank for 8000-BFFF */
+                case 0xFF: return ramBankNumbers[3];                /* RAM bank for C000-FFFF */
 
                 /* Unmapped or unimplemented... */
                 default: return 0x00;
@@ -811,6 +1029,12 @@ namespace MasterFudgeMk2.Machines.Various.MSX
                 /* Special ports */
                 case 0xF5: portSystemControl = value; break;        /* System control */
                 case 0xF7: portAVControl = value; break;            /* A/V control */
+
+                /* Memory mapper */
+                case 0xFC: ramBankNumbers[0] = value; break;        /* RAM bank for 0000-3FFF */
+                case 0xFD: ramBankNumbers[1] = value; break;        /* RAM bank for 4000-7FFF */
+                case 0xFE: ramBankNumbers[2] = value; break;        /* RAM bank for 8000-BFFF */
+                case 0xFF: ramBankNumbers[3] = value; break;        /* RAM bank for C000-FFFF */
             }
         }
     }
