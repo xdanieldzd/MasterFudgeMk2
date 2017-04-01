@@ -231,6 +231,17 @@ namespace MasterFudgeMk2.Machines.Various.MSX
         Int64Kilobyte
     }
 
+    [TypeConverter(typeof(DescriptionTypeConverter))]
+    public enum FloppyDriveTypes
+    {
+        [Description("No Floppy Drive")]
+        None,
+        [Description("Common MMIO-style")]
+        CommonMMIO,
+        [Description("\"Brazilian\" port-style")]
+        BrazilianPort
+    }
+
     class Manager : BaseMachine
     {
         public override string FriendlyName { get { return "Generic MSX"; } }
@@ -284,6 +295,7 @@ namespace MasterFudgeMk2.Machines.Various.MSX
         TMS9918A vdp;
         AY38910 psg;
         i8255 ppi;
+        FD179x fdc;
 
         byte[] bios;
 
@@ -344,6 +356,11 @@ namespace MasterFudgeMk2.Machines.Various.MSX
             psg = new AY38910(psgClock, refreshRate, (s, e) => { OnAddSampleData(e); });
             ppi = new i8255();
 
+            if (configuration.FloppyDrive != FloppyDriveTypes.None)
+            {
+                fdc = new FD179x();
+            }
+
             keyMatrix = new bool[11, 8];
 
             if (CanCurrentlyBootWithoutMedia)
@@ -372,6 +389,8 @@ namespace MasterFudgeMk2.Machines.Various.MSX
             psg.Reset();
             vdp.Reset();
             ppi.Reset();
+
+            fdc?.Reset();
 
             for (int i = 0; i < keyMatrix.GetLength(0); i++)
                 for (int j = 0; j < keyMatrix.GetLength(1); j++)
@@ -425,6 +444,8 @@ namespace MasterFudgeMk2.Machines.Various.MSX
             cpu.SetInterruptLine(vdp.InterruptLine);
 
             psg.Step((int)Math.Round(currentCpuClockCycles));
+
+            fdc?.Step();
 
             currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
         }
@@ -597,6 +618,10 @@ namespace MasterFudgeMk2.Machines.Various.MSX
                 {
                     /* Cartridge A */
                     if (cartridgeA != null) return cartridgeA.Read(address);
+
+                    // TODO: better floppy handling; make floppy controller a cartridge...?
+                    if (fdc != null && configuration.FloppyDrive == FloppyDriveTypes.CommonMMIO && (address >= 0x7FF8 && address <= 0x7FFF))
+                        return ReadFloppyMMIO(address);
                 }
                 else if (primarySlot == 0x02)
                 {
@@ -705,6 +730,10 @@ namespace MasterFudgeMk2.Machines.Various.MSX
                 {
                     /* Cartridge A */
                     cartridgeA?.Write(address, value);
+
+                    // TODO: again, floppy handling is crap, make this better!
+                    if (fdc != null && configuration.FloppyDrive == FloppyDriveTypes.CommonMMIO && (address >= 0x7FF8 && address <= 0x7FFF))
+                        WriteFloppyMMIO(address, value);
                 }
                 else if (primarySlot == 0x02)
                 {
@@ -769,6 +798,19 @@ namespace MasterFudgeMk2.Machines.Various.MSX
 
         private byte ReadPort(byte port)
         {
+            /* Port-style floppy */
+            if (fdc != null && configuration.FloppyDrive == FloppyDriveTypes.BrazilianPort && (port >= 0xD0 && port <= 0xD4))
+            {
+                switch (port)
+                {
+                    case 0xD0: return fdc.StatusRegister;           /* Status register */
+                    case 0xD1: return fdc.TrackRegister;            /* Track register */
+                    case 0xD2: return fdc.SectorRegister;           /* Sector register */
+                    case 0xD3: return fdc.DataRegister;             /* Data register */
+                    case 0xD4: return (byte)((fdc.InterruptRequest ? (1 << 7) : 0) | (fdc.DataRequest ? (1 << 6) : 0)); /* Interrupt/data request flags */
+                }
+            }
+
             switch (port)
             {
                 /* VDP */
@@ -793,6 +835,26 @@ namespace MasterFudgeMk2.Machines.Various.MSX
 
         public void WritePort(byte port, byte value)
         {
+            /* Port-style floppy */
+            if (fdc != null && configuration.FloppyDrive == FloppyDriveTypes.BrazilianPort && (port >= 0xD0 && port <= 0xD4))
+            {
+                switch (port)
+                {
+                    case 0xD0: fdc.CommandRegister = value; return;         /* Command register */
+                    case 0xD1: fdc.TrackRegister = value; return;           /* Track register */
+                    case 0xD2: fdc.SectorRegister = value; return;          /* Sector register */
+                    case 0xD3: fdc.DataRegister = value; return;            /* Data register */
+                    case 0xD4:
+                        /* Drive/side/motor flags */
+                        fdc.SelectDrive0 = BitUtilities.IsBitSet(value, 0); /* Drive 0 select */
+                        fdc.SelectDrive1 = BitUtilities.IsBitSet(value, 1); /* Drive 1 select */
+                        fdc.SelectSide1 = BitUtilities.IsBitSet(value, 4);  /* Side 1 select */
+                        // TODO: verify motor bit!
+                        fdc.MotorOn = BitUtilities.IsBitSet(value, 5);      /* Motor on */
+                        return;
+                }
+            }
+
             switch (port)
             {
                 /* VDP */
@@ -811,6 +873,40 @@ namespace MasterFudgeMk2.Machines.Various.MSX
                 /* Special ports */
                 case 0xF5: portSystemControl = value; break;        /* System control */
                 case 0xF7: portAVControl = value; break;            /* A/V control */
+            }
+        }
+
+        private byte ReadFloppyMMIO(ushort address)
+        {
+            // TODO: uggghhhh
+
+            switch (address)
+            {
+                case 0x7FF8: return fdc.StatusRegister;
+                case 0x7FF9: return fdc.TrackRegister;
+                case 0x7FFA: return fdc.SectorRegister;
+                case 0x7FFB: return fdc.DataRegister;
+
+                case 0x7FFF: return (byte)((fdc.DataRequest ? (1 << 7) : 0) | (fdc.InterruptRequest ? (1 << 6) : 0));
+            }
+
+            return 0x00;
+        }
+
+        private void WriteFloppyMMIO(ushort address, byte value)
+        {
+            // TODO: ugggggghhhhhhhhhhh
+
+            switch (address)
+            {
+                case 0x7FF8: fdc.CommandRegister = value; break;
+                case 0x7FF9: fdc.TrackRegister = value; break;
+                case 0x7FFA: fdc.SectorRegister = value; break;
+                case 0x7FFB: fdc.DataRegister = value; break;
+
+                // TODO: drive 1? motor on?
+                case 0x7FFC: fdc.SelectSide1 = BitUtilities.IsBitSet(value, 0); break;
+                case 0x7FFD: fdc.SelectDrive0 = BitUtilities.IsBitSet(value, 0); break;
             }
         }
     }

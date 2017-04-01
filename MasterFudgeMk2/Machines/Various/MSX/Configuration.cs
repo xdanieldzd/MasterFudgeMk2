@@ -29,6 +29,13 @@ namespace MasterFudgeMk2.Machines.Various.MSX
             set { SettingsConfig.Set(nameof(InternalRam), value.GetFullyQualifiedName()); }
         }
 
+        [Description("Floppy Drive")]
+        public FloppyDriveTypes FloppyDrive
+        {
+            get { return (FloppyDriveTypes)(SettingsConfig.GetString(nameof(FloppyDrive)).GetEnumFromFullyQualifiedName() ?? FloppyDriveTypes.None); }
+            set { SettingsConfig.Set(nameof(FloppyDrive), value.GetFullyQualifiedName()); }
+        }
+
         /* Joysticks */
         public Enum J1Up
         {
