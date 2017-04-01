@@ -124,6 +124,7 @@ namespace MasterFudgeMk2.Devices.Sega
 
         public SegaSMS2VDP(double clockRate, double refreshRate, bool isPalChip) : base(clockRate, refreshRate, isPalChip)
         {
+            registers = new byte[0x0B];
             cram = new byte[0x20];
 
             screenUsage = new byte[NumActivePixelsPerScanline * NumTotalScanlines];

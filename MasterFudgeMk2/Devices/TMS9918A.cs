@@ -145,7 +145,7 @@ namespace MasterFudgeMk2.Devices
             this.refreshRate = refreshRate;
             this.isPalChip = isPalChip;
 
-            registers = new byte[0x10];
+            registers = new byte[0x08];
             vram = new byte[0x4000];
 
             screenUsage = new byte[NumActivePixelsPerScanline * NumTotalScanlines];

@@ -1014,8 +1014,10 @@ namespace MasterFudgeMk2.Machines.Various.MSX2
             switch (port)
             {
                 /* VDP */
-                case 0x98: vdp.WriteDataPort(value); break;         /* Data port */
-                case 0x99: vdp.WriteControlPort(value); break;      /* Control port */
+                case 0x98: vdp.WriteDataPort(value); break;             /* Data port */
+                case 0x99: vdp.WriteControlPort(value); break;          /* Control port */
+                case 0x9A: vdp.WriteColorPaletteRegister(value); break; /* Color palette register */
+                case 0x9B: vdp.WriteRegisterData(value); break;         /* Register data */
 
                 /* PSG */
                 case 0xA0: psg.WriteIndex(value); break;            /* Index */
