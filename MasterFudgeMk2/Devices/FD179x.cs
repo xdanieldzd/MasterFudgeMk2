@@ -31,6 +31,7 @@ namespace MasterFudgeMk2.Devices
         public bool MotorOn { private get; set; }
 
         //
+        int tempTimer = 0;
 
         public FD179x() { }
 
@@ -55,8 +56,22 @@ namespace MasterFudgeMk2.Devices
         public void Step()
         {
             // TODO: make drive actually work
-            InterruptRequest = true;
-            StatusRegister = 0x80;
+            if (tempTimer == 0)
+            {
+                tempTimer = 2048;
+            }
+            else if (tempTimer < 1024)
+            {
+                InterruptRequest = false;
+                StatusRegister = 0x00;
+                tempTimer--;
+            }
+            else
+            {
+                InterruptRequest = true;
+                StatusRegister = 0x80;
+                tempTimer--;
+            }
         }
     }
 }

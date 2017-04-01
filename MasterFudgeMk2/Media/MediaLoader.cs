@@ -55,10 +55,7 @@ namespace MasterFudgeMk2.Media
             }
             else if (machineManager is Machines.Various.MSX.Manager || machineManager is Machines.Various.MSX2.Manager)
             {
-                if (fileInfo.Length <= 0x8000)
-                    media = (new RawRomCartridge() as IMedia);
-                else
-                    media = (Activator.CreateInstance(IdentifyMsxMapper(fileInfo)) as IMedia);
+                media = (Activator.CreateInstance(IdentifyMsxMapper(fileInfo)) as IMedia);
             }
             else
             {
@@ -72,7 +69,14 @@ namespace MasterFudgeMk2.Media
 
         private static Type IdentifyMsxMapper(FileInfo fileInfo)
         {
-            /* Check for writes to cartridge
+            /* Load the first max. ~16k of the given file */
+            byte[] romData = new byte[Math.Min(0x4000, fileInfo.Length)];
+            using (FileStream file = fileInfo.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) { file.Read(romData, 0, romData.Length); }
+
+            /* Read ROM header */
+            MSX.RomHeader romHeader = new MSX.RomHeader(romData);
+
+            /* Now check for writes to cartridge, as per:
              *  http://problemkaputt.de/portar.htm#cartridgememorymappers
              *  http://bifi.msxnet.org/msxnet/tech/megaroms
              */
@@ -83,15 +87,16 @@ namespace MasterFudgeMk2.Media
             /* Initialize type dictionary */
             var mapperTypeProbabilities = new Dictionary<Type, int>()
             {
+                { typeof(FdcCartridge), 0 },
                 { typeof(Konami8kCartridge), 0 },
                 { typeof(Konami8kSccCartridge), 0 },
                 { typeof(Ascii8kCartridge), 1 },    /* Give ASCII mappers more weight, seem less reliable to detect...? */
                 { typeof(Ascii16kCartridge), 2 }
             };
 
-            /* Load & check the first ~16k of the given file */
-            byte[] romData = new byte[Math.Min(0x4000, fileInfo.Length)];
-            using (FileStream file = fileInfo.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) { file.Read(romData, 0, romData.Length); }
+            /* These header values (seem to) indicate a floppy disk controller ROM */
+            if (romHeader.InitializationRoutineAddress == 0x576F && romHeader.StatementExpansionRoutineAddress == 0x6576)
+                mapperTypeProbabilities[typeof(FdcCartridge)] += 10;
 
             for (int i = 0x10; i < Math.Min(0x4000, romData.Length) - 3; i++)
             {
@@ -129,6 +134,9 @@ namespace MasterFudgeMk2.Media
                         else if (address >= 0x7800 && address <= 0x7FFF)
                         {
                             mapperTypeProbabilities[typeof(Ascii8kCartridge)]++;
+
+                            if (address >= 0x7FF8 && address <= 0x7FFF)
+                                mapperTypeProbabilities[typeof(FdcCartridge)]++;
                         }
                         else if (address == 0x8000)
                         {

@@ -36,6 +36,13 @@ namespace MasterFudgeMk2.Machines.Various.MSX
             set { SettingsConfig.Set(nameof(FloppyDrive), value.GetFullyQualifiedName()); }
         }
 
+        [Description("Floppy ROM Path")]
+        public string FloppyRomPath
+        {
+            get { return SettingsConfig.GetString(nameof(FloppyRomPath), string.Empty); }
+            set { SettingsConfig.Set(nameof(FloppyRomPath), value); }
+        }
+
         /* Joysticks */
         public Enum J1Up
         {

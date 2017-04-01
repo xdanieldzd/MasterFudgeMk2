@@ -14,6 +14,7 @@ namespace MasterFudgeMk2.Media
         void Load(FileInfo fileInfo);
         void Reset();
         void Unload();
+        void Step();
         byte Read(ushort address);
         void Write(ushort address, byte value);
     }

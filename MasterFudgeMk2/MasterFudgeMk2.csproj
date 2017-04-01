@@ -112,6 +112,7 @@
     <Compile Include="Media\MSX\Ascii16kCartridge.cs" />
     <Compile Include="Media\MSX\BaseCartridge.cs" />
     <Compile Include="Media\MSX\Ascii8kCartridge.cs" />
+    <Compile Include="Media\MSX\FdcCartridge.cs" />
     <Compile Include="Media\MSX\Konami8kSccCartridge.cs" />
     <Compile Include="Media\MSX\Konami8kCartridge.cs" />
     <Compile Include="Media\MSX\RawRomCartridge.cs" />
