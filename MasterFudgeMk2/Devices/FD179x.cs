@@ -12,6 +12,9 @@ namespace MasterFudgeMk2.Devices
     /* http://problemkaputt.de/portar.htm#floppydiskcontroller
      * http://z00m.speccy.cz/docs/wd1793.htm
      * http://fms.komkon.org/MSX/Docs/Portar.txt
+     * 
+     * http://fms.komkon.org/MSX/Docs/Disk.txt
+     * https://www.win.tue.nl/~aeb/linux/fs/fat/fat-1.html
      */
 
     public class FD179x
@@ -90,6 +93,7 @@ namespace MasterFudgeMk2.Devices
         bool isStepForward;
 
         byte[] diskData;
+        DiskStructure diskStructure;
 
         public FD179x() { }
 
@@ -116,6 +120,9 @@ namespace MasterFudgeMk2.Devices
             string filePath = @"D:\ROMs\MSX\Mappy (1984)(Namcot).dsk";
             if (File.Exists(filePath))
                 diskData = File.ReadAllBytes(filePath);
+
+            diskStructure = new DiskStructure(diskData);
+            // TODO: actually try and use disk structure to read stuff
         }
 
         public void Step()
@@ -180,20 +187,20 @@ namespace MasterFudgeMk2.Devices
                 /* Is Step, Step-In or Step-Out? */
                 if ((commandRegister & 0x60) == 0x20)
                 {
-                    /* Step */
+                    /* Step -- step in same direction as last Step command */
                     TrackStep(stepRate, isStepForward, trackUpdateFlag);
                     HandleCommandFinished();
                 }
                 else if ((commandRegister & 0x60) == 0x40)
                 {
-                    /* Step-In */
+                    /* Step-In -- step forward, towards track 76 */
                     isStepForward = true;
                     TrackStep(stepRate, isStepForward, trackUpdateFlag);
                     HandleCommandFinished();
                 }
                 else
                 {
-                    /* Step-Out */
+                    /* Step-Out -- step backwards, towards track 0 */
                     isStepForward = false;
                     TrackStep(stepRate, isStepForward, trackUpdateFlag);
                     HandleCommandFinished();
@@ -292,6 +299,129 @@ namespace MasterFudgeMk2.Devices
         {
             InterruptRequest = true;
             isBusy = false;
+        }
+    }
+
+    // TODO: move to separate file?
+
+    class DiskStructure
+    {
+        public DiskBootRecord BootRecord { get; private set; }
+        public ushort[][] FatCopies { get; private set; }
+        public DiskDirectoryEntry[] DirectoryEntries { get; private set; }
+
+        public DiskStructure(byte[] diskData)
+        {
+            BootRecord = new DiskBootRecord(diskData);
+
+            if (BootRecord.DiskType != 0xF9) throw new NotImplementedException(string.Format("Non-3.5 inch disks not implemented, tried parsing type 0x{0:X2}", BootRecord.DiskType));
+
+            int fatOffset = (BootRecord.SectorsPerBootRecord * BootRecord.BytesPerSector);
+            int directoryOffset = (fatOffset + ((BootRecord.NumberOfFatCopies * BootRecord.SectorsPerFat) * BootRecord.BytesPerSector));
+
+            FatCopies = new ushort[BootRecord.NumberOfFatCopies][];
+            for (int numFat = 0; numFat < BootRecord.NumberOfFatCopies; numFat++)
+            {
+                List<ushort> fatEntries = new List<ushort>();
+
+                for (int numSector = 0; numSector < BootRecord.SectorsPerFat; numSector++)
+                {
+                    int dataOffset = fatOffset + (numFat * (BootRecord.SectorsPerFat * BootRecord.BytesPerSector)) + (numSector * BootRecord.BytesPerSector);
+                    for (int offset = 0; offset < BootRecord.BytesPerSector; offset += 3)
+                    {
+                        fatEntries.Add((ushort)(diskData[dataOffset + offset] | ((diskData[dataOffset + offset + 1] & 0xF) << 8)));
+                        fatEntries.Add((ushort)((diskData[dataOffset + offset + 2] << 4) | (diskData[dataOffset + offset + 1] >> 4)));
+                    }
+                }
+
+                FatCopies[numFat] = fatEntries.ToArray();
+            }
+
+            DirectoryEntries = new DiskDirectoryEntry[BootRecord.EntriesPerRootDirectory];
+            for (int i = 0; i < DirectoryEntries.Length; i++) DirectoryEntries[i] = new DiskDirectoryEntry(diskData, directoryOffset + (i * 0x20));
+        }
+    }
+
+    class DiskBootRecord
+    {
+        public uint JumpTo80x86BootProcedure { get; private set; }  /* Not used on MSX, but must begin with 0xE9 or 0xEB */
+        public string DiskName { get; private set; }                /* ASCII, 8 bytes */
+        public ushort BytesPerSector { get; private set; }
+        public byte SectorsPerCluster { get; private set; }
+        public ushort SectorsPerBootRecord { get; private set; }
+        public byte NumberOfFatCopies { get; private set; }
+        public ushort EntriesPerRootDirectory { get; private set; }
+        public ushort SectorsPerDisk { get; private set; }
+        public byte DiskType { get; private set; }
+        public ushort SectorsPerFat { get; private set; }
+        public ushort SectorsPerTrack { get; private set; }
+        public ushort HeadsPerDisk { get; private set; }
+        public ushort NumberOfReservedSectors { get; private set; }
+        public byte[] MsxBootProcedure { get; private set; }        /* 0x1E2 bytes */
+
+        public DiskBootRecord(byte[] diskData)
+        {
+            JumpTo80x86BootProcedure = (uint)((diskData[0x00] << 16) | (diskData[0x01] << 8) | diskData[0x02]);
+            DiskName = Encoding.ASCII.GetString(diskData, 0x03, 0x08);
+            BytesPerSector = BitConverter.ToUInt16(diskData, 0x0B);
+            SectorsPerCluster = diskData[0x0D];
+            SectorsPerBootRecord = BitConverter.ToUInt16(diskData, 0x0E);
+            NumberOfFatCopies = diskData[0x10];
+            EntriesPerRootDirectory = BitConverter.ToUInt16(diskData, 0x11);
+            SectorsPerDisk = BitConverter.ToUInt16(diskData, 0x13);
+            DiskType = diskData[0x15];
+            SectorsPerFat = BitConverter.ToUInt16(diskData, 0x16);
+            SectorsPerTrack = BitConverter.ToUInt16(diskData, 0x18);
+            HeadsPerDisk = BitConverter.ToUInt16(diskData, 0x1A);
+            NumberOfReservedSectors = BitConverter.ToUInt16(diskData, 0x1C);
+            MsxBootProcedure = new byte[0x1E2];
+            Buffer.BlockCopy(diskData, 0x1E, MsxBootProcedure, 0, MsxBootProcedure.Length);
+        }
+    }
+
+    [Flags]
+    enum DiskFileAttributes
+    {
+        ReadOnly = 0x01,
+        Hidden = 0x02,
+        System = 0x04,
+        VolumeLabel = 0x08,
+        Subdirectory = 0x10,
+        Archive = 0x20,
+        UnusedBit6 = 0x40,
+        UnusedBit7 = 0x80
+    }
+
+    class DiskDirectoryEntry
+    {
+        public string Filename { get; private set; }
+        public string FileExtension { get; private set; }
+        public DiskFileAttributes FileAttribute { get; private set; }
+        public byte[] Reserved { get; private set; }
+        public ushort Timestamp { get; private set; }
+        public ushort Datestamp { get; private set; }
+        public ushort PointerToFirstCluster { get; private set; }
+        public uint FileSizeInBytes { get; private set; }
+
+        public DateTime DateTimeStamp { get; private set; }
+
+        public DiskDirectoryEntry(byte[] diskData, int offset)
+        {
+            Filename = Encoding.ASCII.GetString(diskData, offset, 0x08);
+            FileExtension = Encoding.ASCII.GetString(diskData, offset + 0x08, 0x03);
+            FileAttribute = (DiskFileAttributes)diskData[offset + 0x0B];
+            Reserved = new byte[0x0A];
+            Buffer.BlockCopy(diskData, offset + 0x0C, Reserved, 0, Reserved.Length);
+            Timestamp = BitConverter.ToUInt16(diskData, offset + 0x16);
+            Datestamp = BitConverter.ToUInt16(diskData, offset + 0x18);
+            PointerToFirstCluster = BitConverter.ToUInt16(diskData, offset + 0x1A);
+            FileSizeInBytes = BitConverter.ToUInt32(diskData, offset + 0x1C);
+
+            if (Datestamp != 0x0000 && Timestamp != 0x0000)
+            {
+                // TODO: adding 1980 places Mappy in 2000?
+                DateTimeStamp = new DateTime((1980 + (Datestamp >> 9)), ((Datestamp >> 5) & 0x0F), (Datestamp & 0x1F), (Timestamp >> 11), ((Timestamp >> 5) & 0x3F), ((Timestamp & 0x1F) << 1));
+            }
         }
     }
 }
