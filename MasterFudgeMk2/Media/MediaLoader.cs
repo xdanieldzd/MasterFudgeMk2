@@ -7,7 +7,6 @@ using System.IO;
 
 using MasterFudgeMk2.Common;
 using MasterFudgeMk2.Media.Sega;
-using MasterFudgeMk2.Media.MSX;
 using MasterFudgeMk2.Machines;
 
 namespace MasterFudgeMk2.Media
@@ -35,7 +34,7 @@ namespace MasterFudgeMk2.Media
             {
                 media = (Activator.CreateInstance(cartIdent.MediaType) as IMedia);
             }
-            else if (machineManager is Machines.Sega.SG1000.Manager || machineManager is Machines.Sega.MasterSystem.Manager || machineManager is Machines.Sega.GameGear.Manager || machineManager is Machines.Sega.SC3000.Manager)
+            else if (machineManager is Machines.Sega.SG1000.Manager || machineManager is Machines.Sega.MasterSystem.Manager || machineManager is Machines.Sega.GameGear.Manager)
             {
                 if (fileInfo.Length <= 0xC000)
                 {
@@ -53,10 +52,6 @@ namespace MasterFudgeMk2.Media
                 // TODO: whatever mapper(s) there's on Coleco
                 media = (new RomOnlyCartridge() as IMedia);
             }
-            else if (machineManager is Machines.Various.MSX.Manager || machineManager is Machines.Various.MSX2.Manager)
-            {
-                media = (Activator.CreateInstance(IdentifyMsxMapper(fileInfo)) as IMedia);
-            }
             else
             {
                 throw new Exception("Could not identify cartridge");
@@ -65,101 +60,6 @@ namespace MasterFudgeMk2.Media
             media?.Load(fileInfo);
 
             return media;
-        }
-
-        private static Type IdentifyMsxMapper(FileInfo fileInfo)
-        {
-            /* Load the first max. ~16k of the given file */
-            byte[] romData = new byte[Math.Min(0x4000, fileInfo.Length)];
-            using (FileStream file = fileInfo.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) { file.Read(romData, 0, romData.Length); }
-
-            /* Read ROM header */
-            MSX.RomHeader romHeader = new MSX.RomHeader(romData);
-
-            /* Now check for writes to cartridge, as per:
-             *  http://problemkaputt.de/portar.htm#cartridgememorymappers
-             *  http://bifi.msxnet.org/msxnet/tech/megaroms
-             */
-
-            /* Opcode to look for; LD (nnnn), A */
-            const byte opcodeCheckLd = 0x32;
-
-            /* Initialize type dictionary */
-            var mapperTypeProbabilities = new Dictionary<Type, int>()
-            {
-                { typeof(FdcCartridge), 0 },
-                { typeof(Konami8kCartridge), 0 },
-                { typeof(Konami8kSccCartridge), 0 },
-                { typeof(Ascii8kCartridge), 1 },    /* Give ASCII mappers more weight, seem less reliable to detect...? */
-                { typeof(Ascii16kCartridge), 2 }
-            };
-
-            /* These header values (seem to) indicate a floppy disk controller ROM */
-            if (romHeader.InitializationRoutineAddress == 0x576F && romHeader.StatementExpansionRoutineAddress == 0x6576)
-                mapperTypeProbabilities[typeof(FdcCartridge)] += 10;
-
-            for (int i = 0x10; i < Math.Min(0x4000, romData.Length) - 3; i++)
-            {
-                /* Check for opcode */
-                byte opcode = romData[i];
-                if (opcode == opcodeCheckLd)
-                {
-                    /* Check for bankswitching addresses, as per Portar */
-                    ushort address = (ushort)(romData[i + 2] << 8 | (romData[i + 1]));
-
-                    if (address >= 0x4000 && address <= 0xBFFF)
-                    {
-                        if (address >= 0x5000 && address <= 0x57FF)
-                        {
-                            mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++;
-                        }
-                        else if (address >= 0x6000 && address <= 0x67FF)
-                        {
-                            if (address == 0x6000)
-                                mapperTypeProbabilities[typeof(Konami8kCartridge)]++;
-
-                            mapperTypeProbabilities[typeof(Ascii8kCartridge)]++;
-                            mapperTypeProbabilities[typeof(Ascii16kCartridge)]++;
-                        }
-                        else if (address >= 0x6800 && address <= 0x6FFF)
-                        {
-                            mapperTypeProbabilities[typeof(Ascii8kCartridge)]++;
-                        }
-                        else if (address >= 0x7000 && address <= 0x77FF)
-                        {
-                            mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++;
-                            mapperTypeProbabilities[typeof(Ascii8kCartridge)]++;
-                            mapperTypeProbabilities[typeof(Ascii16kCartridge)]++;
-                        }
-                        else if (address >= 0x7800 && address <= 0x7FFF)
-                        {
-                            mapperTypeProbabilities[typeof(Ascii8kCartridge)]++;
-
-                            if (address >= 0x7FF8 && address <= 0x7FFF)
-                                mapperTypeProbabilities[typeof(FdcCartridge)]++;
-                        }
-                        else if (address == 0x8000)
-                        {
-                            mapperTypeProbabilities[typeof(Konami8kCartridge)]++;
-                        }
-                        else if (address >= 0x9000 && address <= 0x97FF)
-                        {
-                            mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++;
-                        }
-                        else if (address == 0xA000)
-                        {
-                            mapperTypeProbabilities[typeof(Konami8kCartridge)]++;
-                        }
-                        else if (address >= 0xB000 && address <= 0xB7FF)
-                        {
-                            mapperTypeProbabilities[typeof(Konami8kSccCartridge)]++;
-                        }
-                    }
-                }
-            }
-
-            /* Get mapper type with highest probability */
-            return mapperTypeProbabilities.OrderByDescending(x => x.Value).FirstOrDefault().Key;
         }
     }
 }

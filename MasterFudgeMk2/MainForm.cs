@@ -126,8 +126,7 @@ namespace MasterFudgeMk2
             {
                 //StartMachine(typeof(Machines.Sega.MasterSystem.Manager));
                 //StartMachine(typeof(Machines.Coleco.ColecoVision.Manager));
-                StartMachine(typeof(Machines.Various.MSX.Manager));
-
+                
                 //LoadMedia(@"D:\ROMs\SG1000\Bank Panic (Japan).sg");
                 //LoadMedia(@"D:\ROMs\SG1000\Othello (Japan).sg");
                 //LoadMedia(@"D:\ROMs\SG1000\Castle, The (Japan).sg");
