@@ -26,14 +26,24 @@ namespace MasterFudgeMk2.InputBackends
             directInput = new DirectInput();
 
             keyboard = new Keyboard(directInput);
-            keyboard.Properties.BufferSize = 128;
-            keyboard.Acquire();
+            if (keyboard != null)
+            {
+                keyboard.Properties.BufferSize = 128;
+                keyboard.Acquire();
+            }
 
-            var joystickGuid = directInput.GetDevices(DeviceClass.GameControl, DeviceEnumerationFlags.AttachedOnly).FirstOrDefault().InstanceGuid;
-            joystick = new Joystick(directInput, joystickGuid);
-            joystick.Properties.BufferSize = 128;
-            joystick.Properties.DeadZone = 2000;
-            joystick.Acquire();
+            var joystickDevices = directInput.GetDevices(DeviceClass.GameControl, DeviceEnumerationFlags.AttachedOnly);
+            if (joystickDevices.Count > 0)
+            {
+                var joystickGuid = joystickDevices.FirstOrDefault().InstanceGuid;
+                joystick = new Joystick(directInput, joystickGuid);
+                if (joystick != null)
+                {
+                    joystick.Properties.BufferSize = 128;
+                    joystick.Properties.DeadZone = 2000;
+                    joystick.Acquire();
+                }
+            }
         }
 
         public void Dispose()
@@ -46,13 +56,22 @@ namespace MasterFudgeMk2.InputBackends
         {
             if (disposing)
             {
-                joystick.Unacquire();
-                joystick.Dispose();
+                if (joystick != null)
+                {
+                    joystick.Unacquire();
+                    joystick.Dispose();
+                }
 
-                keyboard.Unacquire();
-                keyboard.Dispose();
+                if (keyboard != null)
+                {
+                    keyboard.Unacquire();
+                    keyboard.Dispose();
+                }
 
-                directInput.Dispose();
+                if (directInput != null)
+                {
+                    directInput.Dispose();
+                }
             }
         }
 
@@ -73,13 +92,14 @@ namespace MasterFudgeMk2.InputBackends
                 DeviceObjectInstance objectInstance;
 
                 if (input.GetType() == typeof(Key))
-                    objectInstance = keyboard.GetObjectInfoByName(Enum.GetName(typeof(Key), input));
+                    objectInstance = keyboard?.GetObjectInfoByName(Enum.GetName(typeof(Key), input));
                 else if (input.GetType() == typeof(JoystickOffset))
-                    objectInstance = joystick.GetObjectInfoByName(Enum.GetName(typeof(JoystickOffset), input));
+                    objectInstance = joystick?.GetObjectInfoByName(Enum.GetName(typeof(JoystickOffset), input));
                 else
                     throw new Exception("Trying to get description from unhandled enum");
 
-                description = objectInstance.Name;
+                if (objectInstance != null)
+                    description = objectInstance.Name;
             }
             catch (SharpDX.SharpDXException e)
             {
@@ -93,15 +113,22 @@ namespace MasterFudgeMk2.InputBackends
 
         public void OnPollInput(object sender, PollInputEventArgs e)
         {
-            keyboard.Poll();
-            var keyboardUpdates = keyboard.GetBufferedData();
-
-            joystick.Poll();
-            var joystickUpdates = joystick.GetBufferedData();
-
             var inputs = new List<Enum>();
-            inputs.AddRange(keyboardUpdates.Where(x => x.IsPressed).Select(x => (Enum)x.Key));
-            inputs.AddRange(joystickUpdates.Select(x => (Enum)x.Offset));
+
+            if (keyboard != null)
+            {
+                keyboard.Poll();
+                var keyboardUpdates = keyboard.GetBufferedData();
+                inputs.AddRange(keyboardUpdates.Where(x => x.IsPressed).Select(x => (Enum)x.Key));
+            }
+
+            if (joystick != null)
+            {
+                joystick.Poll();
+                var joystickUpdates = joystick.GetBufferedData();
+                inputs.AddRange(joystickUpdates.Select(x => (Enum)x.Offset));
+            }
+
             e.Pressed = inputs;
 
 
