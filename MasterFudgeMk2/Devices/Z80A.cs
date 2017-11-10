@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 
 using MasterFudgeMk2.Common;
+using MasterFudgeMk2.Common.Enumerations;
 
 namespace MasterFudgeMk2.Devices
 {

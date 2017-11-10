@@ -6,6 +6,7 @@ using System.IO;
 using System.Drawing;
 
 using MasterFudgeMk2.Common;
+using MasterFudgeMk2.Common.Enumerations;
 using MasterFudgeMk2.Common.EventArguments;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Media.Sega;

@@ -86,6 +86,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AudioBackends\NullAudioBackend.cs" />
+    <Compile Include="Common\Enumerations\ControllerState.cs" />
     <Compile Include="Common\EventArguments\AddSampleDataEventArgs.cs" />
     <Compile Include="AudioBackends\NAudioBackend.cs" />
     <Compile Include="AudioBackends\IAudioBackend.cs" />
@@ -94,7 +95,7 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Common\Crc32.cs" />
-    <Compile Include="Common\InterruptState.cs" />
+    <Compile Include="Common\Enumerations\InterruptState.cs" />
     <Compile Include="Common\MustInitialize.cs" />
     <Compile Include="Common\TupleListExtensions.cs" />
     <Compile Include="Common\UiStateBoolean.cs" />

@@ -380,7 +380,7 @@ namespace MasterFudgeMk2.Devices
 
         public static string PrintInterrupt(Z80A cpu)
         {
-            return string.Format("[IM{0} {1} {2} {3}]", cpu.im, (cpu.iff1 ? "EI" : "DI"), (cpu.halt ? "HLT" : "---"), (cpu.intState == Common.InterruptState.Assert ? "ASR" : "---"));
+            return string.Format("[IM{0} {1} {2} {3}]", cpu.im, (cpu.iff1 ? "EI" : "DI"), (cpu.halt ? "HLT" : "---"), (cpu.intState == Common.Enumerations.InterruptState.Assert ? "ASR" : "---"));
         }
 
         public static string DisassembleOpcode(Z80A cpu, ushort address)
