@@ -13,6 +13,7 @@ namespace MasterFudgeMk2.Machines
         public abstract string FriendlyName { get; }
         public abstract string FriendlyShortName { get; }
         public abstract string FileFilter { get; }
+        public abstract string DatFileName { get; }
 
         public abstract double RefreshRate { get; }
         public abstract float AspectRatio { get; }

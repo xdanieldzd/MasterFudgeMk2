@@ -43,6 +43,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
         public override string FriendlyName { get { return "Sega Game Gear"; } }
         public override string FriendlyShortName { get { return "Game Gear"; } }
         public override string FileFilter { get { return "Game Gear ROMs (*.gg)|*.gg"; } }
+        public override string DatFileName { get { return "Sega - Game Gear.dat"; } }
 
         public override double RefreshRate { get { return refreshRate; } }
         public override float AspectRatio { get { return (576.0f / 486.0f); } }

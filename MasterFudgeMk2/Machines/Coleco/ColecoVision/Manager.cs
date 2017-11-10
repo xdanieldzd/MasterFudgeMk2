@@ -65,6 +65,7 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
         public override string FriendlyName { get { return "Coleco ColecoVision"; } }
         public override string FriendlyShortName { get { return "ColecoVision"; } }
         public override string FileFilter { get { return "ColecoVision ROMs (*.col)|*.col"; } }
+        public override string DatFileName { get { return "Coleco - ColecoVision.dat"; } }
 
         public override double RefreshRate { get { return refreshRate; } }
         public override float AspectRatio { get { return (576.0f / 486.0f); } }

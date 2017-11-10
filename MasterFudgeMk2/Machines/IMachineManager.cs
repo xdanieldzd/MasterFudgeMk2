@@ -22,6 +22,10 @@ namespace MasterFudgeMk2.Machines
         /// Get file filter for Open ROM dialog
         /// </summary>
         string FileFilter { get; }
+        /// <summary>
+        /// Get filename of No-Intro DAT file (i.e. "Sega - Game Gear.dat")
+        /// </summary>
+        string DatFileName { get; }
 
         /// <summary>
         /// Get system refresh rate

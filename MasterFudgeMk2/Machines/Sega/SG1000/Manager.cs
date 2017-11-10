@@ -51,6 +51,7 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
         public override string FriendlyName { get { return "Sega SG-1000"; } }
         public override string FriendlyShortName { get { return "SG-1000"; } }
         public override string FileFilter { get { return "SG-1000 ROMs (*.sg)|*.sg"; } }
+        public override string DatFileName { get { return "Sega - SG-1000.dat"; } }
 
         public override double RefreshRate { get { return refreshRate; } }
         public override float AspectRatio { get { return (576.0f / 486.0f); } }

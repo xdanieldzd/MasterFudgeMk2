@@ -8,6 +8,9 @@ namespace MasterFudgeMk2.Machines
     {
         public static Type DetectMachine(FileInfo mediaFile)
         {
+            var datResult = DatHelper.FindGameInDats(mediaFile);
+            if (datResult != null) return datResult.Type;
+
             foreach (Type machineType in AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => typeof(IMachineManager).IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract).OrderBy(x => x.Name))
             {
                 IMachineManager machine = (Activator.CreateInstance(machineType) as IMachineManager);

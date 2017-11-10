@@ -100,6 +100,8 @@
     <Compile Include="Common\TupleListExtensions.cs" />
     <Compile Include="Common\UiStateBoolean.cs" />
     <Compile Include="Common\EventArguments\PollInputEventArgs.cs" />
+    <Compile Include="DatFile.cs" />
+    <Compile Include="DatHelper.cs" />
     <Compile Include="EmulatorConfigurationNew.cs" />
     <Compile Include="InputBackends\DirectInputBackend.cs" />
     <Compile Include="InputBackends\IInputBackend.cs" />
@@ -217,6 +219,18 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="XML\Coleco - ColecoVision.dat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <Content Include="XML\Sega - Game Gear.dat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="XML\Sega - Master System - Mark III.dat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="XML\Sega - SG-1000.dat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

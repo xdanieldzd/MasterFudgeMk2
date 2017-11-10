@@ -55,6 +55,7 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
         public override string FriendlyName { get { return "Sega Master System"; } }
         public override string FriendlyShortName { get { return "Master System"; } }
         public override string FileFilter { get { return "Master System ROMs (*.sms)|*.sms"; } }
+        public override string DatFileName { get { return "Sega - Master System - Mark III.dat"; } }
 
         public override double RefreshRate { get { return refreshRate; } }
         public override float AspectRatio { get { return (!configuration.IsPalSystem ? (576.0f / 486.0f) : (720.0f / 486.0f)); } }
