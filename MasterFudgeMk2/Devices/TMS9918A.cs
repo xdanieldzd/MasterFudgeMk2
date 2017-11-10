@@ -659,7 +659,9 @@ namespace MasterFudgeMk2.Devices
 
         protected virtual void WriteRegister(byte register, byte value)
         {
-            registers[register] = value;
+            // TODO: same as with SMS2 VDP, correct behavior on invalid registers?
+            if (register < registers.Length)
+                registers[register] = value;
         }
     }
 }
