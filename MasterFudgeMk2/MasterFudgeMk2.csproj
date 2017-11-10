@@ -166,7 +166,6 @@
     <Compile Include="Machines\Sega\GameGear\Manager.cs" />
     <Compile Include="Machines\MachineConfiguration.cs" />
     <Compile Include="Machines\IMachineManager.cs" />
-    <Compile Include="Machines\MachineLoader.cs" />
     <Compile Include="Machines\Sega\MasterSystem\Configuration.cs" />
     <Compile Include="Machines\Sega\MasterSystem\Manager.cs" />
     <Compile Include="Machines\Sega\SG1000\Configuration.cs" />

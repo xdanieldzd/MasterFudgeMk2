@@ -38,7 +38,9 @@ namespace MasterFudgeMk2
 
         List<Keys> keysPressed;
         Controller controller;
+
         FileInfo romFileInfo;
+        string romFriendlyName;
 
         UiStateBoolean emulationIsInitialized;
         bool emulationIsPaused;
@@ -126,7 +128,7 @@ namespace MasterFudgeMk2
             {
                 //StartMachine(typeof(Machines.Sega.MasterSystem.Manager));
                 //StartMachine(typeof(Machines.Coleco.ColecoVision.Manager));
-                
+
                 //LoadMedia(@"D:\ROMs\SG1000\Bank Panic (Japan).sg");
                 //LoadMedia(@"D:\ROMs\SG1000\Othello (Japan).sg");
                 //LoadMedia(@"D:\ROMs\SG1000\Castle, The (Japan).sg");
@@ -342,7 +344,7 @@ namespace MasterFudgeMk2
             }
             else
             {
-                string mediaName = (romFileInfo != null && romFileInfo.Exists ? romFileInfo.Name : "[No Media]");
+                string mediaName = (romFileInfo != null && romFileInfo.Exists ? (romFriendlyName == string.Empty ? romFileInfo.Name : romFriendlyName) : "[No Media]");
                 Text = string.Format("{0} - {1} - {2}", programNameVersion, machineManager.FriendlyShortName, mediaName);
                 tsslStatus.Text = (emulationIsPaused ? "Paused" : "Running");
             }
@@ -437,6 +439,7 @@ namespace MasterFudgeMk2
             soundOutput?.Stop();
 
             romFileInfo = null;
+            romFriendlyName = string.Empty;
 
             machineManager = (Activator.CreateInstance(machineType) as IMachineManager);
             machineManager.RenderScreen += renderer.OnRenderScreen;
@@ -465,15 +468,49 @@ namespace MasterFudgeMk2
 
         public void LoadMedia(FileInfo fileInfo)
         {
-            StartMachine(MachineLoader.DetectMachine(fileInfo));
+            Type machineType = null;
+            string mediaName = string.Empty;
 
+            /* Try to detect machine via No-Intro DATs */
+            var datResult = DatHelper.FindGameInDats(fileInfo);
+            if (datResult != null)
+            {
+                /* Media found in DAT, use the corresponding machine type & media name */
+                machineType = datResult.Type;
+                mediaName = datResult.Game.Name;
+            }
+            else
+            {
+                /* Media not found in DAT, query all machines' CanLoadMedia function */
+                foreach (Type type in AppDomain.CurrentDomain.GetAssemblies().SelectMany(s => s.GetTypes()).Where(p => typeof(IMachineManager).IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract).OrderBy(x => x.Name))
+                {
+                    IMachineManager machine = (Activator.CreateInstance(type) as IMachineManager);
+                    if (machine.CanLoadMedia(fileInfo))
+                    {
+                        machineType = type;
+                        mediaName = fileInfo.Name;
+                        break;
+                    }
+                }
+            }
+
+            /* If machine still hasn't been identified, throw an exception */
+            if (machineType == null)
+                throw new Exception(string.Format("Could not identify machine from media file '{0}'", fileInfo.Name));
+
+            /* Initialize machine */
+            StartMachine(machineType);
+
+            /* Load media into machine */
             IMedia media = MediaLoader.LoadMedia(machineManager, fileInfo);
             machineManager?.LoadMedia(0, media);
             machineManager?.Reset();
 
+            /* Housekeeping & UI stuff */
             soundOutput?.Reset();
 
             romFileInfo = fileInfo;
+            romFriendlyName = mediaName;
 
             AddFileToRecentList(fileInfo.FullName);
             UpdateRecentFilesMenu();
@@ -613,6 +650,7 @@ namespace MasterFudgeMk2
             sb.AppendFormat(CultureInfo.InvariantCulture, "Friendly name (long): {0}\n", machineManager.FriendlyName);
             sb.AppendFormat(CultureInfo.InvariantCulture, "Friendly name (short): {0}\n", machineManager.FriendlyShortName);
             sb.AppendFormat(CultureInfo.InvariantCulture, "File filter: {0}\n", machineManager.FileFilter);
+            sb.AppendFormat(CultureInfo.InvariantCulture, "DAT filename: {0}\n", machineManager.DatFileName);
             sb.AppendLine();
             sb.AppendFormat(CultureInfo.InvariantCulture, "Supports boot without media? {0}\n", machineManager.SupportsBootingWithoutMedia);
             sb.AppendFormat(CultureInfo.InvariantCulture, "Can currently boot without media? {0}\n", machineManager.CanCurrentlyBootWithoutMedia);

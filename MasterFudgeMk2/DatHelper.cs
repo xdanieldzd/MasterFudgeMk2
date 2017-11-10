@@ -43,10 +43,7 @@ namespace MasterFudgeMk2
             {
                 var game = datFile.Value.Game.FirstOrDefault(x => x.Rom.Any(y => y.Crc == crcString && y.Size == sizeString));
                 if (game != null)
-                {
-                    System.Diagnostics.Debug.Print(game.Name);
                     return new { Type = datFile.Key, Game = game };
-                }
             }
 
             return null;
