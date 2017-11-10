@@ -664,7 +664,9 @@ namespace MasterFudgeMk2.Devices.Sega
 
         protected override void WriteRegister(byte register, byte value)
         {
-            registers[register] = value;
+            // TODO: verify what's the correct behavior here? VDPTEST writes to invalid registers...?
+            if (register < registers.Length)
+                registers[register] = value;
 
             /* Some value caching for (minor) performance reasons */
             if (register == 0x00)
