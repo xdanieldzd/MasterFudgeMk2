@@ -108,7 +108,7 @@ namespace MasterFudgeMk2
                 programVersion.Build);
 
             /* Read emulator configuration */
-            emulatorConfig = new EmulatorConfiguration();
+            emulatorConfig = ConfigFile.Load<EmulatorConfiguration>();
         }
 
         private Dictionary<Type, string> GetMachineNames()

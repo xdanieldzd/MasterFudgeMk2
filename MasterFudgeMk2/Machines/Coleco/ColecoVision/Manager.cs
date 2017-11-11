@@ -156,7 +156,7 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
         {
             // TODO: better bios handling?
 
-            configuration = new Configuration();
+            configuration = ConfigFile.Load<Configuration>();
 
             cartridge = null;
 

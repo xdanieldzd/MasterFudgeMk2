@@ -1,73 +1,50 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Drawing;
-
-using Nini.Config;
+using System.Xml.Serialization;
 
 namespace MasterFudgeMk2
 {
     public sealed class EmulatorConfiguration : ConfigFile
     {
-        public override sealed string Filename { get { return "Emulator.xml"; } }
+        public override sealed string Name { get { return "Emulator.xml"; } }
 
-        const string sectionSettings = "Settings";
-        public IConfig SettingsConfig
+        [XmlElement(ElementName = nameof(VideoBackend))]
+        public string VideoBackendString
         {
-            get
-            {
-                if (source.Configs[sectionSettings] == null) source.AddConfig(sectionSettings);
-                return source.Configs[sectionSettings];
-            }
+            get { return VideoBackend.AssemblyQualifiedName; }
+            set { VideoBackend = Type.GetType(value); }
+        }
+        [XmlElement(ElementName = nameof(AudioBackend))]
+        public string AudioBackendString
+        {
+            get { return AudioBackend.AssemblyQualifiedName; }
+            set { AudioBackend = Type.GetType(value); }
+        }
+        [XmlElement(ElementName = nameof(InputBackend))]
+        public string InputBackendString
+        {
+            get { return InputBackend.AssemblyQualifiedName; }
+            set { InputBackend = Type.GetType(value); }
         }
 
-        public Type VideoBackend
-        {
-            get { return Type.GetType(SettingsConfig.GetString(nameof(VideoBackend)) ?? typeof(VideoBackends.Direct2DBackend).AssemblyQualifiedName); }
-            set { SettingsConfig.Set(nameof(VideoBackend), value.AssemblyQualifiedName); }
-        }
+        [XmlIgnore]
+        public Type VideoBackend { get; set; } = typeof(VideoBackends.Direct2DBackend);
+        [XmlIgnore]
+        public Type AudioBackend { get; set; } = typeof(AudioBackends.NullAudioBackend);
+        [XmlIgnore]
+        public Type InputBackend { get; set; } = typeof(InputBackends.DInputKeyboardBackend);
 
-        public Type AudioBackend
-        {
-            get { return Type.GetType(SettingsConfig.GetString(nameof(AudioBackend)) ?? typeof(AudioBackends.NullAudioBackend).AssemblyQualifiedName); }
-            set { SettingsConfig.Set(nameof(AudioBackend), value.AssemblyQualifiedName); }
-        }
+        [XmlElement]
+        public bool LimitFps { get; set; } = true;
+        [XmlElement]
+        public bool KeepAspectRatio { get; set; } = true;
+        [XmlElement]
+        public bool ForceSquarePixels { get; set; } = false;
+        [XmlElement]
+        public bool DebugMode { get; set; } = false;
 
-        public Type InputBackend
-        {
-            get { return Type.GetType(SettingsConfig.GetString(nameof(InputBackend)) ?? typeof(InputBackends.DInputKeyboardBackend).AssemblyQualifiedName); }
-            set { SettingsConfig.Set(nameof(InputBackend), value.AssemblyQualifiedName); }
-        }
-
-        public bool LimitFps
-        {
-            get { return SettingsConfig.GetBoolean(nameof(LimitFps), true); }
-            set { SettingsConfig.Set(nameof(LimitFps), value); }
-        }
-
-        public bool KeepAspectRatio
-        {
-            get { return SettingsConfig.GetBoolean(nameof(KeepAspectRatio), true); }
-            set { SettingsConfig.Set(nameof(KeepAspectRatio), value); }
-        }
-
-        public bool ForceSquarePixels
-        {
-            get { return SettingsConfig.GetBoolean(nameof(ForceSquarePixels), false); }
-            set { SettingsConfig.Set(nameof(ForceSquarePixels), value); }
-        }
-
-        public bool DebugMode
-        {
-            get { return SettingsConfig.GetBoolean(nameof(DebugMode), false); }
-            set { SettingsConfig.Set(nameof(DebugMode), value); }
-        }
-
-        public List<string> RecentFiles
-        {
-            get { return SettingsConfig.GetString(nameof(RecentFiles), string.Empty).Split('|').ToList(); }
-            set { SettingsConfig.Set(nameof(RecentFiles), string.Join("|", value)); }
-        }
+        [XmlArray]
+        public List<string> RecentFiles { get; set; } = new List<string>();
 
         public EmulatorConfiguration() : base() { }
     }

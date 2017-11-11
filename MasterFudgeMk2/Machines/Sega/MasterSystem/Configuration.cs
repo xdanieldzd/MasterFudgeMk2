@@ -1,127 +1,60 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Xml.Serialization;
 
 namespace MasterFudgeMk2.Machines.Sega.MasterSystem
 {
     public sealed class Configuration : MachineConfiguration
     {
-        public override sealed string Filename { get { return "MasterSystem.xml"; } }
+        public override sealed string Name { get { return "MasterSystem.xml"; } }
 
         /* Settings */
         [Description("Bootstrap Path")]
-        public string BootstrapPath
-        {
-            get { return SettingsConfig.GetString(nameof(BootstrapPath), string.Empty); }
-            set { SettingsConfig.Set(nameof(BootstrapPath), value); }
-        }
-
+        [XmlElement]
+        public string BootstrapPath { get; set; } = string.Empty;
         [Description("Enable Bootstrap")]
-        public bool UseBootstrap
-        {
-            get { return SettingsConfig.GetBoolean(nameof(UseBootstrap), false); }
-            set { SettingsConfig.Set(nameof(UseBootstrap), value); }
-        }
-
+        [XmlElement]
+        public bool UseBootstrap { get; set; } = false;
         [Description("Emulate Export System")]
-        public bool IsExportSystem
-        {
-            get { return SettingsConfig.GetBoolean(nameof(IsExportSystem), true); }
-            set { SettingsConfig.Set(nameof(IsExportSystem), value); }
-        }
-
+        [XmlElement]
+        public bool IsExportSystem { get; set; } = true;
         [Description("Emulate PAL System")]
-        public bool IsPalSystem
-        {
-            get { return SettingsConfig.GetBoolean(nameof(IsPalSystem), false); }
-            set { SettingsConfig.Set(nameof(IsPalSystem), value); }
-        }
+        [XmlElement]
+        public bool IsPalSystem { get; set; } = false;
 
         /* Inputs (General) */
-        public Enum Pause
-        {
-            get { return InputConfig.GetString(MachineInputs.Pause.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Pause.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Reset
-        {
-            get { return InputConfig.GetString(MachineInputs.Reset.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Reset.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
+        [XmlElement]
+        public Enum Pause { get; set; } = null;
+        [XmlElement]
+        public Enum Reset { get; set; } = null;
 
         /* Inputs (P1) */
-        public Enum P1Up
-        {
-            get { return InputConfig.GetString(MachineInputs.P1Up.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.P1Up.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum P1Down
-        {
-            get { return InputConfig.GetString(MachineInputs.P1Down.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.P1Down.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum P1Left
-        {
-            get { return InputConfig.GetString(MachineInputs.P1Left.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.P1Left.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum P1Right
-        {
-            get { return InputConfig.GetString(MachineInputs.P1Right.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.P1Right.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum P1Button1
-        {
-            get { return InputConfig.GetString(MachineInputs.P1Button1.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.P1Button1.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum P1Button2
-        {
-            get { return InputConfig.GetString(MachineInputs.P1Button2.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.P1Button2.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
+        [XmlElement]
+        public Enum P1Up { get; set; } = null;
+        [XmlElement]
+        public Enum P1Down { get; set; } = null;
+        [XmlElement]
+        public Enum P1Left { get; set; } = null;
+        [XmlElement]
+        public Enum P1Right { get; set; } = null;
+        [XmlElement]
+        public Enum P1Button1 { get; set; } = null;
+        [XmlElement]
+        public Enum P1Button2 { get; set; } = null;
 
         /* Inputs (P2) */
-        public Enum P2Up
-        {
-            get { return InputConfig.GetString(MachineInputs.P2Up.GetFullyQualifiedName(), string.Empty).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.P2Up.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum P2Down
-        {
-            get { return InputConfig.GetString(MachineInputs.P2Down.GetFullyQualifiedName(), string.Empty).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.P2Down.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum P2Left
-        {
-            get { return InputConfig.GetString(MachineInputs.P2Left.GetFullyQualifiedName(), string.Empty).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.P2Left.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum P2Right
-        {
-            get { return InputConfig.GetString(MachineInputs.P2Right.GetFullyQualifiedName(), string.Empty).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.P2Right.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum P2Button1
-        {
-            get { return InputConfig.GetString(MachineInputs.P2Button1.GetFullyQualifiedName(), string.Empty).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.P2Button1.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum P2Button2
-        {
-            get { return InputConfig.GetString(MachineInputs.P2Button2.GetFullyQualifiedName(), string.Empty).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.P2Button2.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
+        [XmlElement]
+        public Enum P2Up { get; set; } = null;
+        [XmlElement]
+        public Enum P2Down { get; set; } = null;
+        [XmlElement]
+        public Enum P2Left { get; set; } = null;
+        [XmlElement]
+        public Enum P2Right { get; set; } = null;
+        [XmlElement]
+        public Enum P2Button1 { get; set; } = null;
+        [XmlElement]
+        public Enum P2Button2 { get; set; } = null;
 
         public Configuration() : base() { }
     }

@@ -1,24 +1,47 @@
-﻿using System.IO;
-
-using Nini.Config;
+﻿using System;
+using System.IO;
+using System.Xml.Serialization;
 
 namespace MasterFudgeMk2
 {
+    [Serializable]
     public abstract class ConfigFile
     {
-        public abstract string Filename { get; }
+        [XmlIgnore]
+        public abstract string Name { get; }
+        [XmlIgnore]
+        public string FullName { get { return Path.Combine(Program.UserDataPath, Name); } }
 
-        protected IConfigSource source;
+        public ConfigFile() { }
 
-        public ConfigFile()
+        public void Save()
         {
-            string configFilePath = Path.Combine(Program.UserDataPath, Filename);
+            XmlSerializer serializer = new XmlSerializer(GetType());
 
-            Directory.CreateDirectory(Path.GetDirectoryName(configFilePath));
-            if (!File.Exists(configFilePath)) File.WriteAllText(configFilePath, "<Nini>\n</Nini>\n");
+            Directory.CreateDirectory(Path.GetDirectoryName(FullName));
 
-            source = new XmlConfigSource(configFilePath);
-            source.AutoSave = true;
+            using (FileStream stream = new FileStream(FullName, FileMode.OpenOrCreate))
+            {
+                serializer.Serialize(stream, this);
+            }
+        }
+
+        public static T Load<T>() where T : ConfigFile
+        {
+            XmlSerializer serializer = new XmlSerializer(typeof(T));
+            T configInstance = (T)Activator.CreateInstance(typeof(T));
+
+            if (File.Exists(configInstance.FullName))
+            {
+                using (FileStream stream = new FileStream(configInstance.FullName, FileMode.Open))
+                {
+                    configInstance = (T)serializer.Deserialize(stream);
+                }
+            }
+            else
+                configInstance.Save();
+
+            return configInstance;
         }
     }
 }
