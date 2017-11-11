@@ -105,32 +105,54 @@ namespace MasterFudgeMk2.Devices
 
             // TODO, mar 09: uh sounds better but still bad? naudio seems fine, the test sinewave thingy isn't scratchy and shit ... have i ever mentioned i hate sound emulation?
 
-            double psgCycles = (clockCyclesInStep / 16.0);
-            cycleCount += psgCycles;
-            ushort counterDecrement = (ushort)Math.Round(psgCycles, MidpointRounding.AwayFromZero);//(ushort)(psgCycles < 1.0 ? 1.0 : psgCycles);
+            // TODO, nov 11: over half a year later, still a lot of wrong garbage...
 
-            /* Tick tone channels & generate output */
-            for (int ch = 0; ch < numToneChannels; ch++)
+            int clockCycleLimit = (int)Math.Round((clockRate / refreshRate) / (44100.0 / refreshRate));
+
+            cycleCount += clockCyclesInStep;
+
+            if (cycleCount >= clockCycleLimit)
             {
-                /* Check for counter underflow */
-                if ((channelCounters[ch] & 0x03FF) > 0)
-                    channelCounters[ch] -= counterDecrement;
-
-                /* Counter underflowed, reload and flip output bit, then generate sample */
-                if ((channelCounters[ch] & 0x03FF) == 0)
+                // TODO: wrong, i guess, i dunno
+                for (int i = 0; i < 4; i++)
                 {
-                    channelCounters[ch] = (ushort)(toneRegisters[ch] & 0x03FF);
-                    channelOutput[ch] = !channelOutput[ch];
-                    channelSamples[ch] = (short)(volumeTable[volumeRegisters[ch]] * (channelOutput[ch] ? 1 : 0));
-                }
-            }
+                    /* Tick tone channels & generate output */
+                    for (int ch = 0; ch < numToneChannels; ch++)
+                        StepToneChannel(ch);
 
-            /* Tick noise channel & generate output */
+                    /* Tick noise channel & generate output */
+                    StepNoiseChannel();
+                }
+
+                /* Mix and enqueue output */
+                MixSamples();
+
+                cycleCount -= clockCycleLimit;
+            }
+        }
+
+        private void StepToneChannel(int ch)
+        {
+            /* Check for counter underflow */
+            if ((channelCounters[ch] & 0x03FF) > 0)
+                channelCounters[ch]--;
+
+            /* Counter underflowed, reload and flip output bit, then generate sample */
+            if ((channelCounters[ch] & 0x03FF) == 0)
+            {
+                channelCounters[ch] = (ushort)(toneRegisters[ch] & 0x03FF);
+                channelOutput[ch] = !channelOutput[ch];
+                channelSamples[ch] = (short)(volumeTable[volumeRegisters[ch]] * (channelOutput[ch] ? 1 : 0));
+            }
+        }
+
+        private void StepNoiseChannel()
+        {
             int chN = noiseChannelIndex;
             {
                 /* Check for counter underflow */
                 if ((channelCounters[chN] & 0x03FF) > 0)
-                    channelCounters[chN] -= counterDecrement;
+                    channelCounters[chN]--;
 
                 /* Counter underflowed, reload and flip output bit */
                 if ((channelCounters[chN] & 0x03FF) == 0)
@@ -157,31 +179,29 @@ namespace MasterFudgeMk2.Devices
                     }
                 }
             }
+        }
 
-            /* Check if time for output */
-            double maxCycles = ((clockRate / 16.0) / ((44100 / sampleBuffer.Capacity) + 1)) / sampleBuffer.Capacity;    // TODO: bah, magic numbers, kinda from codeslinger.co.uk emu, understand then fixme
-            if (cycleCount >= maxCycles)
+        private void MixSamples()
+        {
+            /* Mix samples together */
+            short mixed = 0;
+            for (int ch = 0; ch < numChannels; ch++)
+                mixed += channelSamples[ch];
+
+            if (false)
             {
-                cycleCount -= maxCycles;
+                // TEMP crappy sinewave test thingy
+                sineCount = ((sineCount + 1) % sineWave.Length);
+                short sineTemp = (short)(sineWave[sineCount] << 6);
+                mixed = (short)(sineTemp - ((sineWave.Max() << 6) / 2));
+            }
 
-                /* Mix output together, then enqueue */
-                short mixed = 0;
-                for (int ch = 0; ch < numChannels; ch++)
-                    mixed += channelSamples[ch];
-
-                if (false)
-                {
-                    // TEMP crappy sinewave test thingy
-                    sineCount = ((sineCount + 1) % sineWave.Length);
-                    mixed = (short)(sineWave[sineCount] << 6);
-                }
-
-                sampleBuffer.Add(mixed);
-                if (sampleBuffer.Count == sampleBuffer.Capacity)
-                {
-                    OnAddSampleData?.Invoke(this, new AddSampleDataEventArgs(sampleBuffer.ToArray()));
-                    sampleBuffer.Clear();
-                }
+            /* Enqueue sample */
+            sampleBuffer.Add(mixed);
+            if (sampleBuffer.Count == sampleBuffer.Capacity)
+            {
+                OnAddSampleData?.Invoke(this, new AddSampleDataEventArgs(sampleBuffer.ToArray()));
+                sampleBuffer.Clear();
             }
         }
 
