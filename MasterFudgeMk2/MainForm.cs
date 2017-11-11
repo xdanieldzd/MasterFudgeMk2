@@ -389,6 +389,21 @@ namespace MasterFudgeMk2
             emuConfig.RecentFiles = files.Take(maxRecentFiles).ToArray();
         }
 
+        private void RemoveFileFromRecentList(string filename)
+        {
+            List<string> files = emuConfig.RecentFiles.Where(x => x != string.Empty).ToList();
+            files.Reverse();
+
+            if (files.Contains(filename)) files.Remove(filename);
+
+            files.Reverse();
+
+            /* Pad with dummy values */
+            while (files.Count < maxRecentFiles) files.Add(string.Empty);
+
+            emuConfig.RecentFiles = files.Take(maxRecentFiles).ToArray();
+        }
+
         private void UpdateRecentFilesMenu()
         {
             /* Recent files menu */
@@ -420,7 +435,7 @@ namespace MasterFudgeMk2
                         if (!File.Exists(filePath))
                         {
                             MessageBox.Show("Selected file does not exist anymore; it will be removed from the list.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            emuConfig.RecentFiles[fileNumber] = string.Empty;
+                            RemoveFileFromRecentList(emuConfig.RecentFiles[fileNumber]);
                             CleanUpRecentList();
                             UpdateRecentFilesMenu();
                         }
@@ -516,7 +531,7 @@ namespace MasterFudgeMk2
             UpdateRecentFilesMenu();
 
             SetFormText();
-            tsslStatus.Text = "ROM loaded";
+            tsslStatus.Text = string.Format("'{0}' loaded", romFriendlyName);
         }
 
         private void StepMachine()
@@ -611,8 +626,7 @@ namespace MasterFudgeMk2
 
         private void clearListToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            for (int i = 0; i < emuConfig.RecentFiles.Length; i++)
-                emuConfig.RecentFiles[i] = string.Empty;
+            emuConfig.RecentFiles = new string[maxRecentFiles];
 
             UpdateRecentFilesMenu();
         }

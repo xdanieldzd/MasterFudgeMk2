@@ -30,7 +30,7 @@ namespace MasterFudgeMk2
             get { return Type.GetType(SettingsConfig.GetString(nameof(AudioBackend)) ?? typeof(AudioBackends.NullAudioBackend).AssemblyQualifiedName); }
             set { SettingsConfig.Set(nameof(AudioBackend), value.AssemblyQualifiedName); }
         }
-        
+
         public Point WindowLocation
         {
             get
@@ -85,12 +85,6 @@ namespace MasterFudgeMk2
         {
             get { return SettingsConfig.GetString(nameof(RecentFiles), string.Empty).Split('|'); }
             set { SettingsConfig.Set(nameof(RecentFiles), string.Join("|", value)); }
-        }
-
-        public string[] RecentFilesNew
-        {
-            get { return SettingsConfig.GetString(nameof(RecentFilesNew), string.Empty).Split('|'); }
-            set { SettingsConfig.Set(nameof(RecentFilesNew), string.Join("|", value)); }
         }
     }
 }
