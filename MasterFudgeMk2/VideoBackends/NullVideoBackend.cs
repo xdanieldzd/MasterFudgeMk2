@@ -26,5 +26,6 @@ namespace MasterFudgeMk2.VideoBackends
                 g.Clear(Color.Black);
             }
         }
+        public override void OnScreenViewportChange(object sender, ScreenViewportChangeEventArgs e) { }
     }
 }

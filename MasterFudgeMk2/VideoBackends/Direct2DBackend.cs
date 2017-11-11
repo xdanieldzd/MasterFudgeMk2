@@ -43,7 +43,6 @@ namespace MasterFudgeMk2.VideoBackends
         public override bool KeepAspectRatio { get { return keepAspectRatio; } set { keepAspectRatio = value; ResizeRenderTargetAndDestinationRectangle(); } }
         public override bool ForceSquarePixels { get { return forceSquarePixels; } set { forceSquarePixels = value; ResizeRenderTargetAndDestinationRectangle(); } }
         public override float AspectRatio { get { return aspectRatio; } set { aspectRatio = value; ResizeRenderTargetAndDestinationRectangle(); } }
-        public override DrawingRectangle ScreenViewport { get { return screenViewport; } set { screenViewport = value; ResizeRenderTargetAndDestinationRectangle(); } }
 
         public Direct2DBackend(Control control) : base(control)
         {
@@ -115,7 +114,7 @@ namespace MasterFudgeMk2.VideoBackends
             DrawingBitmapData bmpData = fullScreenshot.LockBits(new DrawingRectangle(0, 0, fullScreenshot.Width, fullScreenshot.Height), System.Drawing.Imaging.ImageLockMode.WriteOnly, fullScreenshot.PixelFormat);
 
             byte[] pixelData = new byte[bmpData.Stride * bmpData.Height];
-            System.Buffer.BlockCopy(lastFrameData, 0, pixelData, 0, pixelData.Length);
+            System.Buffer.BlockCopy(lastFrameData, 0, pixelData, 0, lastFrameData.Length);
             System.Runtime.InteropServices.Marshal.Copy(pixelData, 0, bmpData.Scan0, pixelData.Length);
 
             fullScreenshot.UnlockBits(bmpData);
@@ -182,6 +181,12 @@ namespace MasterFudgeMk2.VideoBackends
             renderTarget.Clear(Color.Black);
             renderTarget.DrawBitmap(bitmapRenderTarget.Bitmap, destinationRectangle, 1.0f, BitmapInterpolationMode.Linear, sourceRectangle);
             renderTarget.EndDraw();
+        }
+
+        public override void OnScreenViewportChange(object sender, ScreenViewportChangeEventArgs e)
+        {
+            screenViewport = new DrawingRectangle(e.X, e.Y, e.Width, e.Height);
+            ResizeRenderTargetAndDestinationRectangle();
         }
     }
 }

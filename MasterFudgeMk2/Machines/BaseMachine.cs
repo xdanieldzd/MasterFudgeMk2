@@ -30,6 +30,9 @@ namespace MasterFudgeMk2.Machines
         public event EventHandler<RenderScreenEventArgs> RenderScreen;
         protected virtual void OnRenderScreen(RenderScreenEventArgs e) { RenderScreen?.Invoke(this, e); }
 
+        public event EventHandler<ScreenViewportChangeEventArgs> ScreenViewportChange;
+        protected virtual void OnScreenViewportChange(ScreenViewportChangeEventArgs e) { ScreenViewportChange?.Invoke(this, e); }
+
         public event EventHandler<PollInputEventArgs> PollInput;
         protected virtual void OnPollInput(PollInputEventArgs e) { PollInput?.Invoke(this, e); }
 

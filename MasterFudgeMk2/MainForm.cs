@@ -314,8 +314,6 @@ namespace MasterFudgeMk2
                 ForceSquarePixels = emuConfig.ForceSquarePixels;
 
                 renderer.AspectRatio = machineManager.AspectRatio;
-
-                renderer.ScreenViewport = machineManager.ScreenViewport;
             }
 
             foreach (ToolStripMenuItem menuItem in videoBackendToolStripMenuItem.DropDownItems)
@@ -458,12 +456,12 @@ namespace MasterFudgeMk2
 
             machineManager = (Activator.CreateInstance(machineType) as IMachineManager);
             machineManager.RenderScreen += renderer.OnRenderScreen;
+            machineManager.ScreenViewportChange += renderer.OnScreenViewportChange;
             machineManager.PollInput += MachineManager_OnPollInput;
             machineManager.FrameEnded += MachineManager_FrameEnded;
             machineManager.AddSampleData += soundOutput.OnAddSampleData;
 
             renderer.AspectRatio = machineManager.AspectRatio;
-            renderer.ScreenViewport = machineManager.ScreenViewport;
 
             machineManager.Startup();
 

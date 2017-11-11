@@ -68,6 +68,10 @@ namespace MasterFudgeMk2.Machines
         /// </summary>
         event EventHandler<RenderScreenEventArgs> RenderScreen;
         /// <summary>
+        /// Event handler for viewport changes, ex. Game Gear's 160x144 viewport
+        /// </summary>
+        event EventHandler<ScreenViewportChangeEventArgs> ScreenViewportChange;
+        /// <summary>
         /// Event handler for input polling
         /// </summary>
         event EventHandler<PollInputEventArgs> PollInput;

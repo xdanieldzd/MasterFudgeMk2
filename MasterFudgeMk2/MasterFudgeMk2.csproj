@@ -96,6 +96,7 @@
     </Compile>
     <Compile Include="Common\Crc32.cs" />
     <Compile Include="Common\Enumerations\InterruptState.cs" />
+    <Compile Include="Common\EventArguments\ScreenViewportChangeEventArgs.cs" />
     <Compile Include="Common\MustInitialize.cs" />
     <Compile Include="Common\TupleListExtensions.cs" />
     <Compile Include="Common\UiStateBoolean.cs" />

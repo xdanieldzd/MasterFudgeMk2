@@ -46,8 +46,8 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
         public override string DatFileName { get { return "Sega - Game Gear.dat"; } }
 
         public override double RefreshRate { get { return refreshRate; } }
-        public override float AspectRatio { get { return (576.0f / 486.0f); } }
-        public override Rectangle ScreenViewport { get { return new Rectangle(SegaGGVDP.ScreenViewportX, ((vdp.NumTotalScanlines / 2) - (SegaGGVDP.ScreenViewportHeight) / 2), SegaGGVDP.ScreenViewportWidth, SegaGGVDP.ScreenViewportHeight); } }
+        public override float AspectRatio { get { return (SegaGGVDP.ScreenViewportWidth / (float)SegaGGVDP.ScreenViewportHeight); } }
+        public override Rectangle ScreenViewport { get { return new Rectangle(SegaGGVDP.ScreenViewportX, ((vdp.ScreenHeight / 2) - (SegaGGVDP.ScreenViewportHeight) / 2), SegaGGVDP.ScreenViewportWidth, SegaGGVDP.ScreenViewportHeight); } }
 
         public override bool SupportsBootingWithoutMedia { get { return false; } }
         public override bool CanCurrentlyBootWithoutMedia { get { return false; } }
@@ -212,7 +212,10 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             double currentMasterClockCycles = (currentCpuClockCycles * 3.0);
 
             if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
+            {
+                OnScreenViewportChange(new ScreenViewportChangeEventArgs(ScreenViewport.X, ScreenViewport.Y, ScreenViewport.Width, ScreenViewport.Height));
                 OnRenderScreen(new RenderScreenEventArgs(TMS9918A.NumActivePixelsPerScanline, vdp.NumTotalScanlines, vdp.OutputFramebuffer));
+            }
 
             cpu.SetInterruptLine(vdp.InterruptLine);
 

@@ -30,6 +30,11 @@ namespace MasterFudgeMk2.Devices.Sega
             cramLatch = 0x0000;
         }
 
+        protected override void RearrangeFramebuffer()
+        {
+            //
+        }
+
         protected override int AdjustVCounter(int scanline)
         {
             int counter = scanline;

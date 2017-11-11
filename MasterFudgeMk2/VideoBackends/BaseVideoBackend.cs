@@ -17,8 +17,7 @@ namespace MasterFudgeMk2.VideoBackends
         public virtual bool KeepAspectRatio { get { return keepAspectRatio; } set { keepAspectRatio = value; } }
         public virtual bool ForceSquarePixels { get { return forceSquarePixels; } set { forceSquarePixels = value; } }
         public virtual float AspectRatio { get { return aspectRatio; } set { aspectRatio = value; } }
-        public virtual Rectangle ScreenViewport { get { return screenViewport; } set { screenViewport = value; } }
-
+        
         public BaseVideoBackend(Control control)
         {
             outputControl = control;
@@ -30,5 +29,6 @@ namespace MasterFudgeMk2.VideoBackends
 
         public abstract void OnOutputResized(object sender, OutputResizedEventArgs e);
         public abstract void OnRenderScreen(object sender, RenderScreenEventArgs e);
+        public abstract void OnScreenViewportChange(object sender, ScreenViewportChangeEventArgs e);
     }
 }

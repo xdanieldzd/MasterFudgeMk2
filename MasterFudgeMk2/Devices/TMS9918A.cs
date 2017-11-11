@@ -234,7 +234,7 @@ namespace MasterFudgeMk2.Devices
             return drawScreen;
         }
 
-        protected void RearrangeFramebuffer()
+        protected virtual void RearrangeFramebuffer()
         {
             // TODO: a bit of a kludge, maybe rework somehow?
             int bytesUntilDisplayEnd = ((scanlineTopBlanking * NumActivePixelsPerScanline) * 4);

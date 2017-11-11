@@ -10,11 +10,11 @@ namespace MasterFudgeMk2.VideoBackends
         bool KeepAspectRatio { get; set; }
         bool ForceSquarePixels { get; set; }
         float AspectRatio { get; set; }
-        Rectangle ScreenViewport { get; set; }
 
         Bitmap GetRawScreenshot();
 
         void OnOutputResized(object sender, OutputResizedEventArgs e);
         void OnRenderScreen(object sender, RenderScreenEventArgs e);
+        void OnScreenViewportChange(object sender, ScreenViewportChangeEventArgs e);
     }
 }

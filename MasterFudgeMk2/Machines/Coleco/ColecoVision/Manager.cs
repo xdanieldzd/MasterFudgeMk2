@@ -233,7 +233,10 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
             double currentMasterClockCycles = (currentCpuClockCycles * 3.0);
 
             if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
+            {
+                OnScreenViewportChange(new ScreenViewportChangeEventArgs(ScreenViewport.X, ScreenViewport.Y, ScreenViewport.Width, ScreenViewport.Height));
                 OnRenderScreen(new RenderScreenEventArgs(TMS9918A.NumActivePixelsPerScanline, vdp.NumTotalScanlines, vdp.OutputFramebuffer));
+            }
 
             /* The IMO oddball NMI-Vblank handling, see ex. Cogwheel */
             if (vdp.InterruptLine == InterruptState.Assert && !isNmi) isNmiPending = true;

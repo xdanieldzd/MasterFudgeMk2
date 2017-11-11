@@ -370,9 +370,9 @@ namespace MasterFudgeMk2
             {
                 /* Configure new backend & attach to active machine */
                 activeVideoBackend.AspectRatio = activeMachine.AspectRatio;
-                activeVideoBackend.ScreenViewport = activeMachine.ScreenViewport;
-
+                
                 activeMachine.RenderScreen += activeVideoBackend.OnRenderScreen;
+                activeMachine.ScreenViewportChange += activeVideoBackend.OnScreenViewportChange;
             }
 
             /* Handle UI & emulation config updates */
@@ -495,10 +495,10 @@ namespace MasterFudgeMk2
             activeMachine.Startup();
 
             activeVideoBackend.AspectRatio = activeMachine.AspectRatio;
-            activeVideoBackend.ScreenViewport = activeMachine.ScreenViewport;
-
+            
             /* Video backend events */
             activeMachine.RenderScreen += activeVideoBackend.OnRenderScreen;
+            activeMachine.ScreenViewportChange += activeVideoBackend.OnScreenViewportChange;
 
             /* Audio backend events */
             activeMachine.AddSampleData += activeAudioBackend.OnAddSampleData;
