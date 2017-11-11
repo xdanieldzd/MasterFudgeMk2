@@ -86,7 +86,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AudioBackends\NullAudioBackend.cs" />
-    <Compile Include="Common\Enumerations\ControllerState.cs" />
     <Compile Include="Common\EventArguments\AddSampleDataEventArgs.cs" />
     <Compile Include="AudioBackends\NAudioBackend.cs" />
     <Compile Include="AudioBackends\IAudioBackend.cs" />

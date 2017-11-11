@@ -302,21 +302,33 @@ namespace MasterFudgeMk2
                     {
                         var menuItem = (s as ToolStripMenuItem);
                         var recentFileInfo = (menuItem.Tag as Tuple<Type, int, string>);
+                        var fileInfoInstance = new FileInfo(recentFileInfo.Item3);
 
-                        /* Initialize machine and load media */
-                        InitializeMachineManager(recentFileInfo.Item1);
-                        InitializeFrameLimiter(activeMachine.RefreshRate);
-                        InitializeMediaSlot(recentFileInfo.Item2, MediaLoader.LoadMedia(activeMachine, new FileInfo(recentFileInfo.Item3)));
+                        if (fileInfoInstance.Exists)
+                        {
+                            /* Initialize machine and load media */
+                            InitializeMachineManager(recentFileInfo.Item1);
+                            InitializeFrameLimiter(activeMachine.RefreshRate);
+                            InitializeMediaSlot(recentFileInfo.Item2, MediaLoader.LoadMedia(activeMachine, fileInfoInstance));
 
-                        /* Handle recent files updates */
-                        AddToRecentFilesList(recentFileInfo.Item1, recentFileInfo.Item2, recentFileInfo.Item3);
-                        CreateRecentFilesMenu(menuItem.OwnerItem as ToolStripMenuItem);
+                            /* Handle recent files updates */
+                            AddToRecentFilesList(recentFileInfo.Item1, recentFileInfo.Item2, recentFileInfo.Item3);
+                            CreateRecentFilesMenu(menuItem.OwnerItem as ToolStripMenuItem);
 
-                        /* Create load media menu */
-                        CreateLoadMediaMenu(loadMediaToolStripMenuItem, recentFileInfo.Item1);
+                            /* Create load media menu */
+                            CreateLoadMediaMenu(loadMediaToolStripMenuItem, recentFileInfo.Item1);
 
-                        /* Enable disabled menus */
-                        takeScreenshotToolStripMenuItem.Enabled = emulationToolStripMenuItem.Enabled = true;
+                            /* Enable disabled menus */
+                            takeScreenshotToolStripMenuItem.Enabled = emulationToolStripMenuItem.Enabled = true;
+                        }
+                        else
+                        {
+                            if (MessageBox.Show("Selected file does not exist anymore; it will be removed from the list.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning) == DialogResult.OK)
+                            {
+                                RemoveFromRecentFilesList(recentFileInfo.Item1, recentFileInfo.Item2, recentFileInfo.Item3);
+                                CreateRecentFilesMenu(recentFilesToolStripMenuItem);
+                            }
+                        }
                     };
                     rootMenuItem.DropDownItems.Add(recentFileMenuItem);
                 }
@@ -370,7 +382,7 @@ namespace MasterFudgeMk2
             {
                 /* Configure new backend & attach to active machine */
                 activeVideoBackend.AspectRatio = activeMachine.AspectRatio;
-                
+
                 activeMachine.RenderScreen += activeVideoBackend.OnRenderScreen;
                 activeMachine.ScreenViewportChange += activeVideoBackend.OnScreenViewportChange;
             }
@@ -473,6 +485,21 @@ namespace MasterFudgeMk2
             emulatorConfig.RecentFiles = recentFiles;
         }
 
+        private void RemoveFromRecentFilesList(Type machineType, int slotNumber, string mediaFileName)
+        {
+            if (!typeof(IMachineManager).IsAssignableFrom(machineType))
+                throw new ArgumentException(string.Format("Given type {0} is not machine manager", machineType.AssemblyQualifiedName));
+
+            string recentFileString = string.Format("{0}/{1}/{2}", machineType.FullName, slotNumber, mediaFileName);
+
+            if (emulatorConfig.RecentFiles.Contains(recentFileString))
+            {
+                List<string> recentFiles = emulatorConfig.RecentFiles;
+                recentFiles.RemoveAll(x => (x == recentFileString));
+                emulatorConfig.RecentFiles = recentFiles;
+            }
+        }
+
         #endregion
 
         #region Emulation Initialization and Startup
@@ -495,7 +522,7 @@ namespace MasterFudgeMk2
             activeMachine.Startup();
 
             activeVideoBackend.AspectRatio = activeMachine.AspectRatio;
-            
+
             /* Video backend events */
             activeMachine.RenderScreen += activeVideoBackend.OnRenderScreen;
             activeMachine.ScreenViewportChange += activeVideoBackend.OnScreenViewportChange;

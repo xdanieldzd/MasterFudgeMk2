@@ -9,7 +9,7 @@ namespace MasterFudgeMk2
 {
     public sealed class EmulatorConfigurationNew : ConfigFile
     {
-        public override sealed string Filename { get { return "EmulatorNew.xml"; } }
+        public override sealed string Filename { get { return "Emulator.xml"; } }
 
         const string sectionSettings = "Settings";
         public IConfig SettingsConfig
@@ -35,7 +35,7 @@ namespace MasterFudgeMk2
 
         public Type InputBackend
         {
-            get { return Type.GetType(SettingsConfig.GetString(nameof(InputBackend)) ?? typeof(InputBackends.DirectInputBackend).AssemblyQualifiedName); }
+            get { return Type.GetType(SettingsConfig.GetString(nameof(InputBackend)) ?? typeof(InputBackends.DInputKeyboardBackend).AssemblyQualifiedName); }
             set { SettingsConfig.Set(nameof(InputBackend), value.AssemblyQualifiedName); }
         }
 
