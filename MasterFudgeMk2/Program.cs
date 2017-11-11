@@ -9,16 +9,14 @@ namespace MasterFudgeMk2
 {
     static class Program
     {
-        static bool tempNewUi = true;
-
-        public static readonly string UserDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), Application.ProductName + (tempNewUi ? "_test" : string.Empty));
+        public static readonly string UserDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), Application.ProductName);
 
         [STAThread]
         static void Main()
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(tempNewUi ? (new NewMainForm() as Form) : (new MainForm() as Form));
+            Application.Run(new MainForm() as Form);
         }
     }
 }

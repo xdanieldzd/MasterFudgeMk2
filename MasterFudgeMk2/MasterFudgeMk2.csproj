@@ -102,20 +102,20 @@
     <Compile Include="Common\EventArguments\PollInputEventArgs.cs" />
     <Compile Include="DatFile.cs" />
     <Compile Include="DatHelper.cs" />
-    <Compile Include="EmulatorConfigurationNew.cs" />
+    <Compile Include="EmulatorConfiguration.cs" />
     <Compile Include="InputBackends\DirectInputBackend.cs" />
     <Compile Include="InputBackends\IInputBackend.cs" />
-    <Compile Include="NewConfigForm.cs">
+    <Compile Include="ConfigForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="NewConfigForm.Designer.cs">
-      <DependentUpon>NewConfigForm.cs</DependentUpon>
+    <Compile Include="ConfigForm.Designer.cs">
+      <DependentUpon>ConfigForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="NewMainForm.cs">
+    <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="NewMainForm.Designer.cs">
-      <DependentUpon>NewMainForm.cs</DependentUpon>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
     <Compile Include="VideoBackends\BaseVideoBackend.cs" />
     <Compile Include="VideoBackends\IVideoBackend.cs" />
@@ -130,7 +130,6 @@
     <Compile Include="Devices\Z80A.CycleCounts.cs" />
     <Compile Include="Devices\Z80A.Disassembly.cs" />
     <Compile Include="Devices\Z80A.OpcodesNoPrefix.cs" />
-    <Compile Include="EmulatorConfiguration.cs" />
     <Compile Include="Machines\BaseMachine.cs" />
     <Compile Include="Machines\Coleco\ColecoVision\Configuration.cs" />
     <Compile Include="Machines\Coleco\ColecoVision\Manager.cs" />
@@ -150,12 +149,6 @@
     <Compile Include="Common\XInput\XInputGamepad.cs" />
     <Compile Include="Common\XInput\XInputState.cs" />
     <Compile Include="Common\XInput\XInputVibration.cs" />
-    <Compile Include="ConfigForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="ConfigForm.Designer.cs">
-      <DependentUpon>ConfigForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="Common\DescriptionTypeConverter.cs" />
     <Compile Include="Devices\Sega\SegaGGVDP.cs" />
     <Compile Include="Devices\Sega\SegaSMS2VDP.cs" />
@@ -169,12 +162,6 @@
     <Compile Include="Machines\Sega\MasterSystem\Configuration.cs" />
     <Compile Include="Machines\Sega\MasterSystem\Manager.cs" />
     <Compile Include="Machines\Sega\SG1000\Configuration.cs" />
-    <Compile Include="MainForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="MainForm.Designer.cs">
-      <DependentUpon>MainForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="Common\NativeMethods.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -185,14 +172,8 @@
     <Compile Include="Common\ScreenControl.cs">
       <SubType>Component</SubType>
     </Compile>
-    <EmbeddedResource Include="ConfigForm.resx">
-      <DependentUpon>ConfigForm.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="NewMainForm.resx">
-      <DependentUpon>NewMainForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
