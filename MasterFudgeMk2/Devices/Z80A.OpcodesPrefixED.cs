@@ -10,7 +10,7 @@ namespace MasterFudgeMk2.Devices
     {
         static SimpleOpcodeDelegate[] opcodesPrefixED = new SimpleOpcodeDelegate[]
         {
-			/* 0x00 */
+            /* 0x00 */
             new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
             new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
             new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
@@ -79,7 +79,7 @@ namespace MasterFudgeMk2.Devices
             new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
             new SimpleOpcodeDelegate((c) => { /* NOP (2x) */ }),
             /* 0x40 */
-			new SimpleOpcodeDelegate((c) => { c.PortInput(ref c.bc.High, c.bc.Low); }),
+            new SimpleOpcodeDelegate((c) => { c.PortInput(ref c.bc.High, c.bc.Low); }),
             new SimpleOpcodeDelegate((c) => { c.WritePort(c.bc.Low, c.bc.High); }),
             new SimpleOpcodeDelegate((c) => { c.Subtract16(ref c.hl, c.bc.Word, true); }),
             new SimpleOpcodeDelegate((c) => { c.LoadMemory16(c.ReadMemory16(c.pc), c.bc.Word); c.pc += 2; }),
@@ -96,7 +96,7 @@ namespace MasterFudgeMk2.Devices
             new SimpleOpcodeDelegate((c) => { c.im = 0; }),
             new SimpleOpcodeDelegate((c) => { c.r = c.af.High; }),
             /* 0x50 */
-			new SimpleOpcodeDelegate((c) => { c.PortInput(ref c.de.High, c.bc.Low); }),
+            new SimpleOpcodeDelegate((c) => { c.PortInput(ref c.de.High, c.bc.Low); }),
             new SimpleOpcodeDelegate((c) => { c.WritePort(c.bc.Low, c.de.High); }),
             new SimpleOpcodeDelegate((c) => { c.Subtract16(ref c.hl, c.de.Word, true); }),
             new SimpleOpcodeDelegate((c) => { c.LoadMemory16(c.ReadMemory16(c.pc), c.de.Word); c.pc += 2; }),

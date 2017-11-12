@@ -113,7 +113,7 @@ namespace MasterFudgeMk2.Devices
             new DDFDOpcodeDelegate((Z80A c, ref Register r) => { c.de.Low = c.ReadMemory8(c.CalculateIXIYAddress(r)); }),
             new DDFDOpcodeDelegate((Z80A c, ref Register r) => { c.LoadRegister8(ref c.de.Low, c.af.High, false); }),
             /* 0x60 */
-			new DDFDOpcodeDelegate((Z80A c, ref Register r) => { c.LoadRegister8(ref r.High, c.bc.High, false); }),
+            new DDFDOpcodeDelegate((Z80A c, ref Register r) => { c.LoadRegister8(ref r.High, c.bc.High, false); }),
             new DDFDOpcodeDelegate((Z80A c, ref Register r) => { c.LoadRegister8(ref r.High, c.bc.Low, false); }),
             new DDFDOpcodeDelegate((Z80A c, ref Register r) => { c.LoadRegister8(ref r.High, c.de.High, false); }),
             new DDFDOpcodeDelegate((Z80A c, ref Register r) => { c.LoadRegister8(ref r.High, c.de.Low, false); }),
@@ -130,7 +130,7 @@ namespace MasterFudgeMk2.Devices
             new DDFDOpcodeDelegate((Z80A c, ref Register r) => { c.hl.Low = c.ReadMemory8(c.CalculateIXIYAddress(r)); }),
             new DDFDOpcodeDelegate((Z80A c, ref Register r) => { c.LoadRegister8(ref r.Low, c.af.High, false); }),
             /* 0x70 */
-			new DDFDOpcodeDelegate((Z80A c, ref Register r) => { c.LoadMemory8(c.CalculateIXIYAddress(r), c.bc.High); }),
+            new DDFDOpcodeDelegate((Z80A c, ref Register r) => { c.LoadMemory8(c.CalculateIXIYAddress(r), c.bc.High); }),
             new DDFDOpcodeDelegate((Z80A c, ref Register r) => { c.LoadMemory8(c.CalculateIXIYAddress(r), c.bc.Low); }),
             new DDFDOpcodeDelegate((Z80A c, ref Register r) => { c.LoadMemory8(c.CalculateIXIYAddress(r), c.de.High); }),
             new DDFDOpcodeDelegate((Z80A c, ref Register r) => { c.LoadMemory8(c.CalculateIXIYAddress(r), c.de.Low); }),
