@@ -371,9 +371,9 @@ namespace MasterFudgeMk2.Devices
                 cpu.IsFlagSet(Flags.Carry) ? "C" : "-",
                 cpu.IsFlagSet(Flags.Subtract) ? "N" : "-",
                 cpu.IsFlagSet(Flags.ParityOrOverflow) ? "P" : "-",
-                cpu.IsFlagSet(Flags.UnusedBit3) ? "3" : "-",
+                cpu.IsFlagSet(Flags.UnusedBitX) ? "3" : "-",
                 cpu.IsFlagSet(Flags.HalfCarry) ? "H" : "-",
-                cpu.IsFlagSet(Flags.UnusedBit5) ? "5" : "-",
+                cpu.IsFlagSet(Flags.UnusedBitY) ? "5" : "-",
                 cpu.IsFlagSet(Flags.Zero) ? "Z" : "-",
                 cpu.IsFlagSet(Flags.Sign) ? "S" : "-");
         }

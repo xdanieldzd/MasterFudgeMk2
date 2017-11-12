@@ -11,7 +11,7 @@ namespace MasterFudgeMk2.Devices
         static SimpleOpcodeDelegate[] opcodesNoPrefix = new SimpleOpcodeDelegate[]
         {
             /* 0x00 */
-            new SimpleOpcodeDelegate((c) => { /* 00 - NOP */ }),
+            new SimpleOpcodeDelegate((c) => { /* NOP */ }),
             new SimpleOpcodeDelegate((c) => { c.LoadRegisterImmediate16(ref c.bc.Word); }),
             new SimpleOpcodeDelegate((c) => { c.LoadMemory8(c.bc.Word, c.af.High); }),
             new SimpleOpcodeDelegate((c) => { c.Increment16(ref c.bc.Word); }),
@@ -226,7 +226,7 @@ namespace MasterFudgeMk2.Devices
             new SimpleOpcodeDelegate((c) => { c.ReturnConditional(c.IsFlagSet(Flags.Zero)); }),
             new SimpleOpcodeDelegate((c) => { c.Return(); }),
             new SimpleOpcodeDelegate((c) => { c.JumpConditional16(c.IsFlagSet(Flags.Zero)); }),
-            UnimplementedOpcodeMain, /* CB - handled elsewhere */
+            new SimpleOpcodeDelegate((c) => { /* CB - handled elsewhere */ }),
             new SimpleOpcodeDelegate((c) => { c.CallConditional16(c.IsFlagSet(Flags.Zero)); }),
             new SimpleOpcodeDelegate((c) => { c.Call16(); }),
             new SimpleOpcodeDelegate((c) => { c.Add8(c.ReadMemory8(c.pc++), true); }),
@@ -245,7 +245,7 @@ namespace MasterFudgeMk2.Devices
             new SimpleOpcodeDelegate((c) => { c.JumpConditional16(c.IsFlagSet(Flags.Carry)); }),
             new SimpleOpcodeDelegate((c) => { c.af.High = c.ReadPort(c.ReadMemory8(c.pc++)); }),
             new SimpleOpcodeDelegate((c) => { c.CallConditional16(c.IsFlagSet(Flags.Carry)); }),
-            UnimplementedOpcodeMain, /* DD - handled elsewhere */
+            new SimpleOpcodeDelegate((c) => { /* DD - handled elsewhere */ }),
             new SimpleOpcodeDelegate((c) => { c.Subtract8(c.ReadMemory8(c.pc++), true); }),
             new SimpleOpcodeDelegate((c) => { c.Restart(0x0018); }),
             /* 0xE0 */
@@ -262,7 +262,7 @@ namespace MasterFudgeMk2.Devices
             new SimpleOpcodeDelegate((c) => { c.JumpConditional16(c.IsFlagSet(Flags.ParityOrOverflow)); }),
             new SimpleOpcodeDelegate((c) => { c.ExchangeRegisters16(ref c.de, ref c.hl); }),
             new SimpleOpcodeDelegate((c) => { c.CallConditional16(c.IsFlagSet(Flags.ParityOrOverflow)); }),
-            UnimplementedOpcodeMain, /* ED - handled elsewhere */
+            new SimpleOpcodeDelegate((c) => { /* ED - handled elsewhere */ }),
             new SimpleOpcodeDelegate((c) => { c.Xor8(c.ReadMemory8(c.pc++)); }),
             new SimpleOpcodeDelegate((c) => { c.Restart(0x0028); }),
             /* 0xF0 */
@@ -279,7 +279,7 @@ namespace MasterFudgeMk2.Devices
             new SimpleOpcodeDelegate((c) => { c.JumpConditional16(c.IsFlagSet(Flags.Sign)); }),
             new SimpleOpcodeDelegate((c) => { c.eiDelay = true; }),
             new SimpleOpcodeDelegate((c) => { c.CallConditional16(c.IsFlagSet(Flags.Sign)); }),
-            UnimplementedOpcodeMain, /* FD - handled elsewhere */
+            new SimpleOpcodeDelegate((c) => { /* FD - handled elsewhere */ }),
             new SimpleOpcodeDelegate((c) => { c.Cp8(c.ReadMemory8(c.pc++)); }),
             new SimpleOpcodeDelegate((c) => { c.Restart(0x0038); })
         };

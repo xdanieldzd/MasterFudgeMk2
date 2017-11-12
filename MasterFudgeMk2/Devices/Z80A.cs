@@ -11,6 +11,7 @@ using MasterFudgeMk2.Common.Enumerations;
 namespace MasterFudgeMk2.Devices
 {
     // TODO: "undocumented" opcodes (Z80 tester will need them, some Game Gear games (ex. Gunstar Heroes) hit them too?)
+    //       X and Y flags according to z80-documented.pdf, needed for fully accurate DAA (Z80 tester)?
 
     public partial class Z80A
     {
@@ -19,15 +20,13 @@ namespace MasterFudgeMk2.Devices
         {
             Carry = (1 << 0),               /* C */
             Subtract = (1 << 1),            /* N */
-            ParityOrOverflow = (1 << 2),    /* P*/
-            UnusedBit3 = (1 << 3),          /* - */
+            ParityOrOverflow = (1 << 2),    /* P */
+            UnusedBitX = (1 << 3),          /* (X) */
             HalfCarry = (1 << 4),           /* H */
-            UnusedBit5 = (1 << 5),          /* - */
+            UnusedBitY = (1 << 5),          /* (Y) */
             Zero = (1 << 6),                /* Z */
             Sign = (1 << 7)                 /* S */
         }
-
-        const byte opcodeEnableInt = 0xFB;
 
         public delegate byte MemoryReadDelegate(ushort address);
         public delegate void MemoryWriteDelegate(ushort address, byte value);
@@ -191,7 +190,7 @@ namespace MasterFudgeMk2.Devices
             IncrementRefresh();
             opcodesPrefixDDFD[ddOp](this, ref ix);
 
-            currentCycles += CycleCounts.PrefixDDFD[ddOp];
+            currentCycles += (CycleCounts.PrefixDDFD[ddOp] != 0 ? CycleCounts.PrefixDDFD[ddOp] : CycleCounts.NoPrefix[ddOp] + CycleCounts.AdditionalDDFDOps);
         }
 
         private void ExecuteOpFD()
@@ -202,7 +201,7 @@ namespace MasterFudgeMk2.Devices
             IncrementRefresh();
             opcodesPrefixDDFD[fdOp](this, ref iy);
 
-            currentCycles += CycleCounts.PrefixDDFD[fdOp];
+            currentCycles += (CycleCounts.PrefixDDFD[fdOp] != 0 ? CycleCounts.PrefixDDFD[fdOp] : CycleCounts.NoPrefix[fdOp] + CycleCounts.AdditionalDDFDOps);
         }
 
         private void ExecuteOpDDFDCB(byte op, ref Register register)
@@ -371,35 +370,6 @@ namespace MasterFudgeMk2.Devices
         private void WritePort(byte port, byte value)
         {
             portWriteDelegate(port, value);
-        }
-
-        #endregion
-
-        #region Unimplemented/Invalid Opcode Handlers
-
-        private static void UnimplementedOpcodeMain(Z80A c)
-        {
-            throw new Exception(c.MakeUnimplementedOpcodeString(string.Empty, (ushort)(c.pc - 1)));
-        }
-
-        private static void UnimplementedOpcodeED(Z80A c)
-        {
-            throw new Exception(c.MakeUnimplementedOpcodeString("ED", (ushort)(c.pc - 2)));
-        }
-
-        private static void UnimplementedOpcodeCB(Z80A c)
-        {
-            throw new Exception(c.MakeUnimplementedOpcodeString("CB", (ushort)(c.pc - 2)));
-        }
-
-        private static void UnimplementedOpcodeDDFD(Z80A c, ref Register register)
-        {
-            throw new Exception(c.MakeUnimplementedOpcodeString("DD/FD", (ushort)(c.pc - 2)));
-        }
-
-        private static void UnimplementedOpcodeDDFDCB(Z80A c, ref Register register, ushort address)
-        {
-            throw new Exception(c.MakeUnimplementedOpcodeString("DD/FD CB", (ushort)(c.pc - 4)));
         }
 
         #endregion
@@ -750,10 +720,43 @@ namespace MasterFudgeMk2.Devices
 
         protected void DecimalAdjustAccumulator()
         {
+            // TODO: finish rewriting, recheck zexdoc results
+
+            /*byte bef = af.High, diff = 0x00, res;
+            bool cf = IsFlagSet(Flags.Carry), hf = IsFlagSet(Flags.HalfCarry);
+            byte high = (byte)((bef & 0xF0) >> 4), low = (byte)(bef & 0x0F);
+
+            if (cf)
+            {
+                diff |= 0x60;
+                if ((hf && low <= 0x09) || low >= 0x0A)
+                    diff |= 0x06;
+            }
+            else
+            {
+
+            }
+
+
+            if (!IsFlagSet(Flags.Subtract))
+                res = (byte)(bef + diff);
+            else
+                res = (byte)(bef - diff);
+
+            SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(res, 7));
+            SetClearFlagConditional(Flags.Zero, (res == 0x00));
+            SetClearFlagConditional(Flags.HalfCarry, (((bef ^ res) & 0x10) != 0));
+            CalculateAndSetParity(bef);
+            // N
+            // C (set above)
+
+            af.High = res;
+
+            return;*/
+
             /* Algorithm used from http://www.worldofspectrum.org/faq/reference/z80reference.htm */
 
-            byte before = af.High, factor = 0;
-            int result = 0;
+            byte before = af.High, factor = 0, result = 0;
 
             if ((af.High > 0x99) || IsFlagSet(Flags.Carry))
             {
@@ -772,18 +775,20 @@ namespace MasterFudgeMk2.Devices
                 factor |= 0x00;
 
             if (!IsFlagSet(Flags.Subtract))
-                result = (af.High + factor);
+                result = (byte)(af.High + factor);
             else
-                result = (af.High - factor);
+                result = (byte)(af.High - factor);
 
-            SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet((byte)result, 7));
-            SetClearFlagConditional(Flags.Zero, ((byte)result == 0x00));
-            SetClearFlagConditional(Flags.HalfCarry, (((before ^ (byte)result) & 0x10) != 0));
+            SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(result, 7));
+            SetClearFlagConditional(Flags.Zero, (result == 0x00));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(result, 5));
+            SetClearFlagConditional(Flags.HalfCarry, (((before ^ result) & 0x10) != 0));
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(result, 3));
             CalculateAndSetParity(af.High);
             // N
             // C (set above)
 
-            af.High = (byte)result;
+            af.High = result;
         }
 
         protected void Negate()
@@ -854,11 +859,12 @@ namespace MasterFudgeMk2.Devices
 
         #region Opcodes: Rotate and Shift Group
 
-        protected void RotateLeft(ushort address)
+        protected byte RotateLeft(ushort address)
         {
             byte value = ReadMemory8(address);
             RotateLeft(ref value);
             WriteMemory8(address, value);
+            return value;
         }
 
         protected void RotateLeft(ref byte value)
@@ -876,11 +882,12 @@ namespace MasterFudgeMk2.Devices
             SetClearFlagConditional(Flags.Carry, isMsbSet);
         }
 
-        protected void RotateLeftCircular(ushort address)
+        protected byte RotateLeftCircular(ushort address)
         {
             byte value = ReadMemory8(address);
             RotateLeftCircular(ref value);
             WriteMemory8(address, value);
+            return value;
         }
 
         protected void RotateLeftCircular(ref byte value)
@@ -897,11 +904,12 @@ namespace MasterFudgeMk2.Devices
             SetClearFlagConditional(Flags.Carry, isMsbSet);
         }
 
-        protected void RotateRight(ushort address)
+        protected byte RotateRight(ushort address)
         {
             byte value = ReadMemory8(address);
             RotateRight(ref value);
             WriteMemory8(address, value);
+            return value;
         }
 
         protected void RotateRight(ref byte value)
@@ -919,11 +927,12 @@ namespace MasterFudgeMk2.Devices
             SetClearFlagConditional(Flags.Carry, isLsbSet);
         }
 
-        protected void RotateRightCircular(ushort address)
+        protected byte RotateRightCircular(ushort address)
         {
             byte value = ReadMemory8(address);
             RotateRightCircular(ref value);
             WriteMemory8(address, value);
+            return value;
         }
 
         protected void RotateRightCircular(ref byte value)
@@ -1046,11 +1055,12 @@ namespace MasterFudgeMk2.Devices
             // C
         }
 
-        protected void ShiftLeftArithmetic(ushort address)
+        protected byte ShiftLeftArithmetic(ushort address)
         {
             byte value = ReadMemory8(address);
             ShiftLeftArithmetic(ref value);
             WriteMemory8(address, value);
+            return value;
         }
 
         protected void ShiftLeftArithmetic(ref byte value)
@@ -1066,11 +1076,12 @@ namespace MasterFudgeMk2.Devices
             SetClearFlagConditional(Flags.Carry, isMsbSet);
         }
 
-        protected void ShiftRightArithmetic(ushort address)
+        protected byte ShiftRightArithmetic(ushort address)
         {
             byte value = ReadMemory8(address);
             ShiftRightArithmetic(ref value);
             WriteMemory8(address, value);
+            return value;
         }
 
         protected void ShiftRightArithmetic(ref byte value)
@@ -1088,11 +1099,12 @@ namespace MasterFudgeMk2.Devices
             SetClearFlagConditional(Flags.Carry, isLsbSet);
         }
 
-        protected void ShiftLeftLogical(ushort address)
+        protected byte ShiftLeftLogical(ushort address)
         {
             byte value = ReadMemory8(address);
             ShiftLeftLogical(ref value);
             WriteMemory8(address, value);
+            return value;
         }
 
         protected void ShiftLeftLogical(ref byte value)
@@ -1109,11 +1121,12 @@ namespace MasterFudgeMk2.Devices
             SetClearFlagConditional(Flags.Carry, isMsbSet);
         }
 
-        protected void ShiftRightLogical(ushort address)
+        protected byte ShiftRightLogical(ushort address)
         {
             byte value = ReadMemory8(address);
             ShiftRightLogical(ref value);
             WriteMemory8(address, value);
+            return value;
         }
 
         protected void ShiftRightLogical(ref byte value)
@@ -1133,11 +1146,12 @@ namespace MasterFudgeMk2.Devices
 
         #region Opcodes: Bit Set, Reset and Test Group
 
-        protected void SetBit(ushort address, int bit)
+        protected byte SetBit(ushort address, int bit)
         {
             byte value = ReadMemory8(address);
             SetBit(ref value, bit);
             WriteMemory8(address, value);
+            return value;
         }
 
         protected void SetBit(ref byte value, int bit)
@@ -1145,11 +1159,12 @@ namespace MasterFudgeMk2.Devices
             value |= (byte)(1 << bit);
         }
 
-        protected void ResetBit(ushort address, int bit)
+        protected byte ResetBit(ushort address, int bit)
         {
             byte value = ReadMemory8(address);
             ResetBit(ref value, bit);
             WriteMemory8(address, value);
+            return value;
         }
 
         protected void ResetBit(ref byte value, int bit)
