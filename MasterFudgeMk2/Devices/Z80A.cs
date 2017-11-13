@@ -720,71 +720,57 @@ namespace MasterFudgeMk2.Devices
 
         protected void DecimalAdjustAccumulator()
         {
-            // TODO: finish rewriting, recheck zexdoc results
+            /* "The Undocumented Z80 Documented" by Sean Young, chapter 4.7, http://www.z80.info/zip/z80-documented.pdf */
 
-            /*byte bef = af.High, diff = 0x00, res;
-            bool cf = IsFlagSet(Flags.Carry), hf = IsFlagSet(Flags.HalfCarry);
-            byte high = (byte)((bef & 0xF0) >> 4), low = (byte)(bef & 0x0F);
+            // TODO: still not correct? zexdoc "<daa,cpl,scf,ccf>............   CRC:d11dc635 expected:9b4ba675"; also find alternative opcode tester, just in case?
 
-            if (cf)
+            byte before = af.High, diff = 0x00, result;
+            bool carry = IsFlagSet(Flags.Carry), halfCarry = IsFlagSet(Flags.HalfCarry);
+            byte highNibble = (byte)((before & 0xF0) >> 4), lowNibble = (byte)(before & 0x0F);
+
+            if (carry)
             {
                 diff |= 0x60;
-                if ((hf && low <= 0x09) || low >= 0x0A)
+                if ((halfCarry && lowNibble <= 0x09) || lowNibble >= 0x0A)
                     diff |= 0x06;
             }
             else
             {
+                if (lowNibble >= 0x0A && lowNibble <= 0x0F)
+                {
+                    diff |= 0x06;
+                    if (highNibble >= 0x09 && highNibble <= 0x0F)
+                        diff |= 0x60;
+                }
+                else
+                {
+                    if (highNibble >= 0x0A && highNibble <= 0x0F)
+                        diff |= 0x60;
+                    if (halfCarry)
+                        diff |= 0x06;
+                }
 
+                SetClearFlagConditional(Flags.Carry, (
+                    ((highNibble >= 0x09 && highNibble <= 0x0F) && (lowNibble >= 0x0A && lowNibble <= 0x0F)) ||
+                    ((highNibble >= 0x0A && highNibble <= 0x0F) && (lowNibble >= 0x00 && lowNibble <= 0x09))));
             }
-
 
             if (!IsFlagSet(Flags.Subtract))
-                res = (byte)(bef + diff);
+                SetClearFlagConditional(Flags.HalfCarry, (lowNibble >= 0x0A && lowNibble <= 0x0F));
             else
-                res = (byte)(bef - diff);
-
-            SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(res, 7));
-            SetClearFlagConditional(Flags.Zero, (res == 0x00));
-            SetClearFlagConditional(Flags.HalfCarry, (((bef ^ res) & 0x10) != 0));
-            CalculateAndSetParity(bef);
-            // N
-            // C (set above)
-
-            af.High = res;
-
-            return;*/
-
-            /* Algorithm used from http://www.worldofspectrum.org/faq/reference/z80reference.htm */
-
-            byte before = af.High, factor = 0, result = 0;
-
-            if ((af.High > 0x99) || IsFlagSet(Flags.Carry))
-            {
-                factor |= 0x60;
-                SetFlag(Flags.Carry);
-            }
-            else
-            {
-                factor |= 0x00;
-                ClearFlag(Flags.Carry);
-            }
-
-            if (((af.High & 0x0F) > 0x09) || IsFlagSet(Flags.HalfCarry))
-                factor |= 0x06;
-            else
-                factor |= 0x00;
+                SetClearFlagConditional(Flags.HalfCarry, (halfCarry && (lowNibble >= 0x00 && lowNibble <= 0x05)));
 
             if (!IsFlagSet(Flags.Subtract))
-                result = (byte)(af.High + factor);
+                result = (byte)(before + diff);
             else
-                result = (byte)(af.High - factor);
+                result = (byte)(before - diff);
 
             SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(result, 7));
             SetClearFlagConditional(Flags.Zero, (result == 0x00));
             SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(result, 5));
-            SetClearFlagConditional(Flags.HalfCarry, (((before ^ result) & 0x10) != 0));
+            // H (set above)
             SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(result, 3));
-            CalculateAndSetParity(af.High);
+            CalculateAndSetParity(before);
             // N
             // C (set above)
 
