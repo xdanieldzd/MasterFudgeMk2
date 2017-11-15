@@ -8,6 +8,8 @@ namespace MasterFudgeMk2.Devices
 {
     public partial class Z80A
     {
+        // TODO: add mnemonics for undocumented opcodes
+
         static readonly string[] opcodeMnemonicNoPrefix = new string[]
         {
             "NOP",                  "LD BC, 0x{0:X4}",      "LD (BC), A",           "INC BC",               "INC B",                "DEC B",                "LD B, 0x{0:X2}",       "RLCA",                 /* 0x00 */
@@ -371,9 +373,9 @@ namespace MasterFudgeMk2.Devices
                 cpu.IsFlagSet(Flags.Carry) ? "C" : "-",
                 cpu.IsFlagSet(Flags.Subtract) ? "N" : "-",
                 cpu.IsFlagSet(Flags.ParityOrOverflow) ? "P" : "-",
-                cpu.IsFlagSet(Flags.UnusedBit3) ? "3" : "-",
+                cpu.IsFlagSet(Flags.UnusedBitX) ? "X" : "-",
                 cpu.IsFlagSet(Flags.HalfCarry) ? "H" : "-",
-                cpu.IsFlagSet(Flags.UnusedBit5) ? "5" : "-",
+                cpu.IsFlagSet(Flags.UnusedBitY) ? "Y" : "-",
                 cpu.IsFlagSet(Flags.Zero) ? "Z" : "-",
                 cpu.IsFlagSet(Flags.Sign) ? "S" : "-");
         }
