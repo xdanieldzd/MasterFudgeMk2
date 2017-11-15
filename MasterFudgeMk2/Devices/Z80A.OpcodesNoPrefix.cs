@@ -77,7 +77,7 @@ namespace MasterFudgeMk2.Devices
             new SimpleOpcodeDelegate((c) => { c.Increment8(ref c.af.High); }),
             new SimpleOpcodeDelegate((c) => { c.Decrement8(ref c.af.High); }),
             new SimpleOpcodeDelegate((c) => { c.LoadRegisterImmediate8(ref c.af.High, false); }),
-            new SimpleOpcodeDelegate((c) => { c.ClearFlag(Flags.Subtract); c.SetClearFlagConditional(Flags.Carry, !c.IsFlagSet(Flags.Carry)); }),
+            new SimpleOpcodeDelegate((c) => { c.SetClearFlagConditional(Flags.HalfCarry, c.IsFlagSet(Flags.Carry)); c.SetClearFlagConditional(Flags.Carry, !c.IsFlagSet(Flags.Carry)); c.ClearFlag(Flags.Subtract); }),
             /* 0x40 */
             new SimpleOpcodeDelegate((c) => { c.LoadRegister8(ref c.bc.High, c.bc.High, false); }),
             new SimpleOpcodeDelegate((c) => { c.LoadRegister8(ref c.bc.High, c.bc.Low, false); }),

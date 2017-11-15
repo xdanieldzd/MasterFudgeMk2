@@ -10,8 +10,7 @@ using MasterFudgeMk2.Common.Enumerations;
 
 namespace MasterFudgeMk2.Devices
 {
-    // TODO: "undocumented" opcodes (Z80 tester will need them, some Game Gear games (ex. Gunstar Heroes) hit them too?)
-    //       X and Y flags according to z80-documented.pdf, needed for fully accurate DAA (Z80 tester)?
+    // TODO: ZEXDOC passes, ZEXALL shows lots of errors (afaik, X and Y flags according to z80-documented.pdf)
 
     public partial class Z80A
     {
@@ -85,13 +84,14 @@ namespace MasterFudgeMk2.Devices
 
         public virtual void Reset()
         {
-            af.Word = bc.Word = de.Word = hl.Word = 0;
-            af_.Word = bc_.Word = de_.Word = hl_.Word = 0;
-            ix.Word = iy.Word = 0;
+            af.Word = bc.Word = de.Word = hl.Word = 0xFFFF;
+            af_.Word = bc_.Word = de_.Word = hl_.Word = 0xFFFF;
+            ix.Word = iy.Word = 0xFFFF;
             i = r = 0;
             pc = 0;
+            sp = 0xFFFF;
 
-            iff1 = iff1 = eiDelay = halt = false;
+            iff1 = iff2 = eiDelay = halt = false;
             im = 0;
 
             intState = nmiState = InterruptState.Clear;
@@ -722,8 +722,6 @@ namespace MasterFudgeMk2.Devices
         {
             /* "The Undocumented Z80 Documented" by Sean Young, chapter 4.7, http://www.z80.info/zip/z80-documented.pdf */
 
-            // TODO: still not correct? zexdoc "<daa,cpl,scf,ccf>............   CRC:d11dc635 expected:9b4ba675"; also find alternative opcode tester, just in case?
-
             byte before = af.High, diff = 0x00, result;
             bool carry = IsFlagSet(Flags.Carry), halfCarry = IsFlagSet(Flags.HalfCarry);
             byte highNibble = (byte)((before & 0xF0) >> 4), lowNibble = (byte)(before & 0x0F);
@@ -770,7 +768,7 @@ namespace MasterFudgeMk2.Devices
             SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(result, 5));
             // H (set above)
             SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(result, 3));
-            CalculateAndSetParity(before);
+            CalculateAndSetParity(result);
             // N
             // C (set above)
 
