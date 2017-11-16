@@ -104,8 +104,7 @@ namespace MasterFudgeMk2.Devices
             currentCycles = 0;
 
             // Current game bugs and whatnot
-            //  GG Shinobi (GG): crash/restart/etc going in-game (stack corruption?)
-            //  Coca Cola Kid (GG): intro cutscene softlock, can skip w/ start, titlescreen palette is overwritten by garbage
+            //  Coca Cola Kid (GG): intro cutscene softlock, can skip w/ start
             //  Line Interrupt Test #1 (SMS): modes 0 and 3 scroll one scanline too late?
             //  ...
 

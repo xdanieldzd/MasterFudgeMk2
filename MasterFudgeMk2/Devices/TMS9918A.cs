@@ -225,11 +225,10 @@ namespace MasterFudgeMk2.Devices
                     drawScreen = true;
                 }
 
-                if (isFrameInterruptEnabled && isFrameInterruptPending)
-                    InterruptLine = InterruptState.Assert;
-
                 cycleCount -= clockCyclesPerLine;
             }
+
+            InterruptLine = ((isFrameInterruptEnabled && isFrameInterruptPending) ? InterruptState.Assert : InterruptState.Clear);
 
             return drawScreen;
         }

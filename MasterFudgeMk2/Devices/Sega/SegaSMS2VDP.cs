@@ -280,11 +280,10 @@ namespace MasterFudgeMk2.Devices.Sega
                     drawScreen = true;
                 }
 
-                if ((isFrameInterruptEnabled && isFrameInterruptPending) || (isLineInterruptEnabled && isLineInterruptPending))
-                    InterruptLine = InterruptState.Assert;
-
                 cycleCount -= clockCyclesPerLine;
             }
+
+            InterruptLine = (((isFrameInterruptEnabled && isFrameInterruptPending) || (isLineInterruptEnabled && isLineInterruptPending)) ? InterruptState.Assert : InterruptState.Clear);
 
             return drawScreen;
         }

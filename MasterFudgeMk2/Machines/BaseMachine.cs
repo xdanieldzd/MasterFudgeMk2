@@ -43,7 +43,7 @@ namespace MasterFudgeMk2.Machines
         protected virtual void OnFrameEnded(EventArgs e) { FrameEnded?.Invoke(this, e); }
 
         protected bool emulationPaused;
-        protected int currentCyclesInLine, currentMasterClockCyclesInFrame;
+        protected int currentMasterClockCyclesInFrame;
         protected abstract int totalMasterClockCyclesInFrame { get; }
 
         public abstract void Startup();
@@ -51,7 +51,7 @@ namespace MasterFudgeMk2.Machines
         public virtual void Reset()
         {
             emulationPaused = false;
-            currentCyclesInLine = currentMasterClockCyclesInFrame = 0;
+            currentMasterClockCyclesInFrame = 0;
         }
 
         public abstract bool CanLoadMedia(FileInfo mediaFile);
