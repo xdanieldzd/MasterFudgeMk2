@@ -205,6 +205,8 @@ namespace MasterFudgeMk2.Devices
         {
             bool drawScreen = false;
 
+            InterruptLine = ((isFrameInterruptEnabled && isFrameInterruptPending) ? InterruptState.Assert : InterruptState.Clear);
+
             cycleCount += clockCyclesInStep;
 
             if (cycleCount >= clockCyclesPerLine)
@@ -227,8 +229,6 @@ namespace MasterFudgeMk2.Devices
 
                 cycleCount -= clockCyclesPerLine;
             }
-
-            InterruptLine = ((isFrameInterruptEnabled && isFrameInterruptPending) ? InterruptState.Assert : InterruptState.Clear);
 
             return drawScreen;
         }

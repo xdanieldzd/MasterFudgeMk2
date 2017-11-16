@@ -238,6 +238,8 @@ namespace MasterFudgeMk2.Devices.Sega
         {
             bool drawScreen = false;
 
+            InterruptLine = (((isFrameInterruptEnabled && isFrameInterruptPending) || (isLineInterruptEnabled && isLineInterruptPending)) ? InterruptState.Assert : InterruptState.Clear);
+
             cycleCount += clockCyclesInStep;
 
             hCounter = hCounterTable[(int)Math.Round(cycleCount / 3.0) % hCounterTable.Length];
@@ -282,8 +284,6 @@ namespace MasterFudgeMk2.Devices.Sega
 
                 cycleCount -= clockCyclesPerLine;
             }
-
-            InterruptLine = (((isFrameInterruptEnabled && isFrameInterruptPending) || (isLineInterruptEnabled && isLineInterruptPending)) ? InterruptState.Assert : InterruptState.Clear);
 
             return drawScreen;
         }
