@@ -419,6 +419,10 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
                 case 0xC0:
                     /* No effect */
                     // TODO: proper implementation of SDSC debug console - http://www.smspower.org/Development/SDSCDebugConsoleSpecification
+                    if (value == 0x02)
+                        File.WriteAllText(@"E:\temp\sms\new\sdsc.txt", string.Empty);
+                    if (value >= 0xA)
+                        File.AppendAllText(@"E:\temp\sms\new\sdsc.txt", new string(new char[] { (char)value }));
                     break;
 
                 default:

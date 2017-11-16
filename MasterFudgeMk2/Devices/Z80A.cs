@@ -469,9 +469,13 @@ namespace MasterFudgeMk2.Devices
             Increment16(ref hl.Word);
             Decrement16(ref bc.Word);
 
+            byte n = (byte)(hlValue + af.High);
+
             // S
             // Z
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(n, 1));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(n, 3));
             SetClearFlagConditional(Flags.ParityOrOverflow, (bc.Word != 0));
             ClearFlag(Flags.Subtract);
             // C
@@ -480,13 +484,6 @@ namespace MasterFudgeMk2.Devices
         protected void LoadIncrementRepeat()
         {
             LoadIncrement();
-
-            // S
-            // Z
-            ClearFlag(Flags.HalfCarry);
-            ClearFlag(Flags.ParityOrOverflow);
-            ClearFlag(Flags.Subtract);
-            // C
 
             if (bc.Word != 0)
             {
@@ -503,9 +500,13 @@ namespace MasterFudgeMk2.Devices
             Decrement16(ref hl.Word);
             Decrement16(ref bc.Word);
 
+            byte n = (byte)(hlValue + af.High);
+
             // S
             // Z
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(n, 1));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(n, 3));
             SetClearFlagConditional(Flags.ParityOrOverflow, (bc.Word != 0));
             ClearFlag(Flags.Subtract);
             // C
@@ -514,13 +515,6 @@ namespace MasterFudgeMk2.Devices
         protected void LoadDecrementRepeat()
         {
             LoadDecrement();
-
-            // S
-            // Z
-            ClearFlag(Flags.HalfCarry);
-            ClearFlag(Flags.ParityOrOverflow);
-            ClearFlag(Flags.Subtract);
-            // C
 
             if (bc.Word != 0)
             {
@@ -537,9 +531,14 @@ namespace MasterFudgeMk2.Devices
             hl.Word++;
             bc.Word--;
 
+            bool halfCarry = (((af.High ^ result ^ operand) & 0x10) != 0);
+            byte n = (byte)(result - (halfCarry ? 1 : 0));
+
             SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet((byte)result, 7));
             SetClearFlagConditional(Flags.Zero, (af.High == operand));
-            SetClearFlagConditional(Flags.HalfCarry, (((af.High ^ result ^ operand) & 0x10) != 0));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(n, 1));
+            SetClearFlagConditional(Flags.HalfCarry, halfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(n, 3));
             SetClearFlagConditional(Flags.ParityOrOverflow, (bc.Word != 0));
             SetFlag(Flags.Subtract);
             // C
@@ -564,9 +563,14 @@ namespace MasterFudgeMk2.Devices
             hl.Word--;
             bc.Word--;
 
+            bool halfCarry = (((af.High ^ result ^ operand) & 0x10) != 0);
+            byte n = (byte)(result - (halfCarry ? 1 : 0));
+
             SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet((byte)result, 7));
             SetClearFlagConditional(Flags.Zero, (af.High == operand));
-            SetClearFlagConditional(Flags.HalfCarry, (((af.High ^ result ^ operand) & 0x10) != 0));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(n, 1));
+            SetClearFlagConditional(Flags.HalfCarry, halfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(n, 3));
             SetClearFlagConditional(Flags.ParityOrOverflow, (bc.Word != 0));
             SetFlag(Flags.Subtract);
             // C
@@ -677,7 +681,9 @@ namespace MasterFudgeMk2.Devices
 
             SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(result, 7));
             SetClearFlagConditional(Flags.Zero, (result == 0x00));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(result, 5));
             SetClearFlagConditional(Flags.HalfCarry, ((register & 0x0F) == 0x0F));
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(result, 3));
             SetClearFlagConditional(Flags.ParityOrOverflow, (register == 0x7F));
             ClearFlag(Flags.Subtract);
             // C
@@ -698,7 +704,9 @@ namespace MasterFudgeMk2.Devices
 
             SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(result, 7));
             SetClearFlagConditional(Flags.Zero, (result == 0x00));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(result, 5));
             SetClearFlagConditional(Flags.HalfCarry, ((register & 0x0F) == 0x00));
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(result, 3));
             SetClearFlagConditional(Flags.ParityOrOverflow, (register == 0x80));
             SetFlag(Flags.Subtract);
             // C
@@ -780,7 +788,9 @@ namespace MasterFudgeMk2.Devices
 
             SetClearFlagConditional(Flags.Sign, ((result & 0xFF) >= 0x80));
             SetClearFlagConditional(Flags.Zero, ((result & 0xFF) == 0x00));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet((byte)(result & 0xFF), 5));
             SetClearFlagConditional(Flags.HalfCarry, ((0 - (af.High & 0x0F)) < 0));
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet((byte)(result & 0xFF), 3));
             SetClearFlagConditional(Flags.ParityOrOverflow, (af.High == 0x80));
             SetFlag(Flags.Subtract);
             SetClearFlagConditional(Flags.Carry, (af.High != 0x00));
@@ -859,7 +869,9 @@ namespace MasterFudgeMk2.Devices
 
             SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
             SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
             CalculateAndSetParity(value);
             ClearFlag(Flags.Subtract);
             SetClearFlagConditional(Flags.Carry, isMsbSet);
@@ -881,7 +893,9 @@ namespace MasterFudgeMk2.Devices
 
             SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
             SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
             CalculateAndSetParity(value);
             ClearFlag(Flags.Subtract);
             SetClearFlagConditional(Flags.Carry, isMsbSet);
@@ -904,7 +918,9 @@ namespace MasterFudgeMk2.Devices
 
             SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
             SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
             CalculateAndSetParity(value);
             ClearFlag(Flags.Subtract);
             SetClearFlagConditional(Flags.Carry, isLsbSet);
@@ -926,7 +942,9 @@ namespace MasterFudgeMk2.Devices
 
             SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
             SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
             CalculateAndSetParity(value);
             ClearFlag(Flags.Subtract);
             SetClearFlagConditional(Flags.Carry, isLsbSet);
@@ -941,7 +959,9 @@ namespace MasterFudgeMk2.Devices
 
             // S
             // Z
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(af.High, 5));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(af.High, 3));
             // PV
             ClearFlag(Flags.Subtract);
             SetClearFlagConditional(Flags.Carry, isMsbSet);
@@ -955,7 +975,9 @@ namespace MasterFudgeMk2.Devices
 
             // S
             // Z
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(af.High, 5));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(af.High, 3));
             // PV
             ClearFlag(Flags.Subtract);
             SetClearFlagConditional(Flags.Carry, isMsbSet);
@@ -970,7 +992,9 @@ namespace MasterFudgeMk2.Devices
 
             // S
             // Z
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(af.High, 5));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(af.High, 3));
             // PV
             ClearFlag(Flags.Subtract);
             SetClearFlagConditional(Flags.Carry, isLsbSet);
@@ -984,7 +1008,9 @@ namespace MasterFudgeMk2.Devices
 
             // S
             // Z
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(af.High, 5));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(af.High, 3));
             // PV
             ClearFlag(Flags.Subtract);
             SetClearFlagConditional(Flags.Carry, isLsbSet);
@@ -1008,7 +1034,9 @@ namespace MasterFudgeMk2.Devices
 
             SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(af.High, 7));
             SetClearFlagConditional(Flags.Zero, (af.High == 0x00));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(af.High, 5));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(af.High, 3));
             CalculateAndSetParity(af.High);
             ClearFlag(Flags.Subtract);
             // C
@@ -1032,7 +1060,9 @@ namespace MasterFudgeMk2.Devices
 
             SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(af.High, 7));
             SetClearFlagConditional(Flags.Zero, (af.High == 0x00));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(af.High, 5));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(af.High, 3));
             CalculateAndSetParity(af.High);
             ClearFlag(Flags.Subtract);
             // C
@@ -1053,7 +1083,9 @@ namespace MasterFudgeMk2.Devices
 
             SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
             SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
             CalculateAndSetParity(value);
             ClearFlag(Flags.Subtract);
             SetClearFlagConditional(Flags.Carry, isMsbSet);
@@ -1076,7 +1108,9 @@ namespace MasterFudgeMk2.Devices
 
             SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
             SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
             CalculateAndSetParity(value);
             ClearFlag(Flags.Subtract);
             SetClearFlagConditional(Flags.Carry, isLsbSet);
@@ -1098,7 +1132,9 @@ namespace MasterFudgeMk2.Devices
 
             SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
             SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
             CalculateAndSetParity(value);
             ClearFlag(Flags.Subtract);
             SetClearFlagConditional(Flags.Carry, isMsbSet);
@@ -1119,7 +1155,9 @@ namespace MasterFudgeMk2.Devices
 
             SetClearFlagConditional(Flags.Sign, BitUtilities.IsBitSet(value, 7));
             SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.UnusedBitY, BitUtilities.IsBitSet(value, 5));
             ClearFlag(Flags.HalfCarry);
+            SetClearFlagConditional(Flags.UnusedBitX, BitUtilities.IsBitSet(value, 3));
             CalculateAndSetParity(value);
             ClearFlag(Flags.Subtract);
             SetClearFlagConditional(Flags.Carry, isLsbSet);
