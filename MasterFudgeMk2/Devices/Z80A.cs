@@ -130,6 +130,14 @@ namespace MasterFudgeMk2.Devices
                 }
             }
 
+            // HACK TEST BLAH coca cola kid
+            //if (pc == 0x063A) WriteMemory8(0xD136, 0x01);
+            //if (pc == 0x28CF) WriteMemory8(0xD293, 0x80); // bit7 skips intro, bit6 hangs game??, bit7+6 reset after logos??
+            //if (pc == 0x4FC9) WriteMemory8(0xD700, 0x00); // prevents actors from loading (intro, titlescreen, enemies??)
+            //if (pc == 0x4FEF) WriteMemory8(0xD701, 0x00);
+            //if (pc == 0x4FC6) bc.High = 0x00;
+            // HACK TEST BLAH
+
             // ----- PUT RIGHT BEFORE OPCODE FETCH -----
             if (Common.XInput.ControllerManager.GetController(0).IsLeftShoulderPressed())
             {
@@ -1219,7 +1227,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void Jump8()
         {
-            pc += (ushort)((sbyte)(ReadMemory8(pc) + 1));
+            pc += (ushort)(((sbyte)ReadMemory8(pc)) + 1);
         }
 
         protected void JumpConditional8(bool condition)
