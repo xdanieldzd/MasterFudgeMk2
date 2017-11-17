@@ -114,18 +114,20 @@ namespace MasterFudgeMk2.Devices
                 eiDelay = false;
                 iff1 = iff2 = true;
             }
-
-            /* Check INT line */
-            if (intState == InterruptState.Assert)
+            else
             {
-                ServiceInterrupt();
-            }
+                /* Check INT line */
+                if (intState == InterruptState.Assert)
+                {
+                    ServiceInterrupt();
+                }
 
-            /* Check NMI line */
-            if (nmiState == InterruptState.Assert)
-            {
-                nmiState = InterruptState.Clear;
-                ServiceNonMaskableInterrupt();
+                /* Check NMI line */
+                if (nmiState == InterruptState.Assert)
+                {
+                    nmiState = InterruptState.Clear;
+                    ServiceNonMaskableInterrupt();
+                }
             }
 
             // ----- PUT RIGHT BEFORE OPCODE FETCH -----
