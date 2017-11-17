@@ -55,16 +55,6 @@ namespace MasterFudgeMk2
             set { emuConfig.LimitFps = value; }
         }
 
-        public bool KeepAspectRatio
-        {
-            get
-            {
-                if (renderer != null) renderer.KeepAspectRatio = emuConfig.KeepAspectRatio;
-                return emuConfig.KeepAspectRatio;
-            }
-            set { renderer.KeepAspectRatio = emuConfig.KeepAspectRatio = value; }
-        }
-
         public bool ForceSquarePixels
         {
             get
@@ -73,6 +63,16 @@ namespace MasterFudgeMk2
                 return emuConfig.ForceSquarePixels;
             }
             set { renderer.ForceSquarePixels = emuConfig.ForceSquarePixels = value; }
+        }
+
+        public bool LinearInterpolation
+        {
+            get
+            {
+                if (renderer != null) renderer.LinearInterpolation = emuConfig.LinearInterpolation;
+                return emuConfig.LinearInterpolation;
+            }
+            set { renderer.LinearInterpolation = emuConfig.LinearInterpolation = value; }
         }
 
         public bool EmulationIsPaused
@@ -194,8 +194,8 @@ namespace MasterFudgeMk2
         {
             /* Set up databindings for settings */
             limitFPSToolStripMenuItem.DataBindings.Add(nameof(limitFPSToolStripMenuItem.Checked), emuConfig, nameof(emuConfig.LimitFps), false, DataSourceUpdateMode.OnPropertyChanged);
-            keepAspectRatioToolStripMenuItem.DataBindings.Add(nameof(keepAspectRatioToolStripMenuItem.Checked), this, nameof(KeepAspectRatio), false, DataSourceUpdateMode.OnPropertyChanged);
             forceSquarePixelsToolStripMenuItem.DataBindings.Add(nameof(forceSquarePixelsToolStripMenuItem.Checked), this, nameof(ForceSquarePixels), false, DataSourceUpdateMode.OnPropertyChanged);
+            linearInterpolationToolStripMenuItem.DataBindings.Add(nameof(linearInterpolationToolStripMenuItem.Checked), this, nameof(LinearInterpolation), false, DataSourceUpdateMode.OnPropertyChanged);
 
             /* Databindings for initialized */
             takeScreenshotToolStripMenuItem.DataBindings.Add(nameof(takeScreenshotToolStripMenuItem.Enabled), emulationIsInitialized, nameof(emulationIsInitialized.IsTrue), false, DataSourceUpdateMode.OnPropertyChanged);
@@ -310,8 +310,8 @@ namespace MasterFudgeMk2
             {
                 machineManager.RenderScreen += renderer.OnRenderScreen;
 
-                KeepAspectRatio = emuConfig.KeepAspectRatio;
                 ForceSquarePixels = emuConfig.ForceSquarePixels;
+                LinearInterpolation = emuConfig.LinearInterpolation;
 
                 renderer.AspectRatio = machineManager.AspectRatio;
             }

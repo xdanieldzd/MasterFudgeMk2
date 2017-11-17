@@ -48,7 +48,7 @@ namespace MasterFudgeMk2
         {
             get
             {
-                string[] coords = SettingsConfig.GetString(nameof(WindowSize), "528;526").Split(';');
+                string[] coords = SettingsConfig.GetString(nameof(WindowSize), "623;532").Split(';');
                 return new Size(int.Parse(coords[0]), int.Parse(coords[1]));
             }
             set
@@ -63,16 +63,16 @@ namespace MasterFudgeMk2
             set { SettingsConfig.Set(nameof(LimitFps), value); }
         }
 
-        public bool KeepAspectRatio
-        {
-            get { return SettingsConfig.GetBoolean(nameof(KeepAspectRatio), true); }
-            set { SettingsConfig.Set(nameof(KeepAspectRatio), value); }
-        }
-
         public bool ForceSquarePixels
         {
             get { return SettingsConfig.GetBoolean(nameof(ForceSquarePixels), false); }
             set { SettingsConfig.Set(nameof(ForceSquarePixels), value); }
+        }
+
+        public bool LinearInterpolation
+        {
+            get { return SettingsConfig.GetBoolean(nameof(LinearInterpolation), true); }
+            set { SettingsConfig.Set(nameof(LinearInterpolation), value); }
         }
 
         public bool DebugMode

@@ -10,14 +10,14 @@ namespace MasterFudgeMk2.VideoBackends
     {
         protected Control outputControl;
 
-        protected bool keepAspectRatio, forceSquarePixels;
+        protected bool forceSquarePixels, linearInterpolation;
         protected float aspectRatio;
         protected Rectangle screenViewport;
 
-        public virtual bool KeepAspectRatio { get { return keepAspectRatio; } set { keepAspectRatio = value; } }
         public virtual bool ForceSquarePixels { get { return forceSquarePixels; } set { forceSquarePixels = value; } }
+        public virtual bool LinearInterpolation { get { return linearInterpolation; } set { linearInterpolation = value; } }
         public virtual float AspectRatio { get { return aspectRatio; } set { aspectRatio = value; } }
-        
+
         public BaseVideoBackend(Control control)
         {
             outputControl = control;

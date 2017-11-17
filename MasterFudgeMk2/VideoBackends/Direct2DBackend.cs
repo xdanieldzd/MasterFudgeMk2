@@ -40,7 +40,6 @@ namespace MasterFudgeMk2.VideoBackends
 
         byte[] lastFrameData;
 
-        public override bool KeepAspectRatio { get { return keepAspectRatio; } set { keepAspectRatio = value; ResizeRenderTargetAndDestinationRectangle(); } }
         public override bool ForceSquarePixels { get { return forceSquarePixels; } set { forceSquarePixels = value; ResizeRenderTargetAndDestinationRectangle(); } }
         public override float AspectRatio { get { return aspectRatio; } set { aspectRatio = value; ResizeRenderTargetAndDestinationRectangle(); } }
 
@@ -85,8 +84,8 @@ namespace MasterFudgeMk2.VideoBackends
             using (var factory = swapChain.GetParent<FactoryDXGI>())
                 factory.MakeWindowAssociation(control.Handle, WindowAssociationFlags.IgnoreAltEnter);
 
-            keepAspectRatio = false;
             aspectRatio = 1.0f;
+            linearInterpolation = true;
 
             ResizeRenderTargetAndDestinationRectangle();
         }
@@ -133,30 +132,20 @@ namespace MasterFudgeMk2.VideoBackends
             sourceRectangle = new RawRectangleF(screenViewport.X, screenViewport.Y, (screenViewport.X + screenViewport.Width), (screenViewport.Y + screenViewport.Height));
             renderTarget.Resize(new Size2(outputControl.ClientSize.Width, outputControl.ClientSize.Height));
 
-            if (keepAspectRatio)
-            {
-                float screenWidth = (sourceRectangle.Right - sourceRectangle.Left), screenHeight = (sourceRectangle.Bottom - sourceRectangle.Top);
-                float outputWidth = outputControl.ClientSize.Width, outputHeight = outputControl.ClientSize.Height;
+            float screenWidth = (sourceRectangle.Right - sourceRectangle.Left), screenHeight = (sourceRectangle.Bottom - sourceRectangle.Top);
+            float outputWidth = outputControl.ClientSize.Width, outputHeight = outputControl.ClientSize.Height;
 
-                float tempRatio = ((screenWidth / screenHeight) * (forceSquarePixels ? 1.0f : aspectRatio));
-                if ((outputHeight * tempRatio) <= outputWidth)
-                {
-                    float left = ((outputWidth - (outputHeight * tempRatio)) / 2.0f);
-                    destinationRectangle = new RawRectangleF(left, 0.0f, (left + (outputHeight * tempRatio)), outputHeight);
-                }
-                else
-                {
-                    float top = ((outputHeight - (outputWidth / tempRatio)) / 2.0f);
-                    destinationRectangle = new RawRectangleF(0.0f, top, outputWidth, (top + (outputWidth / tempRatio)));
-                }
+            float tempRatio = ((screenWidth / screenHeight) * (forceSquarePixels ? 1.0f : aspectRatio));
+            if ((outputHeight * tempRatio) <= outputWidth)
+            {
+                float left = ((outputWidth - (outputHeight * tempRatio)) / 2.0f);
+                destinationRectangle = new RawRectangleF(left, 0.0f, (left + (outputHeight * tempRatio)), outputHeight);
             }
             else
             {
-                destinationRectangle = new RawRectangleF(0.0f, 0.0f, outputControl.ClientSize.Width, outputControl.ClientSize.Height);
+                float top = ((outputHeight - (outputWidth / tempRatio)) / 2.0f);
+                destinationRectangle = new RawRectangleF(0.0f, top, outputWidth, (top + (outputWidth / tempRatio)));
             }
-
-            destinationRectangle.Right += 0.5f;
-            destinationRectangle.Bottom += 0.5f;
         }
 
         public override void OnOutputResized(object sender, OutputResizedEventArgs e)
@@ -179,7 +168,7 @@ namespace MasterFudgeMk2.VideoBackends
 
             renderTarget.BeginDraw();
             renderTarget.Clear(Color.Black);
-            renderTarget.DrawBitmap(bitmapRenderTarget.Bitmap, destinationRectangle, 1.0f, BitmapInterpolationMode.Linear, sourceRectangle);
+            renderTarget.DrawBitmap(bitmapRenderTarget.Bitmap, destinationRectangle, 1.0f, (linearInterpolation ? BitmapInterpolationMode.Linear : BitmapInterpolationMode.NearestNeighbor), sourceRectangle);
             renderTarget.EndDraw();
         }
 

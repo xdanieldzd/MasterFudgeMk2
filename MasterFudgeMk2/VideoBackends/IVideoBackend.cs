@@ -7,8 +7,8 @@ namespace MasterFudgeMk2.VideoBackends
 {
     public interface IVideoBackend : IDisposable
     {
-        bool KeepAspectRatio { get; set; }
         bool ForceSquarePixels { get; set; }
+        bool LinearInterpolation { get; set; }
         float AspectRatio { get; set; }
 
         Bitmap GetRawScreenshot();
