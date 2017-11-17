@@ -104,7 +104,6 @@ namespace MasterFudgeMk2.Devices
             currentCycles = 0;
 
             // Current game bugs and whatnot
-            //  Coca Cola Kid (GG): intro cutscene softlock, can skip w/ start
             //  Line Interrupt Test #1 (SMS): modes 0 and 3 scroll one scanline too late?
             //  ...
 
@@ -129,15 +128,7 @@ namespace MasterFudgeMk2.Devices
                     ServiceNonMaskableInterrupt();
                 }
             }
-
-            // HACK TEST BLAH coca cola kid
-            //if (pc == 0x063A) WriteMemory8(0xD136, 0x01);
-            //if (pc == 0x28CF) WriteMemory8(0xD293, 0x80); // bit7 skips intro, bit6 hangs game??, bit7+6 reset after logos??
-            //if (pc == 0x4FC9) WriteMemory8(0xD700, 0x00); // prevents actors from loading (intro, titlescreen, enemies??)
-            //if (pc == 0x4FEF) WriteMemory8(0xD701, 0x00);
-            //if (pc == 0x4FC6) bc.High = 0x00;
-            // HACK TEST BLAH
-
+            
             // ----- PUT RIGHT BEFORE OPCODE FETCH -----
             if (Common.XInput.ControllerManager.GetController(0).IsLeftShoulderPressed())
             {
