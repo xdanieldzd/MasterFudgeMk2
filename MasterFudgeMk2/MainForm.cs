@@ -325,8 +325,23 @@ namespace MasterFudgeMk2
             if (audioBackendType == null)
                 emuConfig.AudioBackend = audioBackendType = GetImplementationsFromAssembly(typeof(IAudioBackend)).FirstOrDefault();
 
-            if (soundOutput != null) soundOutput.Dispose();
+            if (soundOutput != null)
+            {
+                soundOutput.Stop();
+
+                if (machineManager != null)
+                    machineManager.AddSampleData -= soundOutput.OnAddSampleData;
+
+                soundOutput.Dispose();
+            }
             soundOutput = (Activator.CreateInstance(audioBackendType, new object[] { 44100, 1 }) as IAudioBackend);
+
+            if (machineManager != null)
+            {
+                machineManager.AddSampleData += soundOutput.OnAddSampleData;
+            }
+
+            soundOutput.Play();
 
             foreach (ToolStripMenuItem menuItem in audioBackendToolStripMenuItem.DropDownItems)
                 menuItem.Checked = ((menuItem.Tag as Type) == audioBackendType);

@@ -27,7 +27,6 @@ namespace MasterFudgeMk2.Devices
         /* Sample generation & event handling */
         public event EventHandler<AddSampleDataEventArgs> OnAddSampleData;
         List<short> sampleBuffer;
-        short[] channelSamples;
 
         /* Channel registers */
         ushort[] volumeRegisters;       /* Channels 0-3: 4 bits */
@@ -49,6 +48,7 @@ namespace MasterFudgeMk2.Devices
         /* Clock & refresh rates */
         double clockRate, refreshRate;
         double cycleCount;
+        int stepCount;
 
         public SN76489(double clockRate, double refreshRate, EventHandler<AddSampleDataEventArgs> addSampleDataEvent) : base(addSampleDataEvent)
         {
@@ -57,8 +57,7 @@ namespace MasterFudgeMk2.Devices
 
             OnAddSampleData += addSampleDataEvent;
 
-            sampleBuffer = new List<short>(4096);
-            channelSamples = new short[numChannels];
+            sampleBuffer = new List<short>(1024);
 
             volumeRegisters = new ushort[numChannels];
             toneRegisters = new ushort[numChannels];
@@ -97,37 +96,33 @@ namespace MasterFudgeMk2.Devices
             }
 
             cycleCount = 0.0;
+            stepCount = 0;
         }
 
         public void Step(int clockCyclesInStep)
         {
-            // TODO TIMING  go over what byuu's said again, figure out how to tick this damn thing at its correct rate (i.e not at 3.58mhz but that /16), etc, etcccccccc...zzzzzzz
+            // TODO: very weird, probably terrible executing and all, but... okay-ish? maybe...?
 
-            // TODO, mar 09: uh sounds better but still bad? naudio seems fine, the test sinewave thingy isn't scratchy and shit ... have i ever mentioned i hate sound emulation?
+            double limit = (clockRate / 44100.0);
 
-            // TODO, nov 11: over half a year later, still a lot of wrong garbage...
-
-            int clockCycleLimit = (int)Math.Round((clockRate / refreshRate) / (44100.0 / refreshRate));
-
-            cycleCount += clockCyclesInStep;
-
-            if (cycleCount >= clockCycleLimit)
+            for (int i = 0; i < clockCyclesInStep; i++)
             {
-                // TODO: wrong, i guess, i dunno
-                for (int i = 0; i < 4; i++)
+                stepCount++;
+                if (stepCount == 16)
                 {
-                    /* Tick tone channels & generate output */
                     for (int ch = 0; ch < numToneChannels; ch++)
                         StepToneChannel(ch);
-
-                    /* Tick noise channel & generate output */
                     StepNoiseChannel();
+
+                    stepCount = 0;
                 }
 
-                /* Mix and enqueue output */
-                MixSamples();
-
-                cycleCount -= clockCycleLimit;
+                cycleCount++;
+                if (cycleCount >= limit)
+                {
+                    MixSamples();
+                    cycleCount = 0;
+                }
             }
         }
 
@@ -142,7 +137,6 @@ namespace MasterFudgeMk2.Devices
             {
                 channelCounters[ch] = (ushort)(toneRegisters[ch] & 0x03FF);
                 channelOutput[ch] = !channelOutput[ch];
-                channelSamples[ch] = (short)(volumeTable[volumeRegisters[ch]] * (channelOutput[ch] ? 1 : 0));
             }
         }
 
@@ -175,7 +169,6 @@ namespace MasterFudgeMk2.Devices
                         ushort newLfsrBit = (ushort)((isWhiteNoise ? CheckParity((ushort)(noiseLfsr & noiseTappedBits)) : (noiseLfsr & 0x01)) << noiseBitShift);
 
                         noiseLfsr = (ushort)((newLfsrBit | (noiseLfsr >> 1)) & noiseLfsrMask);
-                        channelSamples[chN] = (short)(volumeTable[volumeRegisters[chN]] * (noiseLfsr & 0x1));
                     }
                 }
             }
@@ -185,8 +178,10 @@ namespace MasterFudgeMk2.Devices
         {
             /* Mix samples together */
             short mixed = 0;
-            for (int ch = 0; ch < numChannels; ch++)
-                mixed += channelSamples[ch];
+            mixed += (short)(volumeTable[volumeRegisters[0]] * (channelOutput[0] ? 0.5 : -0.5));
+            mixed += (short)(volumeTable[volumeRegisters[1]] * (channelOutput[1] ? 0.5 : -0.5));
+            mixed += (short)(volumeTable[volumeRegisters[2]] * (channelOutput[2] ? 0.5 : -0.5));
+            mixed += (short)(volumeTable[volumeRegisters[3]] * (noiseLfsr & 0x1));
 
             if (false)
             {

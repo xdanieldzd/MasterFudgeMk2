@@ -109,11 +109,13 @@ namespace MasterFudgeMk2.VideoBackends
 
         public override DrawingBitmap GetRawScreenshot()
         {
+            // TODO: verify this works as intended...
+
             DrawingBitmap fullScreenshot = new DrawingBitmap((int)(sourceRectangle.Left + sourceRectangle.Right), (int)(sourceRectangle.Top + sourceRectangle.Bottom));
             DrawingBitmapData bmpData = fullScreenshot.LockBits(new DrawingRectangle(0, 0, fullScreenshot.Width, fullScreenshot.Height), System.Drawing.Imaging.ImageLockMode.WriteOnly, fullScreenshot.PixelFormat);
 
             byte[] pixelData = new byte[bmpData.Stride * bmpData.Height];
-            System.Buffer.BlockCopy(lastFrameData, 0, pixelData, 0, lastFrameData.Length);
+            System.Buffer.BlockCopy(lastFrameData, 0, pixelData, 0, pixelData.Length);
             System.Runtime.InteropServices.Marshal.Copy(pixelData, 0, bmpData.Scan0, pixelData.Length);
 
             fullScreenshot.UnlockBits(bmpData);
