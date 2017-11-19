@@ -103,7 +103,7 @@ namespace MasterFudgeMk2.Devices
         {
             // TODO: very weird, probably terrible executing and all, but... okay-ish? maybe...?
 
-            double limit = (clockRate / 44100.0);
+            double limit = ((clockRate / refreshRate) / (44100.0 / refreshRate));
 
             for (int i = 0; i < clockCyclesInStep; i++)
             {
