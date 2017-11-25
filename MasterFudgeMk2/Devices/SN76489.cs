@@ -49,12 +49,12 @@ namespace MasterFudgeMk2.Devices
         int samplesPerFrame, cyclesPerFrame, cyclesPerSample;
         int sampleCycleCount, frameCycleCount, dividerCount;
 
-        public SN76489(double clockRate, double refreshRate, EventHandler<AddSampleDataEventArgs> addSampleDataEvent) : base(addSampleDataEvent)
+        public SN76489(double clockRate, double refreshRate, int sampleRate, EventHandler<AddSampleDataEventArgs> addSampleDataEvent) : base(addSampleDataEvent)
         {
             this.clockRate = clockRate;
             this.refreshRate = refreshRate;
 
-            samplesPerFrame = (int)(44100.0 / refreshRate);
+            samplesPerFrame = (int)(sampleRate / refreshRate);
             cyclesPerFrame = (int)(this.clockRate / refreshRate);
             cyclesPerSample = (cyclesPerFrame / samplesPerFrame);
 

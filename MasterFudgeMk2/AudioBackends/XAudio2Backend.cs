@@ -14,36 +14,31 @@ using MasterFudgeMk2.Common.EventArguments;
 
 namespace MasterFudgeMk2.AudioBackends
 {
-    // TODO: half broken, if not even 2/3s; will desync after a while or smth
+    // TODO: still not perfect, eventually becomes scratchy & crackles for a sec, then is okay again...?
 
     [Description("XAudio2 (SharpDX)")]
     public class XAudio2Backend : MustInitialize<int>, IAudioBackend
     {
         XAudio2 xaudio2;
+
         MasteringVoice masteringVoice;
         SourceVoice sourceVoice;
+
+        short[] samples;
         DataStream dataStream;
-        int bufferSize;
 
         public XAudio2Backend(int sampleRate, int numChannels) : base(sampleRate, numChannels)
         {
             xaudio2 = new XAudio2();
-            masteringVoice = new MasteringVoice(xaudio2);
 
+            masteringVoice = new MasteringVoice(xaudio2);
             var waveFormat = new WaveFormat(sampleRate, numChannels);
             sourceVoice = new SourceVoice(xaudio2, waveFormat);
 
-            bufferSize = waveFormat.ConvertLatencyToByteSize(1000);
-            dataStream = new DataStream(bufferSize, true, true);
+            samples = new short[sampleRate * numChannels];
+            dataStream = DataStream.Create(samples, true, true);
 
-            int numberOfSamples = bufferSize / waveFormat.BlockAlign;
-            for (int i = 0; i < numberOfSamples; i++)
-            {
-                dataStream.Write((short)0);
-            }
-            dataStream.Position = 0;
-
-            var audioBuffer = new AudioBuffer { Stream = dataStream, Flags = BufferFlags.EndOfStream, AudioBytes = bufferSize, LoopCount = AudioBuffer.LoopInfinite };
+            var audioBuffer = new AudioBuffer { Stream = dataStream, Flags = BufferFlags.EndOfStream, AudioBytes = samples.Length, LoopCount = AudioBuffer.LoopInfinite };
             sourceVoice.SubmitSourceBuffer(audioBuffer, null);
         }
 
@@ -73,7 +68,7 @@ namespace MasterFudgeMk2.AudioBackends
         {
             foreach (short sample in e.Samples)
             {
-                if (dataStream.Position >= bufferSize) dataStream.Position = 0;
+                if (dataStream.Position >= samples.Length) dataStream.Position = 0;
                 dataStream.Write(sample);
             }
         }
@@ -90,6 +85,7 @@ namespace MasterFudgeMk2.AudioBackends
 
         public void Reset()
         {
+            for (int i = 0; i < samples.Length; i++) samples[i] = 0;
             dataStream.Position = 0;
         }
     }
