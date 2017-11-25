@@ -14,8 +14,7 @@ namespace MasterFudgeMk2.Devices
         /* http://www.smspower.org/Development/SN76489 */
         /* Differences in various system's PSGs: http://forums.nesdev.com/viewtopic.php?p=190216#p190216 */
 
-        // TODO: compare to Cydrak's code for higan! https://gitlab.com/higan/higan/tree/master/higan/ms/psg
-        // TODO: eventually, when/if this gets less garbage, look into whatever the Game Gear has here in addition (stereo?)
+        // TODO: look into Game Gear stereo mode & derive class like SMS2 PSG
 
         const int numChannels = 4, numToneChannels = 3, noiseChannelIndex = 3;
 
@@ -45,15 +44,19 @@ namespace MasterFudgeMk2.Devices
         /* Linear-feedback shift register, for noise generation */
         protected ushort noiseLfsr;     /* 15-bit */
 
-        /* Clock & refresh rates */
+        /* Timing variables */
         double clockRate, refreshRate;
-        double cycleCount;
-        int stepCount;
+        int samplesPerFrame, cyclesPerFrame, cyclesPerSample;
+        int sampleCycleCount, frameCycleCount, dividerCount;
 
         public SN76489(double clockRate, double refreshRate, EventHandler<AddSampleDataEventArgs> addSampleDataEvent) : base(addSampleDataEvent)
         {
             this.clockRate = clockRate;
             this.refreshRate = refreshRate;
+
+            samplesPerFrame = (int)(44100.0 / refreshRate);
+            cyclesPerFrame = (int)(this.clockRate / refreshRate);
+            cyclesPerSample = (cyclesPerFrame / samplesPerFrame);
 
             OnAddSampleData += addSampleDataEvent;
 
@@ -95,34 +98,40 @@ namespace MasterFudgeMk2.Devices
                 toneRegisters[i] = 0x0000;
             }
 
-            cycleCount = 0.0;
-            stepCount = 0;
+            sampleCycleCount = frameCycleCount = dividerCount = 0;
         }
 
         public void Step(int clockCyclesInStep)
         {
-            // TODO: very weird, probably terrible executing and all, but... okay-ish? maybe...?
-
-            double limit = ((clockRate / refreshRate) / (44100.0 / refreshRate));
+            sampleCycleCount += clockCyclesInStep;
+            frameCycleCount += clockCyclesInStep;
 
             for (int i = 0; i < clockCyclesInStep; i++)
             {
-                stepCount++;
-                if (stepCount == 16)
+                dividerCount++;
+                if (dividerCount == 16)
                 {
                     for (int ch = 0; ch < numToneChannels; ch++)
                         StepToneChannel(ch);
                     StepNoiseChannel();
 
-                    stepCount = 0;
+                    dividerCount = 0;
                 }
+            }
 
-                cycleCount++;
-                if (cycleCount >= limit)
-                {
-                    MixSamples();
-                    cycleCount = 0;
-                }
+            if (sampleCycleCount >= cyclesPerSample)
+            {
+                sampleBuffer.Add(GetMixedSample());
+                sampleCycleCount -= cyclesPerSample;
+            }
+
+            if (frameCycleCount >= cyclesPerFrame)
+            {
+                OnAddSampleData?.Invoke(this, new AddSampleDataEventArgs(sampleBuffer.ToArray()));
+                sampleBuffer.Clear();
+
+                frameCycleCount -= cyclesPerFrame;
+                sampleCycleCount = frameCycleCount;
             }
         }
 
@@ -165,7 +174,6 @@ namespace MasterFudgeMk2.Devices
                         /* Check noise type, then generate sample */
                         bool isWhiteNoise = (((toneRegisters[chN] >> 2) & 0x1) == 0x1);
 
-                        // TODO: SMS/GG == bits 0 and 3 (0009) into 15; SG-1000/CV == bits 0 and 1 (0003) into 14!
                         ushort newLfsrBit = (ushort)((isWhiteNoise ? CheckParity((ushort)(noiseLfsr & noiseTappedBits)) : (noiseLfsr & 0x01)) << noiseBitShift);
 
                         noiseLfsr = (ushort)((newLfsrBit | (noiseLfsr >> 1)) & noiseLfsrMask);
@@ -174,30 +182,15 @@ namespace MasterFudgeMk2.Devices
             }
         }
 
-        private void MixSamples()
+        private short GetMixedSample()
         {
             /* Mix samples together */
             short mixed = 0;
-            mixed += (short)(volumeTable[volumeRegisters[0]] * (channelOutput[0] ? 0.5 : -0.5));
-            mixed += (short)(volumeTable[volumeRegisters[1]] * (channelOutput[1] ? 0.5 : -0.5));
-            mixed += (short)(volumeTable[volumeRegisters[2]] * (channelOutput[2] ? 0.5 : -0.5));
+            mixed += (short)(volumeTable[volumeRegisters[0]] * ((toneRegisters[0] < 2 ? true : channelOutput[0]) ? 0.5 : -0.5));
+            mixed += (short)(volumeTable[volumeRegisters[1]] * ((toneRegisters[1] < 2 ? true : channelOutput[1]) ? 0.5 : -0.5));
+            mixed += (short)(volumeTable[volumeRegisters[2]] * ((toneRegisters[2] < 2 ? true : channelOutput[2]) ? 0.5 : -0.5));
             mixed += (short)(volumeTable[volumeRegisters[3]] * (noiseLfsr & 0x1));
-
-            if (false)
-            {
-                // TEMP crappy sinewave test thingy
-                sineCount = ((sineCount + 1) % sineWave.Length);
-                short sineTemp = (short)(sineWave[sineCount] << 6);
-                mixed = (short)(sineTemp - ((sineWave.Max() << 6) / 2));
-            }
-
-            /* Enqueue sample */
-            sampleBuffer.Add(mixed);
-            if (sampleBuffer.Count == sampleBuffer.Capacity)
-            {
-                OnAddSampleData?.Invoke(this, new AddSampleDataEventArgs(sampleBuffer.ToArray()));
-                sampleBuffer.Clear();
-            }
+            return mixed;
         }
 
         private ushort CheckParity(ushort val)
@@ -263,42 +256,5 @@ namespace MasterFudgeMk2.Devices
                 }
             }
         }
-
-        static int sineCount = 0;
-        /* https://gist.github.com/funkfinger/965900 */
-        static short[] sineWave = new short[] {
-            0x80, 0x83, 0x86, 0x89, 0x8C, 0x90, 0x93, 0x96,
-            0x99, 0x9C, 0x9F, 0xA2, 0xA5, 0xA8, 0xAB, 0xAE,
-            0xB1, 0xB3, 0xB6, 0xB9, 0xBC, 0xBF, 0xC1, 0xC4,
-            0xC7, 0xC9, 0xCC, 0xCE, 0xD1, 0xD3, 0xD5, 0xD8,
-            0xDA, 0xDC, 0xDE, 0xE0, 0xE2, 0xE4, 0xE6, 0xE8,
-            0xEA, 0xEB, 0xED, 0xEF, 0xF0, 0xF1, 0xF3, 0xF4,
-            0xF5, 0xF6, 0xF8, 0xF9, 0xFA, 0xFA, 0xFB, 0xFC,
-            0xFD, 0xFD, 0xFE, 0xFE, 0xFE, 0xFF, 0xFF, 0xFF,
-            0xFF, 0xFF, 0xFF, 0xFF, 0xFE, 0xFE, 0xFE, 0xFD,
-            0xFD, 0xFC, 0xFB, 0xFA, 0xFA, 0xF9, 0xF8, 0xF6,
-            0xF5, 0xF4, 0xF3, 0xF1, 0xF0, 0xEF, 0xED, 0xEB,
-            0xEA, 0xE8, 0xE6, 0xE4, 0xE2, 0xE0, 0xDE, 0xDC,
-            0xDA, 0xD8, 0xD5, 0xD3, 0xD1, 0xCE, 0xCC, 0xC9,
-            0xC7, 0xC4, 0xC1, 0xBF, 0xBC, 0xB9, 0xB6, 0xB3,
-            0xB1, 0xAE, 0xAB, 0xA8, 0xA5, 0xA2, 0x9F, 0x9C,
-            0x99, 0x96, 0x93, 0x90, 0x8C, 0x89, 0x86, 0x83,
-            0x80, 0x7D, 0x7A, 0x77, 0x74, 0x70, 0x6D, 0x6A,
-            0x67, 0x64, 0x61, 0x5E, 0x5B, 0x58, 0x55, 0x52,
-            0x4F, 0x4D, 0x4A, 0x47, 0x44, 0x41, 0x3F, 0x3C,
-            0x39, 0x37, 0x34, 0x32, 0x2F, 0x2D, 0x2B, 0x28,
-            0x26, 0x24, 0x22, 0x20, 0x1E, 0x1C, 0x1A, 0x18,
-            0x16, 0x15, 0x13, 0x11, 0x10, 0x0F, 0x0D, 0x0C,
-            0x0B, 0x0A, 0x08, 0x07, 0x06, 0x06, 0x05, 0x04,
-            0x03, 0x03, 0x02, 0x02, 0x02, 0x01, 0x01, 0x01,
-            0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02, 0x03,
-            0x03, 0x04, 0x05, 0x06, 0x06, 0x07, 0x08, 0x0A,
-            0x0B, 0x0C, 0x0D, 0x0F, 0x10, 0x11, 0x13, 0x15,
-            0x16, 0x18, 0x1A, 0x1C, 0x1E, 0x20, 0x22, 0x24,
-            0x26, 0x28, 0x2B, 0x2D, 0x2F, 0x32, 0x34, 0x37,
-            0x39, 0x3C, 0x3F, 0x41, 0x44, 0x47, 0x4A, 0x4D,
-            0x4F, 0x52, 0x55, 0x58, 0x5B, 0x5E, 0x61, 0x64,
-            0x67, 0x6A, 0x6D, 0x70, 0x74, 0x77, 0x7A, 0x7D
-        };
     }
 }
