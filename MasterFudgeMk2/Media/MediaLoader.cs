@@ -39,7 +39,7 @@ namespace MasterFudgeMk2.Media
                 if (fileInfo.Length <= 0xC000)
                 {
                     /* Size is 48k max, assume ROM only mapper */
-                    media = (new RomOnlyCartridge() as IMedia);
+                    media = (new Sega.RomOnlyCartridge() as IMedia);
                 }
                 else
                 {
@@ -50,7 +50,7 @@ namespace MasterFudgeMk2.Media
             else if (machineManager is Machines.Coleco.ColecoVision.Manager)
             {
                 // TODO: whatever mapper(s) there's on Coleco
-                media = (new RomOnlyCartridge() as IMedia);
+                media = (new Coleco.RomOnlyCartridge() as IMedia);
             }
             else
             {

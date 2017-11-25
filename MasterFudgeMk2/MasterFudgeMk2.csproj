@@ -106,6 +106,8 @@
     <Compile Include="EmulatorConfigurationNew.cs" />
     <Compile Include="InputBackends\DirectInputBackend.cs" />
     <Compile Include="InputBackends\IInputBackend.cs" />
+    <Compile Include="Media\Coleco\BaseCartridge.cs" />
+    <Compile Include="Media\Coleco\RomOnlyCartridge.cs" />
     <Compile Include="NewConfigForm.cs">
       <SubType>Form</SubType>
     </Compile>
