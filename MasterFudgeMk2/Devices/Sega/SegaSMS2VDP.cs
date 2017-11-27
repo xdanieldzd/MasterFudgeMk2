@@ -49,8 +49,15 @@ namespace MasterFudgeMk2.Devices.Sega
         {
             get
             {
-                if (isMasterSystemMode) return (ushort)((registers[0x02] & 0x0E) << 10);
-                else return (ushort)((registers[0x02] & 0x0F) << 10);
+                if (isMasterSystemMode)
+                {
+                    if (isSMS224LineMode || isSMS240LineMode)
+                        return (ushort)(((registers[0x02] & 0x0C) << 10) | 0x700);
+                    else
+                        return (ushort)((registers[0x02] & 0x0E) << 10);
+                }
+                else
+                    return (ushort)((registers[0x02] & 0x0F) << 10);
             }
         }
         protected override ushort spriteAttribTableBaseAddress
@@ -256,10 +263,7 @@ namespace MasterFudgeMk2.Devices.Sega
 
                 RenderLine(currentScanline);
 
-                vCounter = AdjustVCounter(currentScanline);
-                currentScanline++;
-
-                if (vCounter <= screenHeight)
+                if (currentScanline <= screenHeight)
                 {
                     lineInterruptCounter--;
                     if (lineInterruptCounter < 0)
@@ -271,8 +275,11 @@ namespace MasterFudgeMk2.Devices.Sega
                 else
                     lineInterruptCounter = registers[0x0A];
 
-                if (vCounter == (screenHeight + 1))
+                if (currentScanline == (screenHeight + 1))
                     isFrameInterruptPending = true;
+
+                vCounter = AdjustVCounter(currentScanline);
+                currentScanline++;
 
                 if (currentScanline == NumTotalScanlines)
                 {
@@ -538,40 +545,40 @@ namespace MasterFudgeMk2.Devices.Sega
                 if (screenHeight == NumVisibleLinesHigh)
                 {
                     /* Invalid on NTSC */
-                    if (scanline > 0xFF)
-                        counter = (scanline - 0x100);
+                    if (counter > 0xFF)
+                        counter -= 0x100;
                 }
                 else if (screenHeight == NumVisibleLinesMed)
                 {
-                    if (scanline > 0xEA)
-                        counter = (scanline - 0x06);
+                    if (counter > 0xEA)
+                        counter -= 0x06;
                 }
                 else
                 {
-                    if (scanline > 0xDA)
-                        counter = (scanline - 0x06);
+                    if (counter > 0xDA)
+                        counter -= 0x06;
                 }
             }
             else
             {
                 if (screenHeight == NumVisibleLinesHigh)
                 {
-                    if (scanline > 0xFF && scanline < 0xFF + 0x0A)
-                        counter = (scanline - 0x100);
-                    else
-                        counter = (scanline - 0x38);
+                    if (counter >= 0x100 && counter <= 0x10A)
+                        counter -= 0x100;
+                    else if (counter >= 0x10B)
+                        counter -= 0x39;
                 }
                 else if (screenHeight == NumVisibleLinesMed)
                 {
-                    if (scanline > 0xFF && scanline < 0xFF + 0x02)
-                        counter = (scanline - 0x100);
-                    else
-                        counter = (scanline - 0x38);
+                    if (counter >= 0x100 && counter <= 0x102)
+                        counter -= 0x100;
+                    else if (counter >= 0x103)
+                        counter -= 0x39;
                 }
                 else
                 {
-                    if (scanline > 0xF2)
-                        counter = (scanline - 0x39);
+                    if (counter > 0xF2)
+                        counter -= 0x39;
                 }
             }
             return counter;

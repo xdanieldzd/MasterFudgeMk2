@@ -42,18 +42,18 @@ namespace MasterFudgeMk2.Devices.Sega
             if (screenHeight == NumVisibleLinesHigh)
             {
                 /* Invalid on NTSC */
-                if (scanline > 0xFF)
-                    counter = (scanline - 0x100);
+                if (counter > 0xFF)
+                    counter -= 0x100;
             }
             else if (screenHeight == NumVisibleLinesMed)
             {
-                if (scanline > 0xEA)
-                    counter = (scanline - 0x06);
+                if (counter > 0xEA)
+                    counter -= 0x06;
             }
             else
             {
-                if (scanline > 0xDA)
-                    counter = (scanline - 0x06);
+                if (counter > 0xDA)
+                    counter -= 0x06;
             }
 
             return counter;
