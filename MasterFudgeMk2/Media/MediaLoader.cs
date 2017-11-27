@@ -13,14 +13,7 @@ namespace MasterFudgeMk2.Media
 {
     public static class MediaLoader
     {
-        static Dictionary<uint, MediaIdentity> mediaIdents = new Dictionary<uint, MediaIdentity>()
-        {
-            /* SG-1000 */
-            { 0x092F29D6, new MediaIdentity() { Name = "The Castle (SG-1000)", MediaType = typeof(RomRam32kCartridge) } },
-            { 0xAF4F14BC, new MediaIdentity() { Name = "Othello (SG-1000)", MediaType = typeof(RomRam32kCartridge) } },
-
-            // TODO: region forcing, ex. Pop Breaker (GG)? not sure yet
-        };
+        static MediaOverrides mediaOverrides = XmlFile.Load<MediaOverrides>();
 
         public static IMedia LoadMedia(IMachineManager machineManager, FileInfo fileInfo)
         {
@@ -29,17 +22,17 @@ namespace MasterFudgeMk2.Media
             IMedia media;
 
             /* Is media known to need special care? */
-            MediaIdentity cartIdent = (mediaIdents.ContainsKey(crc) ? mediaIdents[crc] : null);
-            if (cartIdent != null)
+            MediaOverrideEntry mediaOverride = mediaOverrides.MediaList.FirstOrDefault(x => x.Crc == crc);
+            if (mediaOverride != null)
             {
-                media = (Activator.CreateInstance(cartIdent.MediaType) as IMedia);
+                media = (Activator.CreateInstance(mediaOverride.MediaType) as IMedia);
             }
             else if (machineManager is Machines.Sega.SG1000.Manager || machineManager is Machines.Sega.MasterSystem.Manager || machineManager is Machines.Sega.GameGear.Manager)
             {
                 if (fileInfo.Length <= 0xC000)
                 {
                     /* Size is 48k max, assume ROM only mapper */
-                    media = (new Sega.RomOnlyCartridge() as IMedia);
+                    media = (new RomOnlyCartridge() as IMedia);
                 }
                 else
                 {

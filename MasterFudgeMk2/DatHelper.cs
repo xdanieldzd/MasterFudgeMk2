@@ -25,7 +25,7 @@ namespace MasterFudgeMk2
 
                 XmlRootAttribute root = new XmlRootAttribute("datafile") { IsNullable = true };
                 XmlSerializer serializer = new XmlSerializer(typeof(DatFile), root);
-                using (FileStream stream = new FileStream(Path.Combine("XML", machine.DatFileName), FileMode.Open))
+                using (FileStream stream = new FileStream(Path.Combine(Program.NoIntroDatPath, machine.DatFileName), FileMode.Open))
                 {
                     datFiles.Add(machineType, (DatFile)serializer.Deserialize(stream));
                 }

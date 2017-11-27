@@ -101,6 +101,7 @@
     <Compile Include="Common\TupleListExtensions.cs" />
     <Compile Include="Common\UiStateBoolean.cs" />
     <Compile Include="Common\EventArguments\PollInputEventArgs.cs" />
+    <Compile Include="Common\XmlFile.cs" />
     <Compile Include="DatFile.cs" />
     <Compile Include="DatHelper.cs" />
     <Compile Include="EmulatorConfigurationNew.cs" />
@@ -108,6 +109,7 @@
     <Compile Include="InputBackends\IInputBackend.cs" />
     <Compile Include="Media\Coleco\BaseCartridge.cs" />
     <Compile Include="Media\Coleco\RomOnlyCartridge.cs" />
+    <Compile Include="Media\MediaOverrides.cs" />
     <Compile Include="NewConfigForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -137,7 +139,6 @@
     <Compile Include="Machines\BaseMachine.cs" />
     <Compile Include="Machines\Coleco\ColecoVision\Configuration.cs" />
     <Compile Include="Machines\Coleco\ColecoVision\Manager.cs" />
-    <Compile Include="Media\MediaIdentity.cs" />
     <Compile Include="Media\IMedia.cs" />
     <Compile Include="Media\Sega\BaseCartridge.cs" />
     <Compile Include="Media\Sega\RomHeader.cs" />
@@ -188,6 +189,9 @@
     <Compile Include="Common\ScreenControl.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Content Include="XML\MediaOverrides.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <EmbeddedResource Include="ConfigForm.resx">
       <DependentUpon>ConfigForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -221,16 +225,16 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <None Include="XML\Coleco - ColecoVision.dat">
+    <None Include="XML\NoIntro\Coleco - ColecoVision.dat">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <Content Include="XML\Sega - Game Gear.dat">
+    <Content Include="XML\NoIntro\Sega - Game Gear.dat">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="XML\Sega - Master System - Mark III.dat">
+    <Content Include="XML\NoIntro\Sega - Master System - Mark III.dat">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="XML\Sega - SG-1000.dat">
+    <Content Include="XML\NoIntro\Sega - SG-1000.dat">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0"?>
+<MediaOverrides>
+  <Media>
+    <!-- The Castle (SG-1000), extra RAM on cart -->
+    <Crc>092F29D6</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.RomRam32kCartridge</MediaType>
+  </Media>
+  <Media>
+    <!-- Othello (SG-1000), extra RAM on cart -->
+    <Crc>AF4F14BC</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.RomRam32kCartridge</MediaType>
+  </Media>
+</MediaOverrides>
