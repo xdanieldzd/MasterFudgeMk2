@@ -10,4 +10,79 @@
     <Crc>AF4F14BC</Crc>
     <MediaType>MasterFudgeMk2.Media.Sega.RomRam32kCartridge</MediaType>
   </Media>
+  <Media>
+    <!-- Cosmic Spacehead (SMS), Codemasters mapper -->
+    <Crc>29822980</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.CodemastersCartridge</MediaType>
+  </Media>
+  <Media>
+    <!-- Dinobasher (SMS), Codemasters mapper -->
+    <Crc>EA5C3A6F</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.CodemastersCartridge</MediaType>
+  </Media>
+  <Media>
+    <!-- Excellent Dizzy Collection (SMS), Codemasters mapper -->
+    <Crc>8813514B</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.CodemastersCartridge</MediaType>
+  </Media>
+  <Media>
+    <!-- Fantastic Dizzy (SMS), Codemasters mapper -->
+    <Crc>B9664AE1</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.CodemastersCartridge</MediaType>
+  </Media>
+  <Media>
+    <!-- Micro Machines (SMS), Codemasters mapper -->
+    <Crc>A577CE46</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.CodemastersCartridge</MediaType>
+  </Media>
+  <Media>
+    <!-- CJ Elephant Fugitive (GG), Codemasters mapper -->
+    <Crc>72981057</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.CodemastersCartridge</MediaType>
+  </Media>
+  <Media>
+    <!-- Cosmic Spacehead (GG), Codemasters mapper -->
+    <Crc>6CAA625B</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.CodemastersCartridge</MediaType>
+  </Media>
+  <Media>
+    <!-- Dropzone (GG), Codemasters mapper -->
+    <Crc>152F0DCC</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.CodemastersCartridge</MediaType>
+  </Media>
+  <Media>
+    <!-- Ernie Els Golf (GG), Codemasters mapper -->
+    <Crc>5E53C7F7</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.CodemastersCartridge</MediaType>
+  </Media>
+  <Media>
+    <!-- Excellent Dizzy Collection (GG), Codemasters mapper -->
+    <Crc>AA140C9C</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.CodemastersCartridge</MediaType>
+  </Media>
+  <Media>
+    <!-- Fantastic Dizzy (GG), Codemasters mapper -->
+    <Crc>C888222B</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.CodemastersCartridge</MediaType>
+  </Media>
+  <Media>
+    <!-- Man Overboard (GG), Codemasters mapper -->
+    <Crc>D9A7F170</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.CodemastersCartridge</MediaType>
+  </Media>
+  <Media>
+    <!-- Micro Machines (GG), Codemasters mapper -->
+    <Crc>F7C524F6</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.CodemastersCartridge</MediaType>
+  </Media>
+  <Media>
+    <!-- Micro Machines 2 (GG), Codemasters mapper -->
+    <Crc>DBE8895C</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.CodemastersCartridge</MediaType>
+  </Media>
+  <Media>
+    <!-- Pete Sampras Tennis (GG), Codemasters mapper -->
+    <Crc>C1756BEE</Crc>
+    <MediaType>MasterFudgeMk2.Media.Sega.CodemastersCartridge</MediaType>
+  </Media>
 </MediaOverrides>

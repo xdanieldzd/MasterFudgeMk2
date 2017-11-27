@@ -110,6 +110,7 @@
     <Compile Include="Media\Coleco\BaseCartridge.cs" />
     <Compile Include="Media\Coleco\RomOnlyCartridge.cs" />
     <Compile Include="Media\MediaOverrides.cs" />
+    <Compile Include="Media\Sega\CodemastersCartridge.cs" />
     <Compile Include="NewConfigForm.cs">
       <SubType>Form</SubType>
     </Compile>
