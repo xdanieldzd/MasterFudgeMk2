@@ -163,7 +163,7 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
             cpu = new Z80A(cpuClock, refreshRate, ReadMemory, WriteMemory, ReadPort, WritePort);
             wram = new byte[ramSize];
             vdp = new TMS9918A(vdpClock, refreshRate, false);
-            psg = new SN76489(psgClock, refreshRate, 44100, (s, e) => { OnAddSampleData(e); });
+            psg = new SN76489(psgClock, refreshRate, 44100, 2, (s, e) => { OnAddSampleData(e); });
 
             if (CanCurrentlyBootWithoutMedia)
                 bios = File.ReadAllBytes(configuration.BiosPath);

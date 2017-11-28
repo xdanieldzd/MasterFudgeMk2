@@ -171,7 +171,7 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
             cpu = new Z80A(cpuClock, refreshRate, ReadMemory, WriteMemory, ReadPort, WritePort);
             wram = new byte[ramSize];
             vdp = new SegaSMS2VDP(vdpClock, refreshRate, configuration.IsPalSystem);
-            psg = new SegaSMS2PSG(psgClock, refreshRate, 44100, (s, e) => { OnAddSampleData(e); });
+            psg = new SegaSMS2PSG(psgClock, refreshRate, 44100, 2, (s, e) => { OnAddSampleData(e); });
         }
 
         public override void Startup()

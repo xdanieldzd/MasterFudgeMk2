@@ -25,42 +25,48 @@ namespace MasterFudgeMk2.Devices
 
         /* Sample generation & event handling */
         public event EventHandler<AddSampleDataEventArgs> OnAddSampleData;
-        List<short> sampleBuffer;
+        protected List<short> sampleBuffer;
+
+        /* Audio output variables */
+        protected int sampleRate, numOutputChannels;
 
         /* Channel registers */
-        ushort[] volumeRegisters;       /* Channels 0-3: 4 bits */
-        ushort[] toneRegisters;         /* Channels 0-2 (tone): 10 bits; channel 3 (noise): 3 bits */
+        protected ushort[] volumeRegisters;     /* Channels 0-3: 4 bits */
+        protected ushort[] toneRegisters;       /* Channels 0-2 (tone): 10 bits; channel 3 (noise): 3 bits */
 
         /* Channel counters */
-        ushort[] channelCounters;       /* 10-bit counters */
-        bool[] channelOutput;
+        ushort[] channelCounters;               /* 10-bit counters */
+        protected bool[] channelOutput;
 
         /* Volume attenuation table */
-        ushort[] volumeTable;           /* 2dB change per volume register step */
+        protected ushort[] volumeTable;         /* 2dB change per volume register step */
 
         /* Latched channel/type */
         byte latchedChannel, latchedType;
 
         /* Linear-feedback shift register, for noise generation */
-        protected ushort noiseLfsr;     /* 15-bit */
+        protected ushort noiseLfsr;             /* 15-bit */
 
         /* Timing variables */
         double clockRate, refreshRate;
         int samplesPerFrame, cyclesPerFrame, cyclesPerSample;
         int sampleCycleCount, frameCycleCount, dividerCount;
 
-        public SN76489(double clockRate, double refreshRate, int sampleRate, EventHandler<AddSampleDataEventArgs> addSampleDataEvent) : base(addSampleDataEvent)
+        public SN76489(double clockRate, double refreshRate, int sampleRate, int numOutputChannels, EventHandler<AddSampleDataEventArgs> addSampleDataEvent) : base(addSampleDataEvent)
         {
+            this.sampleRate = sampleRate;
+            this.numOutputChannels = numOutputChannels;
+
             this.clockRate = clockRate;
             this.refreshRate = refreshRate;
 
-            samplesPerFrame = (int)(sampleRate / refreshRate);
+            samplesPerFrame = (int)(this.sampleRate / refreshRate);
             cyclesPerFrame = (int)(this.clockRate / refreshRate);
             cyclesPerSample = (cyclesPerFrame / samplesPerFrame);
 
             OnAddSampleData += addSampleDataEvent;
 
-            sampleBuffer = new List<short>(1024);
+            sampleBuffer = new List<short>();
 
             volumeRegisters = new ushort[numChannels];
             toneRegisters = new ushort[numChannels];
@@ -88,6 +94,7 @@ namespace MasterFudgeMk2.Devices
         public virtual void Reset()
         {
             sampleBuffer.Clear();
+            OnAddSampleData?.Invoke(this, new AddSampleDataEventArgs(sampleBuffer.ToArray()));
 
             latchedChannel = latchedType = 0x00;
             noiseLfsr = 0x4000;
@@ -121,7 +128,8 @@ namespace MasterFudgeMk2.Devices
 
             if (sampleCycleCount >= cyclesPerSample)
             {
-                sampleBuffer.Add(GetMixedSample());
+                GenerateSample();
+
                 sampleCycleCount -= cyclesPerSample;
             }
 
@@ -180,6 +188,12 @@ namespace MasterFudgeMk2.Devices
                     }
                 }
             }
+        }
+
+        protected virtual void GenerateSample()
+        {
+            for (int i = 0; i < numOutputChannels; i++)
+                sampleBuffer.Add(GetMixedSample());
         }
 
         private short GetMixedSample()

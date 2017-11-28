@@ -82,7 +82,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
         byte[] wram;
         Z80A cpu;
         SegaGGVDP vdp;
-        SegaSMS2PSG psg;    // TODO: derive stereo-capable GG PSG when/if we get more accurate
+        SegaGGPSG psg;
 
         [Flags]
         enum PortIoABButtons : byte
@@ -117,7 +117,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
         byte portMemoryControl, portIoControl, portIoAB, portIoBMisc;
         byte lastHCounter;
 
-        byte portIoC, portParallelData, portDataDirNMI, portTxBuffer, portRxBuffer, portSerialControl, portStereoControl;
+        byte portIoC, portParallelData, portDataDirNMI, portTxBuffer, portRxBuffer, portSerialControl;
 
         protected override int totalMasterClockCyclesInFrame { get { return (int)Math.Round(masterClock / refreshRate); } }
 
@@ -136,7 +136,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             cpu = new Z80A(cpuClock, refreshRate, ReadMemory, WriteMemory, ReadPort, WritePort);
             wram = new byte[ramSize];
             vdp = new SegaGGVDP(vdpClock, refreshRate);
-            psg = new SegaSMS2PSG(psgClock, refreshRate, 44100, (s, e) => { OnAddSampleData(e); });
+            psg = new SegaGGPSG(psgClock, refreshRate, 44100, 2, (s, e) => { OnAddSampleData(e); });
         }
 
         public override void Startup()
@@ -171,7 +171,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
             portTxBuffer = 0x00;
             portRxBuffer = 0xFF;
             portSerialControl = 0x00;
-            portStereoControl = 0xFF;
+            psg.WriteStereoControl(0xFF);
 
             base.Reset();
         }
@@ -336,7 +336,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
                         case 0x03: portTxBuffer = value; break;
                         case 0x04: /* Read-only? */; break;
                         case 0x05: portSerialControl = (byte)(value & 0xF8); break;
-                        case 0x06: portStereoControl = value; break; // TODO: write to PSG
+                        case 0x06: psg.WriteStereoControl(value); break;
                         default:
                             /* System stuff */
                             if ((maskedPort & 0x01) == 0)

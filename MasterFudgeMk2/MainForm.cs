@@ -334,7 +334,7 @@ namespace MasterFudgeMk2
 
                 soundOutput.Dispose();
             }
-            soundOutput = (Activator.CreateInstance(audioBackendType, new object[] { 44100, 1 }) as IAudioBackend);
+            soundOutput = (Activator.CreateInstance(audioBackendType, new object[] { 44100, 2 }) as IAudioBackend);
 
             if (machineManager != null)
             {

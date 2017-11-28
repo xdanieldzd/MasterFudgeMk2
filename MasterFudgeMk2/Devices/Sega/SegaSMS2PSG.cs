@@ -11,7 +11,7 @@ namespace MasterFudgeMk2.Devices.Sega
         protected override ushort noiseTappedBits => 0x0009;
         protected override int noiseBitShift => 15;
 
-        public SegaSMS2PSG(double clockRate, double refreshRate, int sampleRate, EventHandler<AddSampleDataEventArgs> addSampleDataEvent) : base(clockRate, refreshRate, sampleRate, addSampleDataEvent) { }
+        public SegaSMS2PSG(double clockRate, double refreshRate, int sampleRate, int numOutputChannels, EventHandler<AddSampleDataEventArgs> addSampleDataEvent) : base(clockRate, refreshRate, sampleRate, numOutputChannels, addSampleDataEvent) { }
 
         public override void Reset()
         {

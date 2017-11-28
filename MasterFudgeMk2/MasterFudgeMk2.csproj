@@ -104,6 +104,7 @@
     <Compile Include="Common\XmlFile.cs" />
     <Compile Include="DatFile.cs" />
     <Compile Include="DatHelper.cs" />
+    <Compile Include="Devices\Sega\SegaGGPSG.cs" />
     <Compile Include="EmulatorConfigurationNew.cs" />
     <Compile Include="InputBackends\DirectInputBackend.cs" />
     <Compile Include="InputBackends\IInputBackend.cs" />
