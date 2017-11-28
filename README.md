@@ -14,9 +14,10 @@ MasterFudge is an emulator for various 8-bit game consoles and handhelds, writte
 ### PSGs
 * __Texas Instruments SN76489__: Fully emulated, accuracy is probably not very high, but still sounds decent enough
   * __Sega 315-5246__: Master System II PSG (integrated into VDP chip), SN76489 with minor differences in noise channel; same issues as SN76489
+  * __Sega 315-5378__: Game Gear PSG (integrated into VDP) based on Master System II PSG, with stereo output extension; same issues as other PSGs
 
 ### Media
-* __Sega__: Support for ROM-only, ROM+RAM and standard Sega mapper cartridges; cartridge RAM not yet saved, Codemasters and "Korean" mappers still unsupported
+* __Sega__: Support for ROM-only, ROM+RAM, standard Sega mapper and Codemasters cartridges; cartridge RAM not yet saved, "Korean" mapper still unsupported
 * __ColecoVision__: Only standard cartridges up to 32k supported, no MegaCart or the like
 
 ## Screenshots
