@@ -10,7 +10,6 @@ namespace MasterFudgeMk2.Devices.Sega
     {
         enum OutputChannel : int { Left = 0, Right = 1 }
 
-        byte stereoControl;
         bool[] channel0Enable, channel1Enable, channel2Enable, channel3Enable;
 
         public SegaGGPSG(double clockRate, double refreshRate, int sampleRate, int numOutputChannels, EventHandler<AddSampleDataEventArgs> addSampleDataEvent) : base(clockRate, refreshRate, sampleRate, numOutputChannels, addSampleDataEvent)
@@ -25,7 +24,7 @@ namespace MasterFudgeMk2.Devices.Sega
         {
             base.Reset();
 
-            WriteStereoControl(stereoControl = 0xFF);
+            WriteStereoControl(0xFF);
         }
 
         protected override void GenerateSample()
@@ -46,22 +45,17 @@ namespace MasterFudgeMk2.Devices.Sega
 
         public void WriteStereoControl(byte data)
         {
-            if (stereoControl != data)
-            {
-                stereoControl = data;
+            channel0Enable[(int)OutputChannel.Left] = ((data & 0x10) != 0);
+            channel0Enable[(int)OutputChannel.Right] = ((data & 0x01) != 0);
 
-                channel0Enable[(int)OutputChannel.Left] = ((stereoControl & 0x10) != 0);
-                channel0Enable[(int)OutputChannel.Right] = ((stereoControl & 0x01) != 0);
+            channel1Enable[(int)OutputChannel.Left] = ((data & 0x20) != 0);
+            channel1Enable[(int)OutputChannel.Right] = ((data & 0x02) != 0);
 
-                channel1Enable[(int)OutputChannel.Left] = ((stereoControl & 0x20) != 0);
-                channel1Enable[(int)OutputChannel.Right] = ((stereoControl & 0x02) != 0);
+            channel2Enable[(int)OutputChannel.Left] = ((data & 0x40) != 0);
+            channel2Enable[(int)OutputChannel.Right] = ((data & 0x04) != 0);
 
-                channel2Enable[(int)OutputChannel.Left] = ((stereoControl & 0x40) != 0);
-                channel2Enable[(int)OutputChannel.Right] = ((stereoControl & 0x04) != 0);
-
-                channel3Enable[(int)OutputChannel.Left] = ((stereoControl & 0x80) != 0);
-                channel3Enable[(int)OutputChannel.Right] = ((stereoControl & 0x08) != 0);
-            }
+            channel3Enable[(int)OutputChannel.Left] = ((data & 0x80) != 0);
+            channel3Enable[(int)OutputChannel.Right] = ((data & 0x08) != 0);
         }
     }
 }
