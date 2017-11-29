@@ -102,11 +102,7 @@ namespace MasterFudgeMk2.Devices
         public int Step()
         {
             currentCycles = 0;
-
-            // Current game bugs and whatnot
-            //  Line Interrupt Test #1 (SMS): modes 0 and 3 scroll one scanline too late?
-            //  ...
-
+            
             /* Handle delayed interrupt enable */
             if (eiDelay)
             {

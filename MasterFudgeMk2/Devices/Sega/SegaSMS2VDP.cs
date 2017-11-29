@@ -38,10 +38,8 @@ namespace MasterFudgeMk2.Devices.Sega
         protected override bool isModeGraphics2 { get { return (isBitM2Set && !(isBitM1Set || isBitM3Set || isBitM4Set)); } }
         protected override bool isModeMulticolor { get { return (isBitM3Set && !(isBitM1Set || isBitM2Set || isBitM4Set)); } }
 
-        bool isSMS240LineMode { get { return (isMasterSystemMode && isBitM3Set); } }
-        bool isSMS224LineMode { get { return (isMasterSystemMode && isBitM1Set); } }
-
-        bool isMasterSystemMode;
+        bool isSMS240LineMode { get { return (!isBitM1Set && isBitM2Set && isBitM3Set && isBitM4Set); } }
+        bool isSMS224LineMode { get { return (isBitM1Set && isBitM2Set && !isBitM3Set && isBitM4Set); } }
 
         bool isSpriteShiftLeft8 { get { return BitUtilities.IsBitSet(registers[0x00], 3); } }
 
@@ -49,7 +47,7 @@ namespace MasterFudgeMk2.Devices.Sega
         {
             get
             {
-                if (isMasterSystemMode)
+                if (isBitM4Set)
                 {
                     if (isSMS224LineMode || isSMS240LineMode)
                         return (ushort)(((registers[0x02] & 0x0C) << 10) | 0x700);
@@ -64,7 +62,7 @@ namespace MasterFudgeMk2.Devices.Sega
         {
             get
             {
-                if (isMasterSystemMode) return (ushort)((registers[0x05] & 0x7E) << 7);
+                if (isBitM4Set) return (ushort)((registers[0x05] & 0x7E) << 7);
                 else return (ushort)((registers[0x05] & 0x7F) << 7);
             }
         }
@@ -72,7 +70,7 @@ namespace MasterFudgeMk2.Devices.Sega
         {
             get
             {
-                if (isMasterSystemMode) return (ushort)((registers[0x06] & 0x04) << 11);
+                if (isBitM4Set) return (ushort)((registers[0x06] & 0x04) << 11);
                 else return (ushort)((registers[0x06] & 0x07) << 11);
             }
         }
@@ -162,7 +160,6 @@ namespace MasterFudgeMk2.Devices.Sega
             lineInterruptCounter = registers[0x0A];
 
             isLineInterruptPending = false;
-            isMasterSystemMode = false;
 
             horizontalScrollLatched = verticalScrollLatched = 0;
 
@@ -176,13 +173,13 @@ namespace MasterFudgeMk2.Devices.Sega
                 /* NTSC */
                 if (screenHeight == NumVisibleLinesHigh)
                 {
-                    /* 240 active lines, invalid on NTSC (dummy values) */
-                    scanlineTopBlanking = 0;
-                    scanlineTopBorder = 0;
+                    /* 240 active lines, invalid on NTSC (dummy values); "Line Interrupt Test #1" mode 1 will show blue screen */
                     scanlineActiveDisplay = 0;
-                    scanlineBottomBorder = 0;
-                    scanlineBottomBlanking = 0;
-                    scanlineVerticalBlanking = 0;
+                    scanlineBottomBorder = (scanlineActiveDisplay + 0);
+                    scanlineBottomBlanking = (scanlineBottomBorder + 0);
+                    scanlineVerticalBlanking = (scanlineBottomBlanking + 0);
+                    scanlineTopBlanking = (scanlineVerticalBlanking + 0);
+                    scanlineTopBorder = (scanlineTopBlanking + 0);
                 }
                 else if (screenHeight == NumVisibleLinesMed)
                 {
@@ -249,7 +246,7 @@ namespace MasterFudgeMk2.Devices.Sega
 
             cycleCount += clockCyclesInStep;
 
-            hCounter = hCounterTable[(int)Math.Round(cycleCount / 3.0) % hCounterTable.Length];
+            hCounter = hCounterTable[(int)Math.Round((cycleCount + 578) / 3.0) % hCounterTable.Length];
 
             if (cycleCount >= clockCyclesPerLine)
             {
@@ -315,7 +312,7 @@ namespace MasterFudgeMk2.Devices.Sega
             if (line < scanlineBottomBorder)
             {
                 /* Active display */
-                if (isMasterSystemMode)
+                if (isBitM4Set)
                 {
                     RenderMode4Background(line);
                     RenderMode4Sprites(line);
@@ -623,7 +620,7 @@ namespace MasterFudgeMk2.Devices.Sega
         protected override void WriteColorToFramebuffer(ushort colorValue, int address)
         {
             /* If not in Master System video mode, color value is index into legacy colormap */
-            if (!isMasterSystemMode)
+            if (!isBitM4Set)
                 colorValue = (legacyColorMap[colorValue & 0x000F]);
 
             byte r = (byte)((colorValue >> 0) & 0x3), g = (byte)((colorValue >> 2) & 0x3), b = (byte)((colorValue >> 4) & 0x3);
@@ -673,12 +670,6 @@ namespace MasterFudgeMk2.Devices.Sega
             // TODO: verify what's the correct behavior here? VDPTEST writes to invalid registers...?
             if (register < registers.Length)
                 registers[register] = value;
-
-            /* Some value caching for (minor) performance reasons */
-            if (register == 0x00)
-                isMasterSystemMode = isBitM4Set;
-            else if (register == 0x08)
-                horizontalScrollLatched = registers[0x08];
 
             UpdateViewport();
         }
