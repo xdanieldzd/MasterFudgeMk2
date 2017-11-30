@@ -566,6 +566,20 @@ namespace MasterFudgeMk2
             }
         }
 
+        protected override void OnPreviewKeyDown(PreviewKeyDownEventArgs e)
+        {
+            switch (e.KeyCode)
+            {
+                case Keys.Left:
+                case Keys.Right:
+                case Keys.Up:
+                case Keys.Down:
+                    e.IsInputKey = true;
+                    break;
+            }
+            base.OnPreviewKeyDown(e);
+        }
+
         private void MainForm_KeyDown(object sender, KeyEventArgs e)
         {
             if (!keysPressed.Contains(e.KeyCode))
