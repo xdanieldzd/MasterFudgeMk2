@@ -126,8 +126,6 @@ namespace MasterFudgeMk2.Devices.Sega
 
         public int ScreenHeight { get { return screenHeight; } }
 
-        // TODO: PAL mode is broken-ish (vcounter stuff)
-
         public SegaSMS2VDP(double clockRate, double refreshRate, bool isPalChip) : base(clockRate, refreshRate, isPalChip)
         {
             registers = new byte[0x0B];
@@ -250,12 +248,13 @@ namespace MasterFudgeMk2.Devices.Sega
 
             if (cycleCount >= clockCyclesPerLine)
             {
+                horizontalScrollLatched = registers[0x08];
+
                 if (currentScanline == 0)
                 {
-                    ClearScreen();
-
-                    horizontalScrollLatched = registers[0x08];
                     verticalScrollLatched = registers[0x09];
+
+                    ClearScreen();
                 }
 
                 RenderLine(currentScanline);
