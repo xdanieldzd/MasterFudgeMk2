@@ -128,7 +128,7 @@ namespace MasterFudgeMk2.Machines.Sega.GameGear
 
         public Manager()
         {
-            configuration = new Configuration();
+            configuration = ConfigFile.Load<Configuration>();
 
             bootstrap = null;
             cartridge = null;

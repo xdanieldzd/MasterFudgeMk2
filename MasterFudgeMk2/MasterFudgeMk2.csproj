@@ -36,10 +36,6 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Nini, Version=1.1.0.0, Culture=neutral, PublicKeyToken=691faec150a7fa7b, processorArchitecture=MSIL">
-      <HintPath>..\packages\Trove.Nini.1.1.0.0\lib\net20\Nini.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="SharpDX, Version=4.1.0.0, Culture=neutral, PublicKeyToken=b4dcf0f35e5521f1, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpDX.4.1.0-ci184\lib\net45\SharpDX.dll</HintPath>
       <Private>True</Private>
@@ -105,25 +101,10 @@
     <Compile Include="DatFile.cs" />
     <Compile Include="DatHelper.cs" />
     <Compile Include="Devices\Sega\SegaGGPSG.cs" />
-    <Compile Include="EmulatorConfigurationNew.cs" />
-    <Compile Include="InputBackends\DirectInputBackend.cs" />
-    <Compile Include="InputBackends\IInputBackend.cs" />
     <Compile Include="Media\Coleco\BaseCartridge.cs" />
     <Compile Include="Media\Coleco\RomOnlyCartridge.cs" />
     <Compile Include="Media\MediaOverrides.cs" />
     <Compile Include="Media\Sega\CodemastersCartridge.cs" />
-    <Compile Include="NewConfigForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="NewConfigForm.Designer.cs">
-      <DependentUpon>NewConfigForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="NewMainForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="NewMainForm.Designer.cs">
-      <DependentUpon>NewMainForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="VideoBackends\BaseVideoBackend.cs" />
     <Compile Include="VideoBackends\IVideoBackend.cs" />
     <Compile Include="VideoBackends\NullVideoBackend.cs" />
@@ -199,9 +180,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="NewMainForm.resx">
-      <DependentUpon>NewMainForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

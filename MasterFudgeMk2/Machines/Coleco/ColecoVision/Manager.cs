@@ -156,7 +156,7 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
         {
             // TODO: better bios handling?
 
-            configuration = new Configuration();
+            configuration = ConfigFile.Load<Configuration>();
 
             cartridge = null;
 
@@ -287,7 +287,7 @@ namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
         {
             if (address >= 0x0000 && address <= 0x1FFF)
             {
-                return bios[address & (bios.Length - 1)];
+                return (bios != null ? bios[address & (bios.Length - 1)] : (byte)0x00);
             }
             else if (address >= 0x2000 && address <= 0x3FFF)
             {

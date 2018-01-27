@@ -133,7 +133,7 @@ namespace MasterFudgeMk2.Machines.Sega.SG1000
 
         public Manager()
         {
-            configuration = new Configuration();
+            configuration = ConfigFile.Load<Configuration>();
 
             cartridge = null;
 

@@ -1,128 +1,92 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Xml.Serialization;
 
 namespace MasterFudgeMk2.Machines.Coleco.ColecoVision
 {
     public sealed class Configuration : MachineConfiguration
     {
-        public override sealed string Filename { get { return "ColecoVision.xml"; } }
+        public override sealed string Name { get { return "ColecoVision.xml"; } }
 
         /* Settings */
         [Description("BIOS Path")]
-        public string BiosPath
-        {
-            get { return SettingsConfig.GetString(nameof(BiosPath), string.Empty); }
-            set { SettingsConfig.Set(nameof(BiosPath), value); }
-        }
+        [XmlElement]
+        public string BiosPath { get; set; } = string.Empty;
 
         /* Joystick input */
-        public Enum Up
-        {
-            get { return InputConfig.GetString(MachineInputs.Up.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Up.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
+        [XmlIgnore]
+        public Enum Up { get; set; } = null;
+        [XmlIgnore]
+        public Enum Down { get; set; } = null;
+        [XmlIgnore]
+        public Enum Left { get; set; } = null;
+        [XmlIgnore]
+        public Enum Right { get; set; } = null;
+        [XmlIgnore]
+        public Enum LeftButton { get; set; } = null;
+        [XmlIgnore]
+        public Enum RightButton { get; set; } = null;
+        [XmlIgnore]
+        public Enum Keypad1 { get; set; } = null;
+        [XmlIgnore]
+        public Enum Keypad2 { get; set; } = null;
+        [XmlIgnore]
+        public Enum Keypad3 { get; set; } = null;
+        [XmlIgnore]
+        public Enum Keypad4 { get; set; } = null;
+        [XmlIgnore]
+        public Enum Keypad5 { get; set; } = null;
+        [XmlIgnore]
+        public Enum Keypad6 { get; set; } = null;
+        [XmlIgnore]
+        public Enum Keypad7 { get; set; } = null;
+        [XmlIgnore]
+        public Enum Keypad8 { get; set; } = null;
+        [XmlIgnore]
+        public Enum Keypad9 { get; set; } = null;
+        [XmlIgnore]
+        public Enum Keypad0 { get; set; } = null;
+        [XmlIgnore]
+        public Enum KeypadStar { get; set; } = null;
+        [XmlIgnore]
+        public Enum KeypadNumberSign { get; set; } = null;
 
-        public Enum Down
-        {
-            get { return InputConfig.GetString(MachineInputs.Down.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Down.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Left
-        {
-            get { return InputConfig.GetString(MachineInputs.Left.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Left.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Right
-        {
-            get { return InputConfig.GetString(MachineInputs.Right.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Right.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum LeftButton
-        {
-            get { return InputConfig.GetString(MachineInputs.LeftButton.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.LeftButton.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum RightButton
-        {
-            get { return InputConfig.GetString(MachineInputs.RightButton.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.RightButton.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Keypad1
-        {
-            get { return InputConfig.GetString(MachineInputs.Keypad1.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Keypad1.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Keypad2
-        {
-            get { return InputConfig.GetString(MachineInputs.Keypad2.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Keypad2.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Keypad3
-        {
-            get { return InputConfig.GetString(MachineInputs.Keypad3.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Keypad3.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Keypad4
-        {
-            get { return InputConfig.GetString(MachineInputs.Keypad4.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Keypad4.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Keypad5
-        {
-            get { return InputConfig.GetString(MachineInputs.Keypad5.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Keypad5.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Keypad6
-        {
-            get { return InputConfig.GetString(MachineInputs.Keypad6.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Keypad6.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Keypad7
-        {
-            get { return InputConfig.GetString(MachineInputs.Keypad7.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Keypad7.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Keypad8
-        {
-            get { return InputConfig.GetString(MachineInputs.Keypad8.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Keypad8.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Keypad9
-        {
-            get { return InputConfig.GetString(MachineInputs.Keypad9.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Keypad9.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Keypad0
-        {
-            get { return InputConfig.GetString(MachineInputs.Keypad0.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Keypad0.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum KeypadStar
-        {
-            get { return InputConfig.GetString(MachineInputs.KeypadStar.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.KeypadStar.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum KeypadNumberSign
-        {
-            get { return InputConfig.GetString(MachineInputs.KeypadNumberSign.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.KeypadNumberSign.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
+        [XmlElement(ElementName = nameof(Up)), ReadOnly(true)]
+        public string UpString { get { return Up?.GetFullyQualifiedName(); } set { Up = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Down)), ReadOnly(true)]
+        public string DownString { get { return Down?.GetFullyQualifiedName(); } set { Down = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Left)), ReadOnly(true)]
+        public string LeftString { get { return Left?.GetFullyQualifiedName(); } set { Left = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Right)), ReadOnly(true)]
+        public string RightString { get { return Right?.GetFullyQualifiedName(); } set { Right = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(LeftButton)), ReadOnly(true)]
+        public string LeftButtonString { get { return LeftButton?.GetFullyQualifiedName(); } set { LeftButton = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(RightButton)), ReadOnly(true)]
+        public string RightButtonString { get { return RightButton?.GetFullyQualifiedName(); } set { RightButton = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Keypad1)), ReadOnly(true)]
+        public string Keypad1String { get { return Keypad1?.GetFullyQualifiedName(); } set { Keypad1 = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Keypad2)), ReadOnly(true)]
+        public string Keypad2String { get { return Keypad2?.GetFullyQualifiedName(); } set { Keypad2 = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Keypad3)), ReadOnly(true)]
+        public string Keypad3String { get { return Keypad3?.GetFullyQualifiedName(); } set { Keypad3 = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Keypad4)), ReadOnly(true)]
+        public string Keypad4String { get { return Keypad4?.GetFullyQualifiedName(); } set { Keypad4 = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Keypad5)), ReadOnly(true)]
+        public string Keypad5String { get { return Keypad5?.GetFullyQualifiedName(); } set { Keypad5 = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Keypad6)), ReadOnly(true)]
+        public string Keypad6String { get { return Keypad6?.GetFullyQualifiedName(); } set { Keypad6 = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Keypad7)), ReadOnly(true)]
+        public string Keypad7String { get { return Keypad7?.GetFullyQualifiedName(); } set { Keypad7 = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Keypad8)), ReadOnly(true)]
+        public string Keypad8String { get { return Keypad8?.GetFullyQualifiedName(); } set { Keypad8 = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Keypad9)), ReadOnly(true)]
+        public string Keypad9String { get { return Keypad9?.GetFullyQualifiedName(); } set { Keypad9 = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Keypad0)), ReadOnly(true)]
+        public string Keypad0String { get { return Keypad0?.GetFullyQualifiedName(); } set { Keypad0 = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(KeypadStar)), ReadOnly(true)]
+        public string KeypadStarString { get { return KeypadStar?.GetFullyQualifiedName(); } set { KeypadStar = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(KeypadNumberSign)), ReadOnly(true)]
+        public string KeypadNumberSignString { get { return KeypadNumberSign?.GetFullyQualifiedName(); } set { KeypadNumberSign = value?.GetEnumFromFullyQualifiedName(); } }
 
         public Configuration() : base() { }
     }

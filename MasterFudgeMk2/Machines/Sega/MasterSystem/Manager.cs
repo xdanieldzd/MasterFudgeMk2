@@ -147,7 +147,7 @@ namespace MasterFudgeMk2.Machines.Sega.MasterSystem
 
         public Manager()
         {
-            configuration = new Configuration();
+            configuration = ConfigFile.Load<Configuration>();
 
             bootstrap = null;
             cartridge = null;

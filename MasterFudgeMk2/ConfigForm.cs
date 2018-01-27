@@ -40,6 +40,7 @@ namespace MasterFudgeMk2
 
             /* Main config stuff */
             List<PropertyInfo> mainProps = Configuration.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Where(x => x.PropertyType != typeof(Enum) && x.CanWrite).ToList();
+            mainProps.RemoveAll(x => x.GetCustomAttributes<ReadOnlyAttribute>().FirstOrDefault().IsReadOnly);
             if (mainProps.Count == 0) tcConfig.TabPages.Remove(tpMainConfig);
 
             tlpMainConfig.RowCount = (mainProps.Count + 1);
@@ -49,6 +50,10 @@ namespace MasterFudgeMk2
 
                 object[] descAttribs = prop.GetCustomAttributes(typeof(DescriptionAttribute), false);
                 string settingDescription = (descAttribs != null && descAttribs.Length > 0 ? (descAttribs[0] as DescriptionAttribute).Description : prop.Name);
+
+                object[] readOnlyAttribs = prop.GetCustomAttributes(typeof(ReadOnlyAttribute), false);
+                bool isReadOnly = (readOnlyAttribs != null && readOnlyAttribs.Length > 0 ? (readOnlyAttribs[0] as ReadOnlyAttribute).IsReadOnly : false);
+                if (isReadOnly) continue;
 
                 if (prop.PropertyType == typeof(bool))
                 {
@@ -142,10 +147,10 @@ namespace MasterFudgeMk2
                 if ((keysPressed & Keys.KeyCode) != Keys.None && !keysPressed.HasFlag(Keys.Escape)) timer.Tag = keysPressed;
                 if (controller.Buttons != Buttons.None) timer.Tag = controller.Buttons;
 
-                if (timer.Tag == null && controller.LeftThumbstick.X < -XInputGamepad.LeftThumbDeadzone) timer.Tag = Buttons.DPadLeft;
-                if (timer.Tag == null && controller.LeftThumbstick.Y < -XInputGamepad.LeftThumbDeadzone) timer.Tag = Buttons.DPadDown;
-                if (timer.Tag == null && controller.LeftThumbstick.X > XInputGamepad.LeftThumbDeadzone) timer.Tag = Buttons.DPadRight;
-                if (timer.Tag == null && controller.LeftThumbstick.Y > XInputGamepad.LeftThumbDeadzone) timer.Tag = Buttons.DPadUp;
+                if (timer.Tag == null && controller.LeftThumbstick?.X < -XInputGamepad.LeftThumbDeadzone) timer.Tag = Buttons.DPadLeft;
+                if (timer.Tag == null && controller.LeftThumbstick?.Y < -XInputGamepad.LeftThumbDeadzone) timer.Tag = Buttons.DPadDown;
+                if (timer.Tag == null && controller.LeftThumbstick?.X > XInputGamepad.LeftThumbDeadzone) timer.Tag = Buttons.DPadRight;
+                if (timer.Tag == null && controller.LeftThumbstick?.Y > XInputGamepad.LeftThumbDeadzone) timer.Tag = Buttons.DPadUp;
 
                 if (timer.Tag != null || keysPressed.HasFlag(Keys.Escape))
                 {
@@ -330,9 +335,8 @@ namespace MasterFudgeMk2
             {
                 foreach (KeyValuePair<Enum, Enum> mapping in keyConfiguration)
                 {
-                    Configuration.InputConfig.Remove(mapping.Key.GetFullyQualifiedName());
-                    if (mapping.Value != null)
-                        Configuration.InputConfig.Set(mapping.Key.GetFullyQualifiedName(), mapping.Value.GetFullyQualifiedName());
+                    PropertyInfo prop = Configuration.GetType().GetProperty(mapping.Key.ToString());
+                    prop?.SetValue(Configuration, Convert.ChangeType(mapping.Value, typeof(Enum)));
                 }
             }
         }

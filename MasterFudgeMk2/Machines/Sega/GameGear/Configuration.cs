@@ -1,76 +1,54 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Xml.Serialization;
 
 namespace MasterFudgeMk2.Machines.Sega.GameGear
 {
     public sealed class Configuration : MachineConfiguration
     {
-        public override sealed string Filename { get { return "GameGear.xml"; } }
+        public override sealed string Name { get { return "GameGear.xml"; } }
 
         /* Settings */
         [Description("Bootstrap Path")]
-        public string BootstrapPath
-        {
-            get { return SettingsConfig.GetString(nameof(BootstrapPath), string.Empty); }
-            set { SettingsConfig.Set(nameof(BootstrapPath), value); }
-        }
-
+        [XmlElement]
+        public string BootstrapPath { get; set; } = string.Empty;
         [Description("Enable Bootstrap")]
-        public bool UseBootstrap
-        {
-            get { return SettingsConfig.GetBoolean(nameof(UseBootstrap), false); }
-            set { SettingsConfig.Set(nameof(UseBootstrap), value); }
-        }
-
+        [XmlElement]
+        public bool UseBootstrap { get; set; } = false;
         [Description("Emulate Export System")]
-        public bool IsExportSystem
-        {
-            get { return SettingsConfig.GetBoolean(nameof(IsExportSystem), true); }
-            set { SettingsConfig.Set(nameof(IsExportSystem), value); }
-        }
+        [XmlElement]
+        public bool IsExportSystem { get; set; } = true;
 
         /* Inputs */
-        public Enum Start
-        {
-            get { return InputConfig.GetString(MachineInputs.Start.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Start.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
+        [XmlIgnore]
+        public Enum Start { get; set; } = null;
+        [XmlIgnore]
+        public Enum Up { get; set; } = null;
+        [XmlIgnore]
+        public Enum Down { get; set; } = null;
+        [XmlIgnore]
+        public Enum Left { get; set; } = null;
+        [XmlIgnore]
+        public Enum Right { get; set; } = null;
+        [XmlIgnore]
+        public Enum Button1 { get; set; } = null;
+        [XmlIgnore]
+        public Enum Button2 { get; set; } = null;
 
-        public Enum Up
-        {
-            get { return InputConfig.GetString(MachineInputs.Up.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Up.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Down
-        {
-            get { return InputConfig.GetString(MachineInputs.Down.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Down.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Left
-        {
-            get { return InputConfig.GetString(MachineInputs.Left.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Left.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Right
-        {
-            get { return InputConfig.GetString(MachineInputs.Right.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Right.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Button1
-        {
-            get { return InputConfig.GetString(MachineInputs.Button1.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Button1.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
-
-        public Enum Button2
-        {
-            get { return InputConfig.GetString(MachineInputs.Button2.GetFullyQualifiedName()).GetEnumFromFullyQualifiedName(); }
-            set { InputConfig.Set(MachineInputs.Button2.GetFullyQualifiedName(), value.GetFullyQualifiedName()); }
-        }
+        [XmlElement(ElementName = nameof(Start)), ReadOnly(true)]
+        public string StartString { get { return Start?.GetFullyQualifiedName(); } set { Start = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Up)), ReadOnly(true)]
+        public string UpString { get { return Up?.GetFullyQualifiedName(); } set { Up = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Down)), ReadOnly(true)]
+        public string DownString { get { return Down?.GetFullyQualifiedName(); } set { Down = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Left)), ReadOnly(true)]
+        public string LeftString { get { return Left?.GetFullyQualifiedName(); } set { Left = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Right)), ReadOnly(true)]
+        public string RightString { get { return Right?.GetFullyQualifiedName(); } set { Right = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Button1)), ReadOnly(true)]
+        public string Button1String { get { return Button1?.GetFullyQualifiedName(); } set { Button1 = value?.GetEnumFromFullyQualifiedName(); } }
+        [XmlElement(ElementName = nameof(Button2)), ReadOnly(true)]
+        public string Button2String { get { return Button2?.GetFullyQualifiedName(); } set { Button2 = value?.GetEnumFromFullyQualifiedName(); } }
 
         public Configuration() : base() { }
     }

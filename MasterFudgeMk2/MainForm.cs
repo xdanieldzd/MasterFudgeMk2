@@ -95,7 +95,7 @@ namespace MasterFudgeMk2
             var programVersion = new Version((assembly.GetCustomAttributes(typeof(AssemblyFileVersionAttribute), false).FirstOrDefault() as AssemblyFileVersionAttribute).Version);
             programNameVersion = string.Format("{0} v{1}.{2}", programName, string.Format((programVersion.Major > 0 ? "{0}.{1:D2}" : "{1:D3}"), programVersion.Major, programVersion.Minor), programVersion.Build);
 
-            emuConfig = new EmulatorConfiguration();
+            emuConfig = ConfigFile.Load<EmulatorConfiguration>();
 
             stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -187,7 +187,10 @@ namespace MasterFudgeMk2
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+            machineManager?.Configuration.Save();
             machineManager?.Shutdown();
+
+            emuConfig?.Save();
         }
 
         private void PrepareDataBindings()
@@ -282,8 +285,8 @@ namespace MasterFudgeMk2
             /* Set up "recent files" menu */
             if (emuConfig.RecentFiles == null)
             {
-                emuConfig.RecentFiles = new string[maxRecentFiles];
-                for (int i = 0; i < emuConfig.RecentFiles.Length; i++) emuConfig.RecentFiles[i] = string.Empty;
+                emuConfig.RecentFiles = new List<string>(maxRecentFiles);
+                for (int i = 0; i < emuConfig.RecentFiles.Count; i++) emuConfig.RecentFiles[i] = string.Empty;
             }
             CleanUpRecentList();
             UpdateRecentFilesMenu();
@@ -382,7 +385,7 @@ namespace MasterFudgeMk2
         {
             List<string> files = emuConfig.RecentFiles.Where(x => x != string.Empty).ToList();
             while (files.Count < maxRecentFiles) files.Add(string.Empty);
-            emuConfig.RecentFiles = files.Take(maxRecentFiles).ToArray();
+            emuConfig.RecentFiles = files.Take(maxRecentFiles).ToList();
         }
 
         private void AddFileToRecentList(string filename)
@@ -399,7 +402,7 @@ namespace MasterFudgeMk2
             /* Pad with dummy values */
             while (files.Count < maxRecentFiles) files.Add(string.Empty);
 
-            emuConfig.RecentFiles = files.Take(maxRecentFiles).ToArray();
+            emuConfig.RecentFiles = files.Take(maxRecentFiles).ToList();
         }
 
         private void RemoveFileFromRecentList(string filename)
@@ -414,7 +417,7 @@ namespace MasterFudgeMk2
             /* Pad with dummy values */
             while (files.Count < maxRecentFiles) files.Add(string.Empty);
 
-            emuConfig.RecentFiles = files.Take(maxRecentFiles).ToArray();
+            emuConfig.RecentFiles = files.Take(maxRecentFiles).ToList();
         }
 
         private void UpdateRecentFilesMenu()
@@ -424,7 +427,7 @@ namespace MasterFudgeMk2
             foreach (ToolStripItem item in oldRecentItems)
                 recentFilesToolStripMenuItem.DropDownItems.Remove(item);
 
-            for (int i = 0; i < emuConfig.RecentFiles.Length; i++)
+            for (int i = 0; i < emuConfig.RecentFiles.Count; i++)
             {
                 string recentFile = emuConfig.RecentFiles[i];
 
@@ -653,7 +656,7 @@ namespace MasterFudgeMk2
 
         private void clearListToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            emuConfig.RecentFiles = new string[maxRecentFiles];
+            emuConfig.RecentFiles = new List<string>(maxRecentFiles);
 
             UpdateRecentFilesMenu();
         }
@@ -714,7 +717,7 @@ namespace MasterFudgeMk2
                 if (configForm.ShowDialog() == DialogResult.OK)
                 {
                     machineManager.Configuration = configForm.Configuration;
-                    machineManager.Configuration.InputConfig.ConfigSource.Save();
+                    //machineManager.Configuration.InputConfig.ConfigSource.Save();
 
                     UpdateBootWithoutMediaMenu();
                 }

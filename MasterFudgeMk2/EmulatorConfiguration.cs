@@ -1,90 +1,68 @@
 ﻿using System;
 using System.Drawing;
-
-using Nini.Config;
+using System.Collections.Generic;
+using System.Xml.Serialization;
 
 namespace MasterFudgeMk2
 {
     public sealed class EmulatorConfiguration : ConfigFile
     {
-        public override sealed string Filename { get { return "Emulator.xml"; } }
+        public override sealed string Name { get { return "Emulator.xml"; } }
 
-        const string sectionSettings = "Settings";
-        public IConfig SettingsConfig
+        [XmlElement(ElementName = nameof(VideoBackend))]
+        public string VideoBackendString
         {
-            get
-            {
-                if (source.Configs[sectionSettings] == null) source.AddConfig(sectionSettings);
-                return source.Configs[sectionSettings];
-            }
+            get { return VideoBackend.AssemblyQualifiedName; }
+            set { VideoBackend = Type.GetType(value); }
+        }
+        [XmlElement(ElementName = nameof(AudioBackend))]
+        public string AudioBackendString
+        {
+            get { return AudioBackend.AssemblyQualifiedName; }
+            set { AudioBackend = Type.GetType(value); }
         }
 
-        public Type VideoBackend
-        {
-            get { return Type.GetType(SettingsConfig.GetString(nameof(VideoBackend)) ?? typeof(VideoBackends.Direct2DBackend).AssemblyQualifiedName); }
-            set { SettingsConfig.Set(nameof(VideoBackend), value.AssemblyQualifiedName); }
-        }
+        [XmlIgnore]
+        public Type VideoBackend { get; set; } = typeof(VideoBackends.Direct2DBackend);
+        [XmlIgnore]
+        public Type AudioBackend { get; set; } = typeof(AudioBackends.NullAudioBackend);
 
-        public Type AudioBackend
+        [XmlElement(ElementName = nameof(WindowLocation))]
+        public string WindowLocationString
         {
-            get { return Type.GetType(SettingsConfig.GetString(nameof(AudioBackend)) ?? typeof(AudioBackends.NullAudioBackend).AssemblyQualifiedName); }
-            set { SettingsConfig.Set(nameof(AudioBackend), value.AssemblyQualifiedName); }
-        }
-
-        public Point WindowLocation
-        {
-            get
-            {
-                string[] coords = SettingsConfig.GetString(nameof(WindowLocation), "0;0").Split(';');
-                return new Point(int.Parse(coords[0]), int.Parse(coords[1]));
-            }
+            get { return $"{WindowLocation.X},{WindowLocation.Y}"; }
             set
             {
-                SettingsConfig.Set(nameof(WindowLocation), string.Format("{0};{1}", value.X, value.Y));
+                string[] splitValues = value.Split(',');
+                WindowLocation = new Point(int.Parse(splitValues[0]), int.Parse(splitValues[1]));
             }
         }
-
-        public Size WindowSize
+        [XmlElement(ElementName = nameof(WindowSize))]
+        public string WindowSizeString
         {
-            get
-            {
-                string[] coords = SettingsConfig.GetString(nameof(WindowSize), "623;532").Split(';');
-                return new Size(int.Parse(coords[0]), int.Parse(coords[1]));
-            }
+            get { return $"{WindowSize.Width},{WindowSize.Height}"; }
             set
             {
-                SettingsConfig.Set(nameof(WindowSize), string.Format("{0};{1}", value.Width, value.Height));
+                string[] splitValues = value.Split(',');
+                WindowSize = new Size(int.Parse(splitValues[0]), int.Parse(splitValues[1]));
             }
         }
 
-        public bool LimitFps
-        {
-            get { return SettingsConfig.GetBoolean(nameof(LimitFps), true); }
-            set { SettingsConfig.Set(nameof(LimitFps), value); }
-        }
+        [XmlIgnore]
+        public Point WindowLocation { get; set; } = Point.Empty;
+        [XmlIgnore]
+        public Size WindowSize { get; set; } = new Size(623, 532);
 
-        public bool ForceSquarePixels
-        {
-            get { return SettingsConfig.GetBoolean(nameof(ForceSquarePixels), false); }
-            set { SettingsConfig.Set(nameof(ForceSquarePixels), value); }
-        }
+        [XmlElement]
+        public bool LimitFps { get; set; } = true;
+        [XmlElement]
+        public bool ForceSquarePixels { get; set; } = false;
+        [XmlElement]
+        public bool LinearInterpolation { get; set; } = true;
+        [XmlElement]
+        public bool DebugMode { get; set; } = false;
 
-        public bool LinearInterpolation
-        {
-            get { return SettingsConfig.GetBoolean(nameof(LinearInterpolation), true); }
-            set { SettingsConfig.Set(nameof(LinearInterpolation), value); }
-        }
-
-        public bool DebugMode
-        {
-            get { return SettingsConfig.GetBoolean(nameof(DebugMode), false); }
-            set { SettingsConfig.Set(nameof(DebugMode), value); }
-        }
-
-        public string[] RecentFiles
-        {
-            get { return SettingsConfig.GetString(nameof(RecentFiles), string.Empty).Split('|'); }
-            set { SettingsConfig.Set(nameof(RecentFiles), string.Join("|", value)); }
-        }
+        [XmlArray]
+        public List<string> RecentFiles { get; set; } = new List<string>();
     }
 }
