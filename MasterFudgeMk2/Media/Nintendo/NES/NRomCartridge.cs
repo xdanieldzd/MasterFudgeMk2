@@ -6,6 +6,7 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
     public class NRomCartridge : BaseCartridge
     {
         protected byte[] sramData;
+        protected int prgBank0, prgBank1;
 
         public NRomCartridge()
         {
@@ -17,6 +18,10 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
         {
             switch (address & 0xF000)
             {
+                case 0x4000:
+                case 0x5000:
+                    return 0x00;
+
                 case 0x6000:
                 case 0x7000:
                     return sramData[address & (sramData.Length - 1)];
@@ -38,12 +43,12 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
 
         public override byte ReadPrg(uint address)
         {
-            return prgData[(address >> 14) % prgData.Length][address & prgDataMask];
+            return prgData[(address / 0x4000) % prgData.Length][address & prgDataMask];
         }
 
         public override byte ReadChr(uint address)
         {
-            return chrData[(address >> 13) % chrData.Length][address & chrDataMask];
+            return chrData[(address / 0x4000) % chrData.Length][address & chrDataMask];
         }
     }
 }

@@ -208,7 +208,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
                 RenderLine(CurrentScanline);
                 CurrentScanline++;
 
-                if (CurrentScanline == (NumActiveScanlines + 1))
+                if (CurrentScanline == NumActiveScanlines)
                     isFrameInterruptPending = true;
 
                 if (CurrentScanline == NumTotalScanlines)

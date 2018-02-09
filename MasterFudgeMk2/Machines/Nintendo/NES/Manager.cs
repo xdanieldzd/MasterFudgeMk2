@@ -80,7 +80,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
         byte[] wram;
         MOS6502 cpu;        // TODO: Ricoh 2A03/2A07, not 6502!
         Ricoh2C02 ppu;
-        object apu;
+        Ricoh2A03.APU apu;
 
         [Flags]
         enum JoyButtons : byte
@@ -112,14 +112,14 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
             cpu = new MOS6502(cpuClock, refreshRate, ReadMemory, WriteMemory);
             wram = new byte[ramSize];
             ppu = new Ricoh2C02(ppuClock, refreshRate, false, ReadChrShim, WriteChrShim);
-            apu = null;
+            apu = new Ricoh2A03.APU(apuClock, refreshRate, 44100, 2, (s, e) => { OnAddSampleData(e); });
         }
 
         public override void Startup()
         {
             cpu.Startup();
             ppu.Startup();
-            //apu.Startup();
+            apu.Startup();
 
             Reset();
         }
@@ -130,7 +130,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
 
             cpu.Reset();
             ppu.Reset();
-            //apu.Reset();
+            apu.Reset();
 
             joyInput = 0;
             joy1Data = joy2Data = joyStrobe = 0;
@@ -167,7 +167,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
         {
             cartridge?.Unload();
 
-            //apu?.Shutdown();
+            apu?.Shutdown();
         }
 
         public override void RunStep()
@@ -183,9 +183,9 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
                 OnRenderScreen(new RenderScreenEventArgs(Ricoh2C02.NumActivePixelsPerScanline, Ricoh2C02.NumActiveScanlines, ppu.OutputFramebuffer));
             }
 
-            cpu.SetInterruptLine(ppu.InterruptLine);
+            cpu.SetNonMaskableInterruptLine(ppu.InterruptLine);
 
-            //psg.Step((int)Math.Round(currentCpuClockCycles));
+            apu.Step((int)Math.Round(currentCpuClockCycles));
 
             currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
         }
@@ -227,7 +227,14 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
             }
             else if (address >= 0x4000 && address <= 0x401F)
             {
-                // APU & IO read
+                if (address == 0x4015)
+                {
+                    return apu.ReadRegister(address);
+                }
+                else
+                {
+                    // IO
+                }
             }
             else if (address >= 0x4020 && address <= 0xFFFF)
             {
@@ -251,7 +258,16 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
             }
             else if (address >= 0x4000 && address <= 0x401F)
             {
-                // APU & IO write
+                if (address == 0x4014)
+                {
+                    // PPU sprite DMA
+                }
+                else if (address == 0x4016)
+                {
+                    // pad stuff
+                }
+                else
+                    apu.WriteRegister(address, value);
             }
             else if (address >= 0x4020 && address <= 0xFFFF)
             {

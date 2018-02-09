@@ -103,6 +103,7 @@
     <Compile Include="Devices\MOS6502.cs" />
     <Compile Include="Devices\NEC\HuC6260.cs" />
     <Compile Include="Devices\NEC\HuC6280.cs" />
+    <Compile Include="Devices\Nintendo\Ricoh2A03.APU.cs" />
     <Compile Include="Devices\Nintendo\Ricoh2C02.cs" />
     <Compile Include="Devices\Sega\SegaGGPSG.cs" />
     <Compile Include="Machines\NEC\PCEngine\Configuration.cs" />
