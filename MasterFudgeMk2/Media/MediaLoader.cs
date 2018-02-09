@@ -50,6 +50,21 @@ namespace MasterFudgeMk2.Media
                 // TODO: PC-Engine mappers if any
                 media = (new NEC.RomOnlyCartridge() as IMedia);
             }
+            else if (machineManager is Machines.Nintendo.NES.Manager)
+            {
+                using (FileStream file = fileInfo.Open(FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    byte[] header = new byte[0x10];
+                    file.Read(header, 0, header.Length);
+
+                    Nintendo.NES.INesHeader inesHeader = new Nintendo.NES.INesHeader(header);
+                    switch (inesHeader.MapperNumber)
+                    {
+                        case 0: media = (new Nintendo.NES.NRomCartridge() as IMedia); break;
+                        default: throw new NotImplementedException($"NES mapper number {inesHeader.MapperNumber} not implemented");
+                    }
+                }
+            }
             else
             {
                 throw new Exception("Could not identify cartridge");

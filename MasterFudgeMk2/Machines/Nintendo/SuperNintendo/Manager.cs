@@ -129,9 +129,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.SuperNintendo
 
         public override bool CanLoadMedia(FileInfo mediaFile)
         {
-            // check file
-
-            return true;
+            return (mediaFile.Extension == ".smc");
         }
 
         public override void LoadMedia(int slotNumber, IMedia media)
