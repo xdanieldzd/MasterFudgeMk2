@@ -11,6 +11,7 @@ using MasterFudgeMk2.Common.EventArguments;
 using MasterFudgeMk2.Media;
 using MasterFudgeMk2.Media.Nintendo.NES;
 using MasterFudgeMk2.Devices;
+using MasterFudgeMk2.Devices.Nintendo;
 
 namespace MasterFudgeMk2.Machines.Nintendo.NES
 {
@@ -44,13 +45,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
 
         public override double RefreshRate { get { return refreshRate; } }
         public override float AspectRatio { get { return (576.0f / 486.0f); } }
-        public override Rectangle ScreenViewport
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-        }
+        public override Rectangle ScreenViewport { get { return new Rectangle(0, 0, Ricoh2C02.NumActivePixelsPerScanline, Ricoh2C02.NumActiveScanlines); } }
 
         public override bool SupportsBootingWithoutMedia { get { return false; } }
         public override bool CanCurrentlyBootWithoutMedia { get { return false; } }
@@ -83,8 +78,8 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
         /* Devices on bus */
         BaseCartridge cartridge;
         byte[] wram;
-        MOS6502 cpu;
-        object ppu;
+        MOS6502 cpu;        // TODO: Ricoh 2A03/2A07, not 6502!
+        Ricoh2C02 ppu;
         object apu;
 
         [Flags]
@@ -116,15 +111,15 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
 
             cpu = new MOS6502(cpuClock, refreshRate, ReadMemory, WriteMemory);
             wram = new byte[ramSize];
-            ppu = null;
+            ppu = new Ricoh2C02(ppuClock, refreshRate, false, ReadChrShim, WriteChrShim);
             apu = null;
         }
 
         public override void Startup()
         {
             cpu.Startup();
+            ppu.Startup();
             //apu.Startup();
-            //ppu.Startup();
 
             Reset();
         }
@@ -134,8 +129,8 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
             cartridge?.Reset();
 
             cpu.Reset();
+            ppu.Reset();
             //apu.Reset();
-            //ppu.Reset();
 
             joyInput = 0;
             joy1Data = joy2Data = joyStrobe = 0;
@@ -181,14 +176,17 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
             currentCpuClockCycles += cpu.Step();
 
             double currentMasterClockCycles = (currentCpuClockCycles * 12.0);
-            /*
-            if (vdp.Step((int)Math.Round(currentMasterClockCycles)))
-                OnRenderScreen?.Invoke(this, new RenderScreenEventArgs(TMS9918A.NumPixelsPerLine, SegaSMS2VDP.NumVisibleLinesHigh, vdp.OutputFramebuffer));
 
-            cpu.SetInterruptLine(vdp.InterruptLine);
+            if (ppu.Step((int)Math.Round(currentMasterClockCycles)))
+            {
+                OnScreenViewportChange(new ScreenViewportChangeEventArgs(ScreenViewport.X, ScreenViewport.Y, ScreenViewport.Width, ScreenViewport.Height));
+                OnRenderScreen(new RenderScreenEventArgs(Ricoh2C02.NumActivePixelsPerScanline, Ricoh2C02.NumActiveScanlines, ppu.OutputFramebuffer));
+            }
 
-            psg.Step((int)Math.Round(currentCpuClockCycles));
-            */
+            cpu.SetInterruptLine(ppu.InterruptLine);
+
+            //psg.Step((int)Math.Round(currentCpuClockCycles));
+
             currentMasterClockCyclesInFrame += (int)Math.Round(currentMasterClockCycles);
         }
 
@@ -206,6 +204,17 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
             if (input.Pressed.Contains(configuration.P1A)) joyInput |= JoyButtons.A;
         }
 
+        private byte ReadChrShim(uint address)
+        {
+            return (cartridge != null ? cartridge.ReadChr(address) : (byte)0x00);
+        }
+
+        private void WriteChrShim(uint address, byte value)
+        {
+            if (cartridge != null)
+                cartridge.WriteChr(address, value);
+        }
+
         private byte ReadMemory(uint address)
         {
             if (address >= 0x0000 && address <= 0x1FFF)
@@ -214,7 +223,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
             }
             else if (address >= 0x2000 && address <= 0x3FFF)
             {
-                // PPU read
+                return ppu.ReadRegister((byte)(address & 0x7));
             }
             else if (address >= 0x4000 && address <= 0x401F)
             {
@@ -238,7 +247,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
             }
             else if (address >= 0x2000 && address <= 0x3FFF)
             {
-                // PPU write
+                ppu.WriteRegister((byte)(address & 0x7), value);
             }
             else if (address >= 0x4000 && address <= 0x401F)
             {
