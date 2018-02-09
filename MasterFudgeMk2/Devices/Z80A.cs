@@ -102,7 +102,7 @@ namespace MasterFudgeMk2.Devices
         public int Step()
         {
             currentCycles = 0;
-            
+
             /* Handle delayed interrupt enable */
             if (eiDelay)
             {
@@ -124,7 +124,7 @@ namespace MasterFudgeMk2.Devices
                     ServiceNonMaskableInterrupt();
                 }
             }
-            
+
             // ----- PUT RIGHT BEFORE OPCODE FETCH -----
             if (Common.XInput.ControllerManager.GetController(0).IsLeftShoulderPressed())
             {

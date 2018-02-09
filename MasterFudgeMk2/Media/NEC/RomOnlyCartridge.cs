@@ -1,4 +1,4 @@
-﻿namespace MasterFudgeMk2.Media.Sega
+﻿namespace MasterFudgeMk2.Media.NEC
 {
     public class RomOnlyCartridge : BaseCartridge
     {

@@ -19,7 +19,7 @@
             // TODO: save ram handling
         }
 
-        public override byte Read(ushort address)
+        public override byte Read(uint address)
         {
             if ((address & 0x8000) == 0x8000)
                 return ramData[address & (ramData.Length - 1)];
@@ -27,7 +27,7 @@
                 return romData[address & (romData.Length - 1)];
         }
 
-        public override void Write(ushort address, byte value)
+        public override void Write(uint address, byte value)
         {
             if ((address & 0x8000) == 0x8000)
                 ramData[address & (ramData.Length - 1)] = value;

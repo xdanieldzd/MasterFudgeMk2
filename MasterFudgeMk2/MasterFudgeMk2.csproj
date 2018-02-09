@@ -100,10 +100,17 @@
     <Compile Include="Common\XmlFile.cs" />
     <Compile Include="DatFile.cs" />
     <Compile Include="DatHelper.cs" />
+    <Compile Include="Devices\MOS6502.cs" />
+    <Compile Include="Devices\NEC\HuC6260.cs" />
+    <Compile Include="Devices\NEC\HuC6280.cs" />
     <Compile Include="Devices\Sega\SegaGGPSG.cs" />
+    <Compile Include="Machines\NEC\PCEngine\Configuration.cs" />
+    <Compile Include="Machines\NEC\PCEngine\Manager.cs" />
     <Compile Include="Media\Coleco\BaseCartridge.cs" />
     <Compile Include="Media\Coleco\RomOnlyCartridge.cs" />
     <Compile Include="Media\MediaOverrides.cs" />
+    <Compile Include="Media\NEC\BaseCartridge.cs" />
+    <Compile Include="Media\NEC\RomOnlyCartridge.cs" />
     <Compile Include="Media\Sega\CodemastersCartridge.cs" />
     <Compile Include="VideoBackends\BaseVideoBackend.cs" />
     <Compile Include="VideoBackends\IVideoBackend.cs" />
@@ -205,9 +212,9 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <None Include="XML\NoIntro\Coleco - ColecoVision.dat">
+    <Content Include="XML\NoIntro\Coleco - ColecoVision.dat">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
     <Content Include="XML\NoIntro\Sega - Game Gear.dat">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -215,6 +222,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="XML\NoIntro\Sega - SG-1000.dat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="XML\NoIntro\NEC - PC Engine - TurboGrafx 16.dat">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

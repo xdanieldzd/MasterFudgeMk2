@@ -35,18 +35,18 @@ namespace MasterFudgeMk2.Media.Sega
             // TODO: save ram handling
         }
 
-        public override byte Read(ushort address)
+        public override byte Read(uint address)
         {
             switch (address & 0xC000)
             {
-                case 0x0000: return romData[((pagingSlots[0] << 14) | (address & 0x3FFF))];
-                case 0x4000: return romData[((pagingSlots[1] << 14) | (address & 0x3FFF))];
-                case 0x8000: return romData[((pagingSlots[2] << 14) | (address & 0x3FFF))];
+                case 0x0000: return romData[((pagingSlots[0] << 14) | (ushort)(address & 0x3FFF))];
+                case 0x4000: return romData[((pagingSlots[1] << 14) | (ushort)(address & 0x3FFF))];
+                case 0x8000: return romData[((pagingSlots[2] << 14) | (ushort)(address & 0x3FFF))];
                 default: throw new Exception(string.Format("Codemasters mapper: Cannot read from cartridge address 0x{0:X4}", address));
             }
         }
 
-        public override void Write(ushort address, byte value)
+        public override void Write(uint address, byte value)
         {
             switch (address)
             {

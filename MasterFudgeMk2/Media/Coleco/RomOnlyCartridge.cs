@@ -6,14 +6,15 @@
 
         public RomOnlyCartridge() : base() { }
 
-        public override byte Read(ushort address)
+        public override byte Read(uint address)
         {
+            address &= 0xFFFF;
             address -= 0x8000;
             if (address >= romData.Length) address -= (ushort)romData.Length;
             return romData[address];
         }
 
-        public override void Write(ushort address, byte value)
+        public override void Write(uint address, byte value)
         {
             /* Cannot write to cartridge */
             return;

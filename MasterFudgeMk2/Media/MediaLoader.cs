@@ -45,6 +45,11 @@ namespace MasterFudgeMk2.Media
                 // TODO: whatever mapper(s) there's on Coleco
                 media = (new Coleco.RomOnlyCartridge() as IMedia);
             }
+            else if (machineManager is Machines.NEC.PCEngine.Manager)
+            {
+                // TODO: PC-Engine mappers if any
+                media = (new NEC.RomOnlyCartridge() as IMedia);
+            }
             else
             {
                 throw new Exception("Could not identify cartridge");

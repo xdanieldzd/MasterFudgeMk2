@@ -33,7 +33,7 @@ namespace MasterFudgeMk2.Media.Sega
         public virtual void Reset() { }
         public virtual void Unload() { }
         public virtual void Step() { }
-        public abstract byte Read(ushort address);
-        public abstract void Write(ushort address, byte value);
+        public abstract byte Read(uint address);
+        public abstract void Write(uint address, byte value);
     }
 }

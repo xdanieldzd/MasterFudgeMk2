@@ -46,7 +46,7 @@ namespace MasterFudgeMk2.Media.Sega
             // TODO: save ram handling
         }
 
-        public override byte Read(ushort address)
+        public override byte Read(uint address)
         {
             switch (address & 0xC000)
             {
@@ -55,23 +55,23 @@ namespace MasterFudgeMk2.Media.Sega
                         /* First 1kb is constant to preserve interrupt vectors */
                         return romData[address];
                     else
-                        return romData[((romBank0 << 14) | (address & 0x3FFF))];
+                        return romData[((romBank0 << 14) | (ushort)(address & 0x3FFF))];
 
                 case 0x4000:
-                    return romData[((romBank1 << 14) | (address & 0x3FFF))];
+                    return romData[((romBank1 << 14) | (ushort)(address & 0x3FFF))];
 
                 case 0x8000:
                     if (isRamEnabled)
-                        return ramData[((ramBank << 14) | (address & 0x3FFF))];
+                        return ramData[((ramBank << 14) | (ushort)(address & 0x3FFF))];
                     else
-                        return romData[((romBank2 << 14) | (address & 0x3FFF))];
+                        return romData[((romBank2 << 14) | (ushort)(address & 0x3FFF))];
 
                 default:
                     throw new Exception(string.Format("Sega mapper: Cannot read from cartridge address 0x{0:X4}", address));
             }
         }
 
-        public override void Write(ushort address, byte value)
+        public override void Write(uint address, byte value)
         {
             if (address >= 0xFFFC && address <= 0xFFFF)
             {
@@ -86,7 +86,7 @@ namespace MasterFudgeMk2.Media.Sega
             if (isRamEnabled && (address & 0xC000) == 0x8000)
             {
                 /* Cartridge RAM */
-                ramData[((ramBank << 14) | (address & 0x3FFF))] = value;
+                ramData[((ramBank << 14) | (ushort)(address & 0x3FFF))] = value;
             }
             else if (isRomWriteEnable)
             {
