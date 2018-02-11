@@ -11,7 +11,7 @@ namespace MasterFudgeMk2.Devices
 {
     // TODO: verify decimal mode calculations, add unofficial opcodes...
 
-    public class MOS6502
+    public partial class MOS6502
     {
         [Flags]
         public enum Flags : byte
@@ -48,6 +48,7 @@ namespace MasterFudgeMk2.Devices
 
         public enum AddressingModes
         {
+            Invalid = -1,
             Implied,
             Accumulator,
             Immediate,
@@ -132,22 +133,14 @@ namespace MasterFudgeMk2.Devices
                 ServiceNonMaskableInterrupt();
             }
 
-            /* Fetch and execute opcode */
-            op = ReadMemory8(pc++);
-
-
-            if (pc - 1 == 0x90D4)
-            {
-                bool tmp = false;
-            }
-
             if (false)
             {
-                string disasm = $"{pc - 1:X4} | {op:X2}\n";
+                string disasm = $"{DisassembleOpcode(this, pc).PadRight(48)} | {PrintRegisters(this)} | {PrintFlags(this)} | {PrintInterrupt(this)}\n";
                 System.IO.File.AppendAllText(@"E:\temp\sms\nes\log.txt", disasm);
             }
 
-
+            /* Fetch and execute opcode */
+            op = ReadMemory8(pc++);
             switch (op)
             {
                 case 0x00: OpBRK(); break;
@@ -210,7 +203,7 @@ namespace MasterFudgeMk2.Devices
                 case 0x5D: OpEOR(AddressingModes.AbsoluteX); break;
                 case 0x5E: OpLSR(AddressingModes.AbsoluteX); break;
 
-                case 0x60: pc = Pull16(); break;
+                case 0x60: pc = (ushort)(Pull16() + 1); break;
                 case 0x61: OpADC(AddressingModes.IndirectX); break;
                 case 0x65: OpADC(AddressingModes.ZeroPage); break;
                 case 0x66: OpROR(AddressingModes.ZeroPage); break;
@@ -494,12 +487,12 @@ namespace MasterFudgeMk2.Devices
             WriteMemory8((uint)(ReadMemory16(address) + y), value);
         }
 
-        protected virtual byte GetOperand(AddressingModes mode)
+        protected virtual byte GetOperand(AddressingModes mode, bool incrementPc)
         {
-            return GetOperand(mode, 0);
+            return GetOperand(mode, 0, incrementPc);
         }
 
-        protected virtual byte GetOperand(AddressingModes mode, int offset)
+        protected virtual byte GetOperand(AddressingModes mode, int offset, bool incrementPc)
         {
             byte arg1 = ReadMemory8((ushort)(pc + 0 + offset));
             byte arg2 = ReadMemory8((ushort)(pc + 1 + offset));
@@ -509,22 +502,22 @@ namespace MasterFudgeMk2.Devices
             {
                 case AddressingModes.Implied: break;
                 case AddressingModes.Accumulator: value = a; break;
-                case AddressingModes.Immediate: value = arg1; pc++; break;
-                case AddressingModes.ZeroPage: value = ReadZeroPage(arg1); pc++; break;
-                case AddressingModes.ZeroPageX: value = ReadZeroPageX(arg1); pc++; break;
-                case AddressingModes.ZeroPageY: value = ReadZeroPageY(arg1); pc++; break;
-                case AddressingModes.Absolute: value = ReadAbsolute(arg1, arg2); pc += 2; break;
-                case AddressingModes.AbsoluteX: value = ReadAbsoluteX(arg1, arg2); pc += 2; break;
-                case AddressingModes.AbsoluteY: value = ReadAbsoluteY(arg1, arg2); pc += 2; break;
-                case AddressingModes.IndirectX: value = ReadIndirectX(arg1); pc++; break;
-                case AddressingModes.IndirectY: value = ReadIndirectY(arg1); pc++; break;
+                case AddressingModes.Immediate: value = arg1; if (incrementPc) pc++; break;
+                case AddressingModes.ZeroPage: value = ReadZeroPage(arg1); if (incrementPc) pc++; break;
+                case AddressingModes.ZeroPageX: value = ReadZeroPageX(arg1); if (incrementPc) pc++; break;
+                case AddressingModes.ZeroPageY: value = ReadZeroPageY(arg1); if (incrementPc) pc++; break;
+                case AddressingModes.Absolute: value = ReadAbsolute(arg1, arg2); if (incrementPc) pc += 2; break;
+                case AddressingModes.AbsoluteX: value = ReadAbsoluteX(arg1, arg2); if (incrementPc) pc += 2; break;
+                case AddressingModes.AbsoluteY: value = ReadAbsoluteY(arg1, arg2); if (incrementPc) pc += 2; break;
+                case AddressingModes.IndirectX: value = ReadIndirectX(arg1); if (incrementPc) pc++; break;
+                case AddressingModes.IndirectY: value = ReadIndirectY(arg1); if (incrementPc) pc++; break;
                 default: throw new Exception("6502 addressing mode error on read");
             }
 
             return value;
         }
 
-        protected virtual void WriteValue(AddressingModes mode, byte value)
+        protected virtual void WriteValue(AddressingModes mode, byte value, bool incrementPc)
         {
             byte arg1 = ReadMemory8((ushort)(pc + 0));
             byte arg2 = ReadMemory8((ushort)(pc + 1));
@@ -533,14 +526,14 @@ namespace MasterFudgeMk2.Devices
             {
                 case AddressingModes.Implied: break;
                 case AddressingModes.Accumulator: a = value; break;
-                case AddressingModes.ZeroPage: WriteZeroPage(arg1, value); pc++; break;
-                case AddressingModes.ZeroPageX: WriteZeroPageX(arg1, value); pc++; break;
-                case AddressingModes.ZeroPageY: WriteZeroPageY(arg1, value); pc++; break;
-                case AddressingModes.Absolute: WriteAbsolute(arg1, arg2, value); pc += 2; break;
-                case AddressingModes.AbsoluteX: WriteAbsoluteX(arg1, arg2, value); pc += 2; break;
-                case AddressingModes.AbsoluteY: WriteAbsoluteY(arg1, arg2, value); pc += 2; break;
-                case AddressingModes.IndirectX: WriteIndirectX(arg1, value); pc++; break;
-                case AddressingModes.IndirectY: WriteIndirectY(arg1, value); pc++; break;
+                case AddressingModes.ZeroPage: WriteZeroPage(arg1, value); if (incrementPc) pc++; break;
+                case AddressingModes.ZeroPageX: WriteZeroPageX(arg1, value); if (incrementPc) pc++; break;
+                case AddressingModes.ZeroPageY: WriteZeroPageY(arg1, value); if (incrementPc) pc++; break;
+                case AddressingModes.Absolute: WriteAbsolute(arg1, arg2, value); if (incrementPc) pc += 2; break;
+                case AddressingModes.AbsoluteX: WriteAbsoluteX(arg1, arg2, value); if (incrementPc) pc += 2; break;
+                case AddressingModes.AbsoluteY: WriteAbsoluteY(arg1, arg2, value); if (incrementPc) pc += 2; break;
+                case AddressingModes.IndirectX: WriteIndirectX(arg1, value); if (incrementPc) pc++; break;
+                case AddressingModes.IndirectY: WriteIndirectY(arg1, value); if (incrementPc) pc++; break;
                 default: throw new Exception("6502 addressing mode error on write");
             }
         }
@@ -580,7 +573,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpADC(AddressingModes mode)
         {
-            byte data = GetOperand(mode);
+            byte data = GetOperand(mode, true);
             uint w;
 
             SetClearFlagConditional(Flags.Overflow, ((a ^ data) & 0x80) != 0);
@@ -617,7 +610,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpAND(AddressingModes mode)
         {
-            a = (byte)(a & GetOperand(mode));
+            a = (byte)(a & GetOperand(mode, true));
 
             SetClearFlagConditional(Flags.Zero, (a == 0x00));
             SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80));
@@ -625,19 +618,19 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpASL(AddressingModes mode)
         {
-            uint value = GetOperand(mode);
+            uint value = GetOperand(mode, false);
             SetClearFlagConditional(Flags.Carry, ((value & 0x80) == 0x80));
 
             value = (byte)(value << 1);
             SetClearFlagConditional(Flags.Zero, (value == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
 
-            WriteValue(mode, (byte)value);
+            WriteValue(mode, (byte)value, true);
         }
 
         protected void OpBCC()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte value = GetOperand(AddressingModes.Immediate, true);
 
             if (!IsFlagSet(Flags.Carry))
             {
@@ -650,7 +643,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpBCS()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte value = GetOperand(AddressingModes.Immediate, true);
 
             if (IsFlagSet(Flags.Carry))
             {
@@ -663,7 +656,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpBEQ()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte value = GetOperand(AddressingModes.Immediate, true);
 
             if (IsFlagSet(Flags.Zero))
             {
@@ -676,7 +669,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpBIT(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint value = GetOperand(Mode, true);
 
             SetClearFlagConditional(Flags.Zero, ((a & value) == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
@@ -685,7 +678,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpBMI()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte value = GetOperand(AddressingModes.Immediate, true);
 
             if (IsFlagSet(Flags.Sign))
             {
@@ -698,7 +691,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpBNE()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte value = GetOperand(AddressingModes.Immediate, true);
 
             if (!IsFlagSet(Flags.Zero))
             {
@@ -711,7 +704,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpBPL()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte value = GetOperand(AddressingModes.Immediate, true);
 
             if (!IsFlagSet(Flags.Sign))
             {
@@ -734,7 +727,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpBVC()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte value = GetOperand(AddressingModes.Immediate, true);
 
             if (!IsFlagSet(Flags.Overflow))
             {
@@ -747,7 +740,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpBVS()
         {
-            byte value = GetOperand(AddressingModes.Immediate);
+            byte value = GetOperand(AddressingModes.Immediate, true);
 
             if (IsFlagSet(Flags.Overflow))
             {
@@ -760,7 +753,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpCMP(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint value = GetOperand(Mode, true);
 
             SetClearFlagConditional(Flags.Carry, a >= (byte)value);
 
@@ -772,7 +765,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpCPX(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint value = GetOperand(Mode, true);
 
             SetClearFlagConditional(Flags.Carry, x >= (byte)value);
 
@@ -784,7 +777,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpCPY(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint value = GetOperand(Mode, true);
 
             SetClearFlagConditional(Flags.Carry, y >= (byte)value);
 
@@ -796,14 +789,14 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpDEC(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint value = GetOperand(Mode, false);
 
             value--;
 
             SetClearFlagConditional(Flags.Zero, (value == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
 
-            WriteValue(Mode, (byte)(value & 0xFF));
+            WriteValue(Mode, (byte)(value & 0xFF), true);
         }
 
         protected void OpDEX()
@@ -824,7 +817,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpEOR(AddressingModes Mode)
         {
-            a = (byte)(a ^ GetOperand(Mode));
+            a = (byte)(a ^ GetOperand(Mode, true));
 
             SetClearFlagConditional(Flags.Zero, (a == 0x00));
             SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80));
@@ -832,14 +825,14 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpINC(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint value = GetOperand(Mode, true);
 
             value++;
 
             SetClearFlagConditional(Flags.Zero, (value == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
 
-            WriteValue(Mode, (byte)(value & 0xFF));
+            WriteValue(Mode, (byte)(value & 0xFF), false);
         }
 
         protected void OpINX()
@@ -874,13 +867,13 @@ namespace MasterFudgeMk2.Devices
         {
             byte arg1 = ReadMemory8((ushort)(pc + 0));
             byte arg2 = ReadMemory8((ushort)(pc + 1));
-            Push16((ushort)(pc + 2));
+            Push16((ushort)(pc + 1));
             pc = CalculateAddress(arg1, arg2);
         }
 
         protected void OpLDA(AddressingModes Mode)
         {
-            a = (byte)(GetOperand(Mode) & 0xFF);
+            a = (byte)(GetOperand(Mode, true) & 0xFF);
 
             SetClearFlagConditional(Flags.Zero, (a == 0x00));
             SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80));
@@ -888,7 +881,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpLDX(AddressingModes Mode)
         {
-            x = (byte)(GetOperand(Mode) & 0xFF);
+            x = (byte)(GetOperand(Mode, true) & 0xFF);
 
             SetClearFlagConditional(Flags.Zero, (x == 0x00));
             SetClearFlagConditional(Flags.Sign, ((x & 0x80) == 0x80));
@@ -896,7 +889,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpLDY(AddressingModes Mode)
         {
-            y = (byte)(GetOperand(Mode) & 0xFF);
+            y = (byte)(GetOperand(Mode, true) & 0xFF);
 
             SetClearFlagConditional(Flags.Zero, (y == 0x00));
             SetClearFlagConditional(Flags.Sign, ((y & 0x80) == 0x80));
@@ -904,7 +897,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpLSR(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint value = GetOperand(Mode, true);
 
             SetClearFlagConditional(Flags.Sign, ((value & 0x01) == 0x01));
 
@@ -913,7 +906,7 @@ namespace MasterFudgeMk2.Devices
             SetClearFlagConditional(Flags.Zero, (value == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
 
-            WriteValue(Mode, (byte)value);
+            WriteValue(Mode, (byte)value, false);
         }
 
         protected void OpNOP()
@@ -923,7 +916,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpORA(AddressingModes Mode)
         {
-            a = (byte)(a | GetOperand(Mode));
+            a = (byte)(a | GetOperand(Mode, true));
 
             SetClearFlagConditional(Flags.Zero, (a == 0x00));
             SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80));
@@ -931,7 +924,7 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpROL(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint value = GetOperand(Mode, false);
             bool tempBit = ((value & 0x80) == 0x80);
 
             value = (byte)(value << 1);
@@ -942,30 +935,28 @@ namespace MasterFudgeMk2.Devices
             SetClearFlagConditional(Flags.Zero, (value == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
 
-            WriteValue(Mode, (byte)value);
+            WriteValue(Mode, (byte)value, true);
         }
 
         protected void OpROR(AddressingModes Mode)
         {
-            uint value = GetOperand(Mode);
+            uint value = GetOperand(Mode, false);
             bool tempBit = ((value & 0x01) == 0x01);
 
             value = (byte)(value >> 1);
-
-            if (IsFlagSet(Flags.Carry))
-                value = (byte)(value | 0x80);
+            value = (byte)(value | (byte)(IsFlagSet(Flags.Carry) ? 0x80 : 0x00));
 
             SetClearFlagConditional(Flags.Carry, tempBit);
 
             SetClearFlagConditional(Flags.Zero, (value == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
 
-            WriteValue(Mode, (byte)value);
+            WriteValue(Mode, (byte)value, true);
         }
 
         protected void OpSBC(AddressingModes Mode)
         {
-            byte data = GetOperand(Mode);
+            byte data = GetOperand(Mode, true);
             uint w;
 
             SetClearFlagConditional(Flags.Overflow, ((a ^ data) & 0x80) != 0);
@@ -1003,17 +994,17 @@ namespace MasterFudgeMk2.Devices
 
         protected void OpSTA(AddressingModes Mode)
         {
-            WriteValue(Mode, a);
+            WriteValue(Mode, a, true);
         }
 
         protected void OpSTX(AddressingModes Mode)
         {
-            WriteValue(Mode, x);
+            WriteValue(Mode, x, true);
         }
 
         protected void OpSTY(AddressingModes Mode)
         {
-            WriteValue(Mode, y);
+            WriteValue(Mode, y, true);
         }
     }
 }

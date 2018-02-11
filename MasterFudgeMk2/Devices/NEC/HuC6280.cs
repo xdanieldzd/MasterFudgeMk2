@@ -12,6 +12,8 @@ namespace MasterFudgeMk2.Devices.NEC
 {
     // HuC6280 (CPU)
 
+    // TODO: might be busted after messing w/ 6502
+
     public class HuC6280 : MOS6502
     {
         public delegate byte PagingRegisterReadDelegate(byte register);
@@ -489,7 +491,7 @@ namespace MasterFudgeMk2.Devices.NEC
             WriteMemory8((uint)(ReadMemory16(address) + 0x2000 + y), value);
         }
 
-        protected override byte GetOperand(AddressingModes mode, int offset)
+        protected override byte GetOperand(AddressingModes mode, int offset, bool incrementPc)
         {
             byte arg1 = ReadMemory8((ushort)(pc + 1 + offset));
             byte arg2 = ReadMemory8((ushort)(pc + 2 + offset));
@@ -499,22 +501,22 @@ namespace MasterFudgeMk2.Devices.NEC
             {
                 case AddressingModes.Implied: break;
                 case AddressingModes.Accumulator: value = a; break;
-                case AddressingModes.Immediate: value = arg1; pc++; break;
-                case AddressingModes.ZeroPage: value = ReadZeroPage(arg1); pc++; break;
-                case AddressingModes.ZeroPageX: value = ReadZeroPageX(arg1); pc++; break;
-                case AddressingModes.ZeroPageY: value = ReadZeroPageY(arg1); pc++; break;
-                case AddressingModes.Absolute: value = ReadAbsolute(arg1, arg2); pc += 2; break;
-                case AddressingModes.AbsoluteX: value = ReadAbsoluteX(arg1, arg2); pc += 2; break;
-                case AddressingModes.AbsoluteY: value = ReadAbsoluteY(arg1, arg2); pc += 2; break;
-                case AddressingModes.IndirectX: value = ReadIndirectX(arg1); pc++; break;
-                case AddressingModes.IndirectY: value = ReadIndirectY(arg1); pc++; break;
+                case AddressingModes.Immediate: value = arg1; if (incrementPc) pc++; break;
+                case AddressingModes.ZeroPage: value = ReadZeroPage(arg1); if (incrementPc) pc++; break;
+                case AddressingModes.ZeroPageX: value = ReadZeroPageX(arg1); if (incrementPc) pc++; break;
+                case AddressingModes.ZeroPageY: value = ReadZeroPageY(arg1); if (incrementPc) pc++; break;
+                case AddressingModes.Absolute: value = ReadAbsolute(arg1, arg2); if (incrementPc) pc += 2; break;
+                case AddressingModes.AbsoluteX: value = ReadAbsoluteX(arg1, arg2); if (incrementPc) pc += 2; break;
+                case AddressingModes.AbsoluteY: value = ReadAbsoluteY(arg1, arg2); if (incrementPc) pc += 2; break;
+                case AddressingModes.IndirectX: value = ReadIndirectX(arg1); if (incrementPc) pc++; break;
+                case AddressingModes.IndirectY: value = ReadIndirectY(arg1); if (incrementPc) pc++; break;
                 default: throw new Exception("6502 addressing mode error on read");
             }
 
             return value;
         }
 
-        protected override void WriteValue(AddressingModes mode, byte value)
+        protected override void WriteValue(AddressingModes mode, byte value, bool incrementPc)
         {
             byte arg1 = ReadMemory8((ushort)(pc + 1));
             byte arg2 = ReadMemory8((ushort)(pc + 2));
@@ -523,15 +525,15 @@ namespace MasterFudgeMk2.Devices.NEC
             {
                 case AddressingModes.Implied: break;
                 case AddressingModes.Accumulator: a = value; break;
-                case AddressingModes.ZeroPage: WriteZeroPage(arg1, value); pc++; break;
-                case AddressingModes.ZeroPageX: WriteZeroPageX(arg1, value); pc++; break;
-                case AddressingModes.ZeroPageY: WriteZeroPageY(arg1, value); pc++; break;
-                case AddressingModes.Absolute: WriteAbsolute(arg1, arg2, value); pc += 2; break;
-                case AddressingModes.AbsoluteX: WriteAbsoluteX(arg1, arg2, value); pc += 2; break;
-                case AddressingModes.AbsoluteY: WriteAbsoluteY(arg1, arg2, value); pc += 2; break;
-                case AddressingModes.Indirect: WriteIndirect(arg1, value); pc++; break;
-                case AddressingModes.IndirectX: WriteIndirectX(arg1, value); pc++; break;
-                case AddressingModes.IndirectY: WriteIndirectY(arg1, value); pc++; break;
+                case AddressingModes.ZeroPage: WriteZeroPage(arg1, value); if (incrementPc) pc++; break;
+                case AddressingModes.ZeroPageX: WriteZeroPageX(arg1, value); if (incrementPc) pc++; break;
+                case AddressingModes.ZeroPageY: WriteZeroPageY(arg1, value); if (incrementPc) pc++; break;
+                case AddressingModes.Absolute: WriteAbsolute(arg1, arg2, value); if (incrementPc) pc += 2; break;
+                case AddressingModes.AbsoluteX: WriteAbsoluteX(arg1, arg2, value); if (incrementPc) pc += 2; break;
+                case AddressingModes.AbsoluteY: WriteAbsoluteY(arg1, arg2, value); if (incrementPc) pc += 2; break;
+                case AddressingModes.Indirect: WriteIndirect(arg1, value); if (incrementPc) pc++; break;
+                case AddressingModes.IndirectX: WriteIndirectX(arg1, value); if (incrementPc) pc++; break;
+                case AddressingModes.IndirectY: WriteIndirectY(arg1, value); if (incrementPc) pc++; break;
                 default: throw new Exception("6502 addressing mode error on write");
             }
         }
@@ -551,26 +553,26 @@ namespace MasterFudgeMk2.Devices.NEC
 
         private void OpTSB(AddressingModes mode)
         {
-            byte value = GetOperand(mode);
+            byte value = GetOperand(mode, false);
 
             SetClearFlagConditional(Flags.Zero, (a & value) == 0x00);
             SetClearFlagConditional(Flags.Sign, (value & 0x80) == 0x80);
             SetClearFlagConditional(Flags.Overflow, (value & 0x40) == 0x40);
 
             value |= a;
-            WriteValue(mode, value);
+            WriteValue(mode, value, true);
         }
 
         private void OpRMBi(int bit)
         {
-            byte value = GetOperand(AddressingModes.ZeroPage);
+            byte value = GetOperand(AddressingModes.ZeroPage, false);
             value &= (byte)(~(1 << bit));
-            WriteValue(AddressingModes.ZeroPage, value);
+            WriteValue(AddressingModes.ZeroPage, value, true);
         }
 
         private void OpBBRi(int Bit)
         {
-            byte value = GetOperand(AddressingModes.ZeroPage);
+            byte value = GetOperand(AddressingModes.ZeroPage, true);
             sbyte branch = (sbyte)ReadMemory8((uint)(pc + 1));
 
             if ((value & (1 << Bit)) == 0)
@@ -584,14 +586,14 @@ namespace MasterFudgeMk2.Devices.NEC
 
         private void OpTRB(AddressingModes mode)
         {
-            byte value = GetOperand(mode);
+            byte value = GetOperand(mode, false);
 
             SetClearFlagConditional(Flags.Zero, (a & value) == 0x00);
             SetClearFlagConditional(Flags.Sign, (value & 0x80) == 0x80);
             SetClearFlagConditional(Flags.Overflow, (value & 0x40) == 0x40);
 
             value &= (byte)~a;
-            WriteValue(mode, value);
+            WriteValue(mode, value, true);
         }
 
         private void OpINA()
@@ -626,7 +628,7 @@ namespace MasterFudgeMk2.Devices.NEC
 
         private void OpTMAi()
         {
-            byte data = GetOperand(AddressingModes.Immediate);
+            byte data = GetOperand(AddressingModes.Immediate, true);
             for (byte register = 0; register < 8; register++)
             {
                 if ((data & (1 << register)) != 0)
@@ -636,7 +638,7 @@ namespace MasterFudgeMk2.Devices.NEC
 
         private void OpBSR()
         {
-            sbyte branch = (sbyte)GetOperand(AddressingModes.Immediate);
+            sbyte branch = (sbyte)GetOperand(AddressingModes.Immediate, true);
 
             Push16((ushort)(pc - 1));
 
@@ -648,7 +650,7 @@ namespace MasterFudgeMk2.Devices.NEC
 
         private void OpTAM()
         {
-            byte data = GetOperand(AddressingModes.Immediate);
+            byte data = GetOperand(AddressingModes.Immediate, true);
             for (byte register = 0; register < 8; register++)
             {
                 if ((data & (1 << register)) != 0)
@@ -658,7 +660,7 @@ namespace MasterFudgeMk2.Devices.NEC
 
         private void OpSTZ(AddressingModes mode)
         {
-            WriteValue(mode, 0x00);
+            WriteValue(mode, 0x00, true);
         }
 
         private void OpTII()
@@ -679,7 +681,7 @@ namespace MasterFudgeMk2.Devices.NEC
 
         private void OpBRA()
         {
-            sbyte branch = (sbyte)GetOperand(AddressingModes.Immediate);
+            sbyte branch = (sbyte)GetOperand(AddressingModes.Immediate, true);
 
             if ((pc & 0xFF00) != ((pc + branch + 2) & 0xFF00))
                 currentCycles += 1;
@@ -689,8 +691,8 @@ namespace MasterFudgeMk2.Devices.NEC
 
         private void OpTST(AddressingModes mode)
         {
-            byte arg1 = GetOperand(AddressingModes.Immediate);
-            byte arg2 = GetOperand(mode, 1);
+            byte arg1 = GetOperand(AddressingModes.Immediate, true);
+            byte arg2 = GetOperand(mode, 1, true);
 
             SetClearFlagConditional(Flags.Zero, (arg2 & arg1) == 0x00);
             SetClearFlagConditional(Flags.Sign, (arg2 & 0x80) == 0x80);
@@ -699,14 +701,14 @@ namespace MasterFudgeMk2.Devices.NEC
 
         private void OpSMBi(int bit)
         {
-            byte value = GetOperand(AddressingModes.ZeroPage);
+            byte value = GetOperand(AddressingModes.ZeroPage, true);
             value |= (byte)(1 << bit);
-            WriteValue(AddressingModes.ZeroPage, value);
+            WriteValue(AddressingModes.ZeroPage, value, false);
         }
 
         private void OpBBSi(int bit)
         {
-            byte value = GetOperand(AddressingModes.ZeroPage);
+            byte value = GetOperand(AddressingModes.ZeroPage, true);
             sbyte branch = (sbyte)ReadMemory8((uint)(pc + 2));
 
             if ((value & (1 << bit)) != 0)
@@ -789,7 +791,5 @@ namespace MasterFudgeMk2.Devices.NEC
 
             x = Pull(); a = Pull(); y = Pull();
         }
-
-        //
     }
 }

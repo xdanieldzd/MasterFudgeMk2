@@ -43,12 +43,12 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
 
         public override byte ReadPrg(uint address)
         {
-            return prgData[(address / 0x4000) % prgData.Length][address & prgDataMask];
+            return prgData[((address - 0x8000) / 0x4000) % prgData.Length][address & prgDataMask];
         }
 
         public override byte ReadChr(uint address)
         {
-            return chrData[(address / 0x4000) % chrData.Length][address & chrDataMask];
+            return chrData[((address - 0x4000) / 0x2000) % chrData.Length][address & chrDataMask];
         }
     }
 }

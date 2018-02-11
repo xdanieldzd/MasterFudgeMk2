@@ -177,7 +177,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
 
             double currentMasterClockCycles = (currentCpuClockCycles * 12.0);
 
-            if (ppu.Step((int)Math.Round(currentMasterClockCycles)))
+            if (ppu.Step((int)Math.Round(currentMasterClockCycles / 4.0)))
             {
                 OnScreenViewportChange(new ScreenViewportChangeEventArgs(ScreenViewport.X, ScreenViewport.Y, ScreenViewport.Width, ScreenViewport.Height));
                 OnRenderScreen(new RenderScreenEventArgs(Ricoh2C02.NumActivePixelsPerScanline, Ricoh2C02.NumActiveScanlines, ppu.OutputFramebuffer));
