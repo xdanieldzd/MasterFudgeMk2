@@ -572,6 +572,8 @@ namespace MasterFudgeMk2.Devices.Nintendo
                 {
                     spriteOverflow++;
 
+                    spriteId = spriteRam[i + 1];
+
                     if (spriteSize == 8)
                     {
                         if ((spriteRam[i + 2] & 0x80) != 0x80)
@@ -579,11 +581,10 @@ namespace MasterFudgeMk2.Devices.Nintendo
                         else
                             spriteLineToDraw = actualY + 7 - line;
 
-                        offsetToSprite = spritePatternAddress + spriteRam[i + 1] * 16;
+                        offsetToSprite = spritePatternAddress + (spriteId * 16);
                     }
                     else
                     {
-                        spriteId = spriteRam[i + 1];
                         if ((spriteRam[i + 2] & 0x80) != 0x80)
                             spriteLineToDraw = line - actualY;
                         else
@@ -592,18 +593,18 @@ namespace MasterFudgeMk2.Devices.Nintendo
                         if (spriteLineToDraw < 8)
                         {
                             if ((spriteId % 2) == 0)
-                                offsetToSprite = 0x0000 + (spriteId) * 16;
+                                offsetToSprite = 0x0000 + (spriteId * 16);
                             else
-                                offsetToSprite = 0x1000 + (spriteId - 1) * 16;
+                                offsetToSprite = 0x1000 + ((spriteId - 1) * 16);
                         }
                         else
                         {
                             spriteLineToDraw = spriteLineToDraw - 8;
 
                             if ((spriteId % 2) == 0)
-                                offsetToSprite = 0x0000 + (spriteId + 1) * 16;
+                                offsetToSprite = 0x0000 + ((spriteId + 1) * 16);
                             else
-                                offsetToSprite = 0x1000 + (spriteId) * 16;
+                                offsetToSprite = 0x1000 + (spriteId * 16);
                         }
                     }
 
