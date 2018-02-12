@@ -12,14 +12,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
         [Description("Emulate PAL System")]
         [XmlElement]
         public bool IsPalSystem { get; set; } = false;
-
-        /* Inputs (General) */
-        [XmlIgnore]
-        public Enum Reset { get; set; } = null;
-
-        [XmlElement(ElementName = nameof(Reset)), ReadOnly(true)]
-        public string ResetString { get { return Reset?.GetFullyQualifiedName(); } set { Reset = value?.GetEnumFromFullyQualifiedName(); } }
-
+        
         /* Inputs (P1) */
         [XmlIgnore]
         public Enum P1Up { get; set; } = null;

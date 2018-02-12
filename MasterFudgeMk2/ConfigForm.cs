@@ -40,7 +40,7 @@ namespace MasterFudgeMk2
 
             /* Main config stuff */
             List<PropertyInfo> mainProps = Configuration.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Where(x => x.PropertyType != typeof(Enum) && x.CanWrite).ToList();
-            mainProps.RemoveAll(x => x.GetCustomAttributes<ReadOnlyAttribute>().FirstOrDefault().IsReadOnly);
+            mainProps.RemoveAll(x => (x.GetCustomAttributes<ReadOnlyAttribute>().FirstOrDefault() != null && x.GetCustomAttributes<ReadOnlyAttribute>().FirstOrDefault().IsReadOnly));
             if (mainProps.Count == 0) tcConfig.TabPages.Remove(tpMainConfig);
 
             tlpMainConfig.RowCount = (mainProps.Count + 1);

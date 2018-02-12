@@ -19,21 +19,21 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
     public enum MachineInputs
     {
         [Description("Up")]
-        Up,
+        P1Up,
         [Description("Down")]
-        Down,
+        P1Down,
         [Description("Left")]
-        Left,
+        P1Left,
         [Description("Right")]
-        Right,
+        P1Right,
         [Description("B Button")]
-        B,
+        P1B,
         [Description("A Button")]
-        A,
+        P1A,
         [Description("Select Button")]
-        Select,
+        P1Select,
         [Description("Start Button")]
-        Start
+        P1Start
     }
 
     class Manager : BaseMachine

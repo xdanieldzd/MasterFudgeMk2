@@ -330,6 +330,8 @@ namespace MasterFudgeMk2.Devices
                 case 0xF9: OpSBC(AddressingModes.AbsoluteY); break;
                 case 0xFD: OpSBC(AddressingModes.AbsoluteX); break;
                 case 0xFE: OpINC(AddressingModes.AbsoluteX); break;
+
+                default: throw new NotImplementedException($"Unimplemented opcode 0x{op:X2}");
             }
 
             return currentCycles;
