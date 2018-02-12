@@ -55,6 +55,17 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
             }
         }
 
+        public Devices.Nintendo.PPUMirroring GetMirroring()
+        {
+            switch (inesHeader.Mirroring)
+            {
+                case INesMirroring.Horizontal: return Devices.Nintendo.PPUMirroring.Horizontal;
+                case INesMirroring.Vertical: return Devices.Nintendo.PPUMirroring.Vertical;
+                case INesMirroring.FourScreen: return Devices.Nintendo.PPUMirroring.FourScreen;
+                default: throw new System.NotImplementedException($"Unsupported mirroring mode {inesHeader.Mirroring}");
+            }
+        }
+
         public virtual void Reset() { }
         public virtual void Unload() { }
         public virtual void Step() { }

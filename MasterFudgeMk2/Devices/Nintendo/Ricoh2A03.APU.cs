@@ -9,7 +9,7 @@ using MasterFudgeMk2.Common.EventArguments;
 
 namespace MasterFudgeMk2.Devices.Nintendo
 {
-    public partial class Ricoh2A03
+    public partial class Ricoh2A03 : MOS6502
     {
         public class APU : MustInitialize<EventHandler<AddSampleDataEventArgs>>, ISoundDevice
         {

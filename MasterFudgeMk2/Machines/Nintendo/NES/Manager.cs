@@ -78,7 +78,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
         /* Devices on bus */
         BaseCartridge cartridge;
         byte[] wram;
-        MOS6502 cpu;        // TODO: Ricoh 2A03/2A07, not 6502!
+        Ricoh2A03 cpu;
         Ricoh2C02 ppu;
         Ricoh2A03.APU apu;
 
@@ -96,7 +96,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
             Mask = ((1 << 8) - 1)
         }
 
-        JoyButtons joyInput;
+        JoyButtons joyInput1, joyInput2;
         byte joy1Data, joy2Data, joyStrobe;
 
         protected override int totalMasterClockCyclesInFrame { get { return (int)Math.Round(masterClock / refreshRate); } }
@@ -109,7 +109,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
 
             cartridge = null;
 
-            cpu = new MOS6502(cpuClock, refreshRate, ReadMemory, WriteMemory);
+            cpu = new Ricoh2A03(cpuClock, refreshRate, ReadMemory, WriteMemory);
             wram = new byte[ramSize];
             ppu = new Ricoh2C02(ppuClock, refreshRate, false, ReadChrShim, WriteChrShim);
             apu = new Ricoh2A03.APU(apuClock, refreshRate, 44100, 2, (s, e) => { OnAddSampleData(e); });
@@ -132,8 +132,11 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
             ppu.Reset();
             apu.Reset();
 
-            joyInput = 0;
+            joyInput1 = joyInput2 = 0;
             joy1Data = joy2Data = joyStrobe = 0;
+
+            if (cartridge != null)
+                ppu.SetMirroringMode(cartridge.GetMirroring());
 
             base.Reset();
         }
@@ -192,16 +195,20 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
 
         protected override void ParseInput(PollInputEventArgs input)
         {
-            joyInput = 0;
+            joyInput1 = 0;
 
-            if (input.Pressed.Contains(configuration.P1Start)) joyInput |= JoyButtons.Start;
-            if (input.Pressed.Contains(configuration.P1Select)) joyInput |= JoyButtons.Select;
-            if (input.Pressed.Contains(configuration.P1Up)) joyInput |= JoyButtons.Up;
-            if (input.Pressed.Contains(configuration.P1Down)) joyInput |= JoyButtons.Down;
-            if (input.Pressed.Contains(configuration.P1Left)) joyInput |= JoyButtons.Left;
-            if (input.Pressed.Contains(configuration.P1Right)) joyInput |= JoyButtons.Right;
-            if (input.Pressed.Contains(configuration.P1B)) joyInput |= JoyButtons.B;
-            if (input.Pressed.Contains(configuration.P1A)) joyInput |= JoyButtons.A;
+            if (input.Pressed.Contains(configuration.P1Start)) joyInput1 |= JoyButtons.Start;
+            if (input.Pressed.Contains(configuration.P1Select)) joyInput1 |= JoyButtons.Select;
+            if (input.Pressed.Contains(configuration.P1Up)) joyInput1 |= JoyButtons.Up;
+            if (input.Pressed.Contains(configuration.P1Down)) joyInput1 |= JoyButtons.Down;
+            if (input.Pressed.Contains(configuration.P1Left)) joyInput1 |= JoyButtons.Left;
+            if (input.Pressed.Contains(configuration.P1Right)) joyInput1 |= JoyButtons.Right;
+            if (input.Pressed.Contains(configuration.P1B)) joyInput1 |= JoyButtons.B;
+            if (input.Pressed.Contains(configuration.P1A)) joyInput1 |= JoyButtons.A;
+
+            joyInput2 = 0;
+
+            // TODO: controller 2 inputs
         }
 
         private byte ReadChrShim(uint address)
@@ -231,9 +238,17 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
                 {
                     return apu.ReadRegister(address);
                 }
-                else
+                else if (address == 0x4016)
                 {
-                    // IO
+                    byte joy1Bit = (byte)(joy1Data & 0x01);
+                    joy1Data >>= 1;
+                    return joy1Bit;
+                }
+                else if (address == 0x4017)
+                {
+                    byte joy2Bit = (byte)(joy2Data & 0x01);
+                    joy2Data >>= 1;
+                    return joy2Bit;
                 }
             }
             else if (address >= 0x4020 && address <= 0xFFFF)
@@ -260,11 +275,17 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
             {
                 if (address == 0x4014)
                 {
-                    // PPU sprite DMA
+                    for (int i = 0; i < 256; i++)
+                        ppu.WriteRegister(0x04, ReadMemory((uint)((value << 8) + i)));
                 }
                 else if (address == 0x4016)
                 {
-                    // pad stuff
+                    if ((joyStrobe == 0x01) && ((value & 0x01) == 0))
+                    {
+                        joy1Data = (byte)joyInput1;
+                        joy2Data = (byte)joyInput2;
+                    }
+                    joyStrobe = (byte)(value & 0x01);
                 }
                 else
                     apu.WriteRegister(address, value);
