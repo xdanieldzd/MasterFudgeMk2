@@ -15,23 +15,12 @@ namespace MasterFudgeMk2.Devices.Nintendo
         protected override void OpADC(AddressingModes mode)
         {
             byte data = GetOperand(mode);
-            uint w;
+            uint sum = (uint)(a + data + (IsFlagSet(Flags.Carry) ? 1 : 0));
 
-            SetClearFlagConditional(Flags.Overflow, ((a ^ data) & 0x80) != 0);
+            SetClearFlagConditional(Flags.Overflow, ((a ^ sum) & (data ^ sum) & 0x80) != 0);
+            SetClearFlagConditional(Flags.Carry, sum >= 0x100);
 
-            w = (uint)(a + data + (IsFlagSet(Flags.Carry) ? 1 : 0));
-            if (w >= 0x100)
-            {
-                SetFlag(Flags.Carry);
-                SetClearFlagConditional(Flags.Overflow, !(IsFlagSet(Flags.Overflow) && w >= 0x180));
-            }
-            else
-            {
-                ClearFlag(Flags.Carry);
-                SetClearFlagConditional(Flags.Overflow, !(IsFlagSet(Flags.Overflow) && w < 0x80));
-            }
-
-            a = (byte)(w & 0xFF);
+            a = (byte)(sum & 0xFF);
 
             SetClearFlagConditional(Flags.Zero, (a == 0x00));
             SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80));
@@ -42,24 +31,13 @@ namespace MasterFudgeMk2.Devices.Nintendo
 
         protected override void OpSBC(AddressingModes mode)
         {
-            byte data = GetOperand(mode);
-            uint w;
+            byte data = (byte)(GetOperand(mode) ^ 0xFF);
+            uint sum = (uint)(a + data + (IsFlagSet(Flags.Carry) ? 1 : 0));
 
-            SetClearFlagConditional(Flags.Overflow, ((a ^ data) & 0x80) != 0);
+            SetClearFlagConditional(Flags.Overflow, ((a ^ sum) & (data ^ sum) & 0x80) != 0);
+            SetClearFlagConditional(Flags.Carry, sum >= 0x100);
 
-            w = (uint)(0xff + a - data + (IsFlagSet(Flags.Carry) ? 1 : 0));
-            if (w < 0x100)
-            {
-                ClearFlag(Flags.Carry);
-                SetClearFlagConditional(Flags.Overflow, !(IsFlagSet(Flags.Overflow) && w < 0x80));
-            }
-            else
-            {
-                SetFlag(Flags.Carry);
-                SetClearFlagConditional(Flags.Overflow, !(IsFlagSet(Flags.Overflow) && w >= 0x180));
-            }
-
-            a = (byte)(w & 0xFF);
+            a = (byte)(sum & 0xFF);
 
             SetClearFlagConditional(Flags.Zero, (a == 0x00));
             SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80));

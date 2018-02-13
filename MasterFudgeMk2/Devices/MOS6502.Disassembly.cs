@@ -196,7 +196,7 @@ namespace MasterFudgeMk2.Devices
 
         public static string PrintRegisters(MOS6502 cpu)
         {
-            return $"A:{cpu.a:X2} X:{cpu.x:X2} Y:{cpu.y:X2} SP:{cpu.sp:X2}";
+            return $"A:{cpu.a:X2} X:{cpu.x:X2} Y:{cpu.y:X2} P:{(byte)cpu.p:X2} SP:{cpu.sp:X2}";
         }
 
         public static string PrintFlags(MOS6502 cpu)
@@ -220,7 +220,7 @@ namespace MasterFudgeMk2.Devices
         public static string DisassembleOpcode(MOS6502 cpu, ushort address)
         {
             byte[] opcode = DisassembleReadOpcode(cpu, address);
-            return $"0x{address:X4} | {DisassembleMakeByteString(cpu, opcode).PadRight(15)} | {string.Format(DisasmFormat(cpu, opcode[0]), opcode[1], opcode[2])}";
+            return $"0x{address:X4} | {DisassembleMakeByteString(cpu, opcode).PadRight(8)} | {string.Format(DisasmFormat(cpu, opcode[0]), opcode[1], opcode[2])}";
         }
     }
 }

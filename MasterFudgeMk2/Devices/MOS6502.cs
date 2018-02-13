@@ -13,6 +13,8 @@ namespace MasterFudgeMk2.Devices
 
     public partial class MOS6502
     {
+        static readonly bool DEBUG_NESTEST = false;
+
         [Flags]
         public enum Flags : byte
         {
@@ -127,13 +129,15 @@ namespace MasterFudgeMk2.Devices
         public virtual void Reset()
         {
             pc = ReadMemory16(0xFFFC);
-            sp = 0xFF;
+            sp = 0xFD;
             a = x = y = 0;
-            p = 0;
+            p = (Flags.InterruptDisable | Flags.Brk | Flags.UnusedBit5);
 
             intState = nmiState = InterruptState.Clear;
 
             currentCycles = 0;
+
+            if (DEBUG_NESTEST) pc = 0xC000;
         }
 
         public virtual int Step()
@@ -154,7 +158,7 @@ namespace MasterFudgeMk2.Devices
                 ServiceNonMaskableInterrupt();
             }
 
-            if (false)
+            if (DEBUG_NESTEST)
             {
                 string disasm = $"{DisassembleOpcode(this, pc).PadRight(48)} | {PrintRegisters(this)} | {PrintFlags(this)} | {PrintInterrupt(this)}\n";
                 System.IO.File.AppendAllText(@"E:\temp\sms\nes\log.txt", disasm);
@@ -168,7 +172,7 @@ namespace MasterFudgeMk2.Devices
                 case 0x01: OpORA(AddressingModes.IndirectX); break;
                 case 0x05: OpORA(AddressingModes.ZeroPage); break;
                 case 0x06: OpASL(AddressingModes.ZeroPage); break;
-                case 0x08: PushP(); IncrementPC(); IncrementCycles(); break;
+                case 0x08: SetFlag(Flags.Brk); PushP(); IncrementPC(); IncrementCycles(); break;
                 case 0x09: OpORA(AddressingModes.Immediate); break;
                 case 0x0A: OpASL(AddressingModes.Accumulator); break;
                 case 0x0D: OpORA(AddressingModes.Absolute); break;
@@ -426,11 +430,12 @@ namespace MasterFudgeMk2.Devices
             memoryWriteDelegate(address, value);
         }
 
-        protected ushort ReadMemory16(uint address)
+        protected ushort ReadMemory16(uint address, bool wrap = false)
         {
             byte low = ReadMemory8(address);
-            if ((address & 0xFF00) != ((address + 1) & 0xFF00))
+            if (wrap && ((address & 0xFF00) != ((address + 1) & 0xFF00)))
                 address -= 0x100;
+
             byte high = ReadMemory8(address + 1);
             return (ushort)((high << 8) | low);
         }
@@ -469,9 +474,10 @@ namespace MasterFudgeMk2.Devices
 
         protected virtual byte ReadAbsoluteY(byte address1, byte address2)
         {
-            CheckPageBoundary(CalculateAddress(address1, address2), (uint)(CalculateAddress(address1, address2) + y), 1);
+            uint address = CalculateAddress(address1, address2);
+            CheckPageBoundary(address, (ushort)(address + y), 1);
 
-            return ReadMemory8((uint)(CalculateAddress(address1, address2) + y));
+            return ReadMemory8((ushort)(address + y));
         }
 
         protected virtual byte ReadIndirectX(byte address)
@@ -481,9 +487,9 @@ namespace MasterFudgeMk2.Devices
 
         protected virtual byte ReadIndirectY(byte address)
         {
-            CheckPageBoundary(ReadMemory16(address), (uint)(ReadMemory16(address) + y), 1);
+            CheckPageBoundary(ReadMemory16(address, true), (ushort)(ReadMemory16(address, true) + y), 1);
 
-            return ReadMemory8((uint)(ReadMemory16(address) + y));
+            return ReadMemory8((ushort)(ReadMemory16(address, true) + y));
         }
 
         protected virtual void WriteZeroPage(uint address, byte Value)
@@ -523,7 +529,7 @@ namespace MasterFudgeMk2.Devices
 
         protected virtual void WriteIndirectY(byte address, byte value)
         {
-            WriteMemory8((uint)(ReadMemory16(address) + y), value);
+            WriteMemory8((uint)(ReadMemory16(address, true) + y), value);
         }
 
         protected virtual byte GetOperand(AddressingModes mode)
@@ -612,27 +618,18 @@ namespace MasterFudgeMk2.Devices
 
         public void PullP()
         {
-            p = (Flags)Pull();
+            Flags pulledStateUsed = ((Flags)Pull() & ~(Flags.Brk | Flags.UnusedBit5));
+            Flags oldStateUnused = (p & (Flags.Brk | Flags.UnusedBit5));
+            p = (pulledStateUsed | oldStateUnused);
         }
 
         protected virtual void OpADC(AddressingModes mode)
         {
             byte data = GetOperand(mode);
-            uint w;
+            uint sum = (uint)(a + data + (IsFlagSet(Flags.Carry) ? 1 : 0));
 
-            SetClearFlagConditional(Flags.Overflow, ((a ^ data) & 0x80) != 0);
-
-            w = (uint)(a + data + (IsFlagSet(Flags.Carry) ? 1 : 0));
-            if (w >= 0x100)
-            {
-                SetFlag(Flags.Carry);
-                SetClearFlagConditional(Flags.Overflow, !(IsFlagSet(Flags.Overflow) && w >= 0x180));
-            }
-            else
-            {
-                ClearFlag(Flags.Carry);
-                SetClearFlagConditional(Flags.Overflow, !(IsFlagSet(Flags.Overflow) && w < 0x80));
-            }
+            SetClearFlagConditional(Flags.Overflow, ((a ^ sum) & (data ^ sum) & 0x80) != 0);
+            SetClearFlagConditional(Flags.Carry, sum >= 0x100);
 
             if (IsFlagSet(Flags.DecimalMode))
             {
@@ -646,7 +643,7 @@ namespace MasterFudgeMk2.Devices
                 }
             }
 
-            a = (byte)(w & 0xFF);
+            a = (byte)(sum & 0xFF);
 
             SetClearFlagConditional(Flags.Zero, (a == 0x00));
             SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80));
@@ -672,7 +669,7 @@ namespace MasterFudgeMk2.Devices
             SetClearFlagConditional(Flags.Carry, ((value & 0x80) == 0x80));
 
             value = (byte)(value << 1);
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.Zero, ((value & 0xFF) == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
 
             WriteValue(mode, (byte)value);
@@ -834,7 +831,7 @@ namespace MasterFudgeMk2.Devices
 
             value = (byte)(a - value);
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.Zero, ((value & 0xFF) == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
 
             IncrementPC();
@@ -849,7 +846,7 @@ namespace MasterFudgeMk2.Devices
 
             value = (byte)(x - value);
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.Zero, ((value & 0xFF) == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
 
             IncrementPC();
@@ -864,7 +861,7 @@ namespace MasterFudgeMk2.Devices
 
             value = (byte)(y - value);
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.Zero, ((value & 0xFF) == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
 
             IncrementPC();
@@ -877,7 +874,7 @@ namespace MasterFudgeMk2.Devices
 
             value--;
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.Zero, ((value & 0xFF) == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
 
             WriteValue(mode, (byte)(value & 0xFF));
@@ -925,7 +922,7 @@ namespace MasterFudgeMk2.Devices
 
             value++;
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.Zero, ((value & 0xFF) == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
 
             WriteValue(mode, (byte)(value & 0xFF));
@@ -963,7 +960,7 @@ namespace MasterFudgeMk2.Devices
             switch (mode)
             {
                 case AddressingModes.Absolute: pc = address; break;
-                case AddressingModes.Indirect: pc = ReadMemory16(address); break;
+                case AddressingModes.Indirect: pc = ReadMemory16(address, true); break;
                 default: throw new Exception("6502 addressing mode error on jump");
             }
 
@@ -1017,11 +1014,11 @@ namespace MasterFudgeMk2.Devices
         {
             uint value = GetOperand(mode);
 
-            SetClearFlagConditional(Flags.Sign, ((value & 0x01) == 0x01));
+            SetClearFlagConditional(Flags.Carry, ((value & 0x01) == 0x01));
 
             value = (byte)(value >> 1);
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.Zero, ((value & 0xFF) == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
 
             WriteValue(mode, (byte)(value & 0xFF));
@@ -1057,7 +1054,7 @@ namespace MasterFudgeMk2.Devices
 
             SetClearFlagConditional(Flags.Carry, tempBit);
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.Zero, ((value & 0xFF) == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
 
             WriteValue(mode, (byte)(value & 0xFF));
@@ -1076,7 +1073,7 @@ namespace MasterFudgeMk2.Devices
 
             SetClearFlagConditional(Flags.Carry, tempBit);
 
-            SetClearFlagConditional(Flags.Zero, (value == 0x00));
+            SetClearFlagConditional(Flags.Zero, ((value & 0xFF) == 0x00));
             SetClearFlagConditional(Flags.Sign, ((value & 0x80) == 0x80));
 
             WriteValue(mode, (byte)(value & 0xFF));
@@ -1087,22 +1084,37 @@ namespace MasterFudgeMk2.Devices
 
         protected virtual void OpSBC(AddressingModes mode)
         {
-            byte data = GetOperand(mode);
-            uint w;
+            byte data = (byte)(GetOperand(mode) ^ 0xFF);
+            uint sum = (uint)(a + data + (IsFlagSet(Flags.Carry) ? 1 : 0));
 
-            SetClearFlagConditional(Flags.Overflow, ((a ^ data) & 0x80) != 0);
+            SetClearFlagConditional(Flags.Overflow, ((a ^ sum) & (data ^ sum) & 0x80) != 0);
+            SetClearFlagConditional(Flags.Carry, sum >= 0x100);
 
-            w = (uint)(0xff + a - data + (IsFlagSet(Flags.Carry) ? 1 : 0));
-            if (w < 0x100)
+            if (IsFlagSet(Flags.DecimalMode))
             {
                 ClearFlag(Flags.Carry);
-                SetClearFlagConditional(Flags.Overflow, !(IsFlagSet(Flags.Overflow) && w < 0x80));
+
+                if ((a & 0x0F) > 0x09) a += 0x06;
+                if ((a & 0xF0) > 0x90)
+                {
+                    a += 0x60;
+                    SetFlag(Flags.Carry);
+                }
             }
-            else
-            {
-                SetFlag(Flags.Carry);
-                SetClearFlagConditional(Flags.Overflow, !(IsFlagSet(Flags.Overflow) && w >= 0x180));
-            }
+
+            a = (byte)(sum & 0xFF);
+
+            SetClearFlagConditional(Flags.Zero, (a == 0x00));
+            SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80));
+
+            IncrementPC();
+            IncrementCycles();
+            /*
+            byte data = GetOperand(mode);
+            uint sum = (uint)(0xFF + a - data + (IsFlagSet(Flags.Carry) ? 1 : 0));
+
+            SetClearFlagConditional(Flags.Overflow, ((a ^ sum) & (data ^ sum) & 0x80) != 0);
+            SetClearFlagConditional(Flags.Carry, sum >= 0x100);
 
             if (IsFlagSet(Flags.DecimalMode))
             {
@@ -1117,13 +1129,13 @@ namespace MasterFudgeMk2.Devices
                 }
             }
 
-            a = (byte)(w & 0xFF);
+            a = (byte)(sum & 0xFF);
 
             SetClearFlagConditional(Flags.Zero, (a == 0x00));
             SetClearFlagConditional(Flags.Sign, ((a & 0x80) == 0x80));
 
             IncrementPC();
-            IncrementCycles();
+            IncrementCycles();*/
         }
 
         protected void OpSTA(AddressingModes mode)
