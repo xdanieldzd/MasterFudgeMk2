@@ -482,7 +482,7 @@ namespace MasterFudgeMk2.Devices
 
         protected virtual byte ReadIndirectX(byte address)
         {
-            return ReadMemory8(ReadMemory16((uint)((address + x) & 0xFF)));
+            return ReadMemory8(ReadMemory16((uint)((address + x) & 0xFF), true));
         }
 
         protected virtual byte ReadIndirectY(byte address)
@@ -524,7 +524,7 @@ namespace MasterFudgeMk2.Devices
 
         protected virtual void WriteIndirectX(byte address, byte value)
         {
-            WriteMemory8(ReadMemory16((uint)((address + x) & 0xFF)), value);
+            WriteMemory8(ReadMemory16((uint)((address + x) & 0xFF), true), value);
         }
 
         protected virtual void WriteIndirectY(byte address, byte value)

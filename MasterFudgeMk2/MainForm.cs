@@ -162,9 +162,9 @@ namespace MasterFudgeMk2
                 //LoadMedia(@"D:\ROMs\ColecoVision\Smurf - Rescue in Gargamel's Castle (1982).col");
                 //LoadMedia(@"D:\ROMs\ColecoVision\Smurf - Paint 'n Play Workshop (1983).col");
 
-                LoadMedia(@"D:\ROMs\NES\Super Mario Bros\Super Mario Bros. (JU) (PRG0) [!].nes");
+                //LoadMedia(@"D:\ROMs\NES\Super Mario Bros\Super Mario Bros. (JU) (PRG0) [!].nes");
                 //LoadMedia(@"D:\ROMs\NES\ROM files\Devil World (Europe).nes");
-                //LoadMedia(@"D:\ROMs\NES\nestest.nes");
+                LoadMedia(@"D:\ROMs\NES\nestest.nes");
             }
         }
 
