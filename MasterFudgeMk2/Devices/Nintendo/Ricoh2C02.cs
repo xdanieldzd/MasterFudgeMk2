@@ -119,7 +119,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
         ushort bgPatternAddress { get { return (ushort)(((registers[0] & 0x10) == 0x10) ? 0x1000 : 0x0000); } }
         ushort spritePatternAddress { get { return (ushort)(((registers[0] & 0x08) == 0x08) ? 0x1000 : 0x0000); } }
         int vramAddressIncrement { get { return (((registers[0] & 0x04) == 0x04) ? 32 : 1); } }
-        ushort nametableBaseAddress { get { return (ushort)(0x2000 | ((registers[0] & 0x3) << 10)); } }
+        ushort nametableBaseAddress;
 
         bool showSprites { get { return ((registers[1] & 0x10) == 0x10); } }
         bool showBackground { get { return ((registers[1] & 0x08) == 0x08); } }
@@ -190,6 +190,8 @@ namespace MasterFudgeMk2.Devices.Nintendo
             scrollY = 0;
             scrollX = 0;
             sprite0Hit = false;
+
+            nametableBaseAddress = 0x2000;
 
             SetMirroringMode(PPUMirroring.Horizontal);
             isFrameInterruptPending = false;
@@ -337,6 +339,13 @@ namespace MasterFudgeMk2.Devices.Nintendo
 
             switch (register)
             {
+                case 0x00:
+                    if (showBackground || showSprites)
+                    {
+                        nametableBaseAddress = (ushort)(0x2000 | ((registers[register] & 0x3) << 10));
+                    }
+                    break;
+
                 case 0x03:
                     spriteRamAddress = value;
                     break;
