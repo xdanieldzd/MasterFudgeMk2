@@ -1,14 +1,12 @@
 ﻿using System;
-using System.IO;
 
 namespace MasterFudgeMk2.Media.Nintendo.NES
 {
-    public class NRomCartridge : BaseCartridge
+    public class Mapper0Cartridge : BaseCartridge
     {
         protected byte[] sramData;
-        protected int prgBank0, prgBank1;
 
-        public NRomCartridge()
+        public Mapper0Cartridge()
         {
             // Family Basic only; just provide 8k regardless
             sramData = new byte[0x2000];
@@ -37,7 +35,7 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
                     return ReadPrg(address);
 
                 default:
-                    throw new Exception($"NES NROM: invalid read from 0x{address:X4}");
+                    throw new Exception($"iNES Mapper 0: invalid read from 0x{address:X4}");
             }
         }
 

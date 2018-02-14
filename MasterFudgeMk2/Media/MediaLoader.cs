@@ -60,7 +60,8 @@ namespace MasterFudgeMk2.Media
                     Nintendo.NES.INesHeader inesHeader = new Nintendo.NES.INesHeader(header);
                     switch (inesHeader.MapperNumber)
                     {
-                        case 0: media = (new Nintendo.NES.NRomCartridge() as IMedia); break;
+                        case 0: media = (new Nintendo.NES.Mapper0Cartridge() as IMedia); break;
+                        case 2: media = (new Nintendo.NES.Mapper2Cartridge() as IMedia); break;
                         default: throw new NotImplementedException($"NES mapper number {inesHeader.MapperNumber} not implemented");
                     }
                 }
