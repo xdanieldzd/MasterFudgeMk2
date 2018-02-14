@@ -9,17 +9,17 @@ using MasterFudgeMk2.Common.Enumerations;
 
 namespace MasterFudgeMk2.Devices.Nintendo
 {
-    public enum PPUMirroring
-    {
-        Horizontal = 0,
-        Vertical = 1,
-        FourScreen = 2
-    }
-
     // TODO: UGH, TERRIBLE STYLE, REWRITE, also fixes, etc etc etc <_<
 
     public class Ricoh2C02
     {
+        public enum Mirroring
+        {
+            Horizontal = 0,
+            Vertical = 1,
+            FourScreen = 2
+        }
+
         public delegate byte ReadChrDelegate(uint address);
         public delegate void WriteChrDelegate(uint address, byte value);
 
@@ -107,32 +107,31 @@ namespace MasterFudgeMk2.Devices.Nintendo
         protected bool isPalChip;
 
         protected byte[] registers;
-
-        byte[] nametables, spriteRam;
-        byte vramReadBuffer;
+        byte[] ciram, cgram, oam;
+        byte readBuffer;
 
         bool addressToggle;
-        ushort ppuCurrentAddress, ppuNewAddress;
+        ushort currentAddress, newAddress;
 
         bool isNmiOnVBlankEnabled { get { return ((registers[0] & 0x80) == 0x80); } }
         int spriteSize { get { return (((registers[0] & 0x20) == 0x20) ? 16 : 8); } }
         ushort bgPatternAddress { get { return (ushort)(((registers[0] & 0x10) == 0x10) ? 0x1000 : 0x0000); } }
         ushort spritePatternAddress { get { return (ushort)(((registers[0] & 0x08) == 0x08) ? 0x1000 : 0x0000); } }
-        int vramAddressIncrement { get { return (((registers[0] & 0x04) == 0x04) ? 32 : 1); } }
-        ushort nametableBaseAddress;
+        int addressIncrement { get { return (((registers[0] & 0x04) == 0x04) ? 32 : 1); } }
+        ushort nametableBaseAddress;    //HACK(?) see below
 
         bool showSprites { get { return ((registers[1] & 0x10) == 0x10); } }
         bool showBackground { get { return ((registers[1] & 0x08) == 0x08); } }
         bool showSpritesLeftClip { get { return ((registers[1] & 0x04) == 0x04); } }
         bool showBackgroundLeftClip { get { return ((registers[1] & 0x02) == 0x02); } }
-        byte palMask { get { return (byte)(((registers[1] & 0x01) == 0x01) ? 0x30 : 0x3F); } }
+        byte grayscaleMask { get { return (byte)(((registers[1] & 0x01) == 0x01) ? 0x30 : 0x3F); } }
 
         byte spriteRamAddress, scrollX, scrollY;
 
         bool sprite0Hit;
         int spriteOverflow;
 
-        PPUMirroring mirroringMode;
+        Mirroring mirroringMode;
         bool isFrameInterruptPending;
         byte lastPPUWrite;
 
@@ -167,8 +166,9 @@ namespace MasterFudgeMk2.Devices.Nintendo
 
             registers = new byte[0x08];
 
-            nametables = new byte[0x2000];
-            spriteRam = new byte[0x100];
+            ciram = new byte[0x800];
+            cgram = new byte[0x20];
+            oam = new byte[0x100];
 
             screenUsage = new byte[NumActivePixelsPerScanline];
 
@@ -186,14 +186,14 @@ namespace MasterFudgeMk2.Devices.Nintendo
         {
             currentScanline = -1;
             addressToggle = false;
-            vramReadBuffer = 0;
+            readBuffer = 0;
             scrollY = 0;
             scrollX = 0;
             sprite0Hit = false;
 
             nametableBaseAddress = 0x2000;
 
-            SetMirroringMode(PPUMirroring.Horizontal);
+            SetMirroringMode(Mirroring.Horizontal);
             isFrameInterruptPending = false;
 
             cycleCount = 0;
@@ -234,7 +234,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
             return drawScreen;
         }
 
-        public void SetMirroringMode(PPUMirroring mirroring)
+        public void SetMirroringMode(Mirroring mirroring)
         {
             mirroringMode = mirroring;
         }
@@ -244,7 +244,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
             if (!(showBackground || showSprites)) return;
 
             if (line >= 0 && line < NumActiveScanlines)
-                BlankLine(line, (byte)(nametables[0x1F00] & palMask));
+                BlankLine(line, (byte)(cgram[0x00] & grayscaleMask));
 
             spriteOverflow = 0;
 
@@ -304,28 +304,28 @@ namespace MasterFudgeMk2.Devices.Nintendo
                     break;
 
                 case 0x04:
-                    retVal = spriteRam[spriteRamAddress];
+                    retVal = oam[spriteRamAddress];
                     break;
 
                 case 0x07:
-                    ppuCurrentAddress &= 0x3FFF;
+                    currentAddress &= 0x3FFF;
 
-                    if (ppuCurrentAddress < 0x3F00)
+                    if (currentAddress < 0x3F00)
                     {
-                        retVal = vramReadBuffer;
-                        if (ppuCurrentAddress >= 0x2000 && ppuCurrentAddress < 0x3000)
-                            vramReadBuffer = nametables[ppuCurrentAddress - 0x2000];
-                        else if (ppuCurrentAddress >= 0x3000 && ppuCurrentAddress < 0x3F00)
-                            vramReadBuffer = nametables[ppuCurrentAddress - 0x3000];
+                        retVal = readBuffer;
+                        if (currentAddress < 0x2000)
+                            readBuffer = readChrDelegate(currentAddress);
                         else
-                            vramReadBuffer = readChrDelegate(ppuCurrentAddress);
+                        {
+                            ushort ciramAddress = currentAddress;
+                            if (mirroringMode == Mirroring.Horizontal) ciramAddress = (ushort)(((ciramAddress & 0x0800) >> 1) | (ciramAddress & 0x03FF));
+                            readBuffer = ciram[ciramAddress & (ciram.Length - 1)];
+                        }
                     }
                     else
-                    {
-                        retVal = nametables[ppuCurrentAddress - 0x2000];
-                    }
+                        retVal = cgram[currentAddress & (cgram.Length - 1)];
 
-                    ppuCurrentAddress += (ushort)vramAddressIncrement;
+                    currentAddress += (ushort)addressIncrement;
                     break;
             }
 
@@ -340,6 +340,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
             switch (register)
             {
                 case 0x00:
+                    // HACK! SMB needs accurate scrolling, this hacks around the game hanging otherwise as per https://forums.nesdev.com/viewtopic.php?f=3&t=12185
                     if (showBackground || showSprites)
                     {
                         nametableBaseAddress = (ushort)(0x2000 | ((registers[register] & 0x3) << 10));
@@ -351,7 +352,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
                     break;
 
                 case 0x04:
-                    spriteRam[spriteRamAddress] = value;
+                    oam[spriteRamAddress] = value;
                     spriteRamAddress++;
                     break;
 
@@ -369,51 +370,36 @@ namespace MasterFudgeMk2.Devices.Nintendo
                 case 0x06:
                     if (!addressToggle)
                     {
-                        ppuNewAddress = (ushort)(((value << 8) & 0x3F00) | (ppuNewAddress & 0xFF));
+                        newAddress = (ushort)(((value << 8) & 0x3F00) | (newAddress & 0xFF));
                     }
                     else
                     {
-                        ppuNewAddress = (ushort)(value | (ppuNewAddress & 0xFF00));
-                        ppuCurrentAddress = ppuNewAddress;
+                        newAddress = (ushort)(value | (newAddress & 0xFF00));
+                        currentAddress = newAddress;
                     }
 
                     addressToggle = !addressToggle;
                     break;
 
                 case 0x07:
-                    if (ppuCurrentAddress < 0x2000)
+                    if (currentAddress < 0x2000)
                     {
-                        writeChrDelegate(ppuCurrentAddress, value);
+                        writeChrDelegate(currentAddress, value);
                     }
-                    else if (ppuCurrentAddress >= 0x2000 && ppuCurrentAddress < 0x3F00)
+                    else if (currentAddress >= 0x2000 && currentAddress < 0x3F00)
                     {
-                        ushort writeAddress = (ushort)(ppuCurrentAddress & 0x0FFF);
-
-                        if (mirroringMode == PPUMirroring.Horizontal)
-                        {
-                            if ((ppuCurrentAddress & 0x0400) == 0x0000)
-                                nametables[writeAddress] = nametables[writeAddress + 0x0400] = value;
-                            else
-                                nametables[writeAddress] = nametables[writeAddress - 0x0400] = value;
-                        }
-                        else if (mirroringMode == PPUMirroring.Vertical)
-                        {
-                            if ((ppuCurrentAddress & 0x0800) == 0x0000)
-                                nametables[writeAddress] = nametables[writeAddress + 0x0800] = value;
-                            else
-                                nametables[writeAddress] = nametables[writeAddress - 0x0800] = value;
-                        }
-                        else
-                            throw new NotImplementedException($"Unimplemented PPU nametable mirroring mode {mirroringMode}");
+                        ushort ciramAddress = currentAddress;
+                        if (mirroringMode == Mirroring.Horizontal) ciramAddress = (ushort)(((ciramAddress & 0x0800) >> 1) | (ciramAddress & 0x03FF));
+                        ciram[ciramAddress & (ciram.Length - 1)] = value;
                     }
-                    else if ((ppuCurrentAddress >= 0x3F00) && (ppuCurrentAddress < 0x3F20))
+                    else if (currentAddress >= 0x3F00)
                     {
-                        nametables[ppuCurrentAddress - 0x2000] = value;
-                        if ((ppuCurrentAddress & 0x07) == 0x00)
-                            nametables[(ppuCurrentAddress - 0x2000) ^ 0x10] = value;
+                        cgram[currentAddress & (cgram.Length - 1)] = value;
+                        if ((currentAddress & 0x07) == 0x00)
+                            cgram[(currentAddress & (cgram.Length - 1)) ^ 0x10] = value;
                     }
 
-                    ppuCurrentAddress += (ushort)vramAddressIncrement;
+                    currentAddress += (ushort)addressIncrement;
                     break;
             }
         }
@@ -475,7 +461,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
                     endColumn = (scrollY / 8) + 1;
                 }
 
-                if (mirroringMode == PPUMirroring.Horizontal)
+                if (mirroringMode == Mirroring.Horizontal)
                 {
                     switch (nameTableBase)
                     {
@@ -484,7 +470,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
                         case (0x2C00): nameTableBase = 0x2400; break;
                     }
                 }
-                else if (mirroringMode == PPUMirroring.Vertical)
+                else if (mirroringMode == Mirroring.Vertical)
                 {
                     switch (nameTableBase)
                     {
@@ -501,7 +487,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
                     //The offset in the tile is currentScanline % 8
 
                     //Step #1, get the tile number
-                    tileNumber = nametables[nameTableBase - 0x2000 + ((virtualScanline / 8) * 32) + currentTileColumn];
+                    tileNumber = ciram[(nameTableBase & (ciram.Length - 1)) + ((virtualScanline / 8) * 32) + currentTileColumn];
 
                     //Step #2, get the offset for the tile in the tile data
                     tileDataOffset = bgPatternAddress + (tileNumber * 16);
@@ -512,7 +498,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
 
                     //Step #4, get the attribute byte for the block of tiles we're in
                     //this will put us in the correct section in the palette table
-                    paletteHighBits = nametables[((nameTableBase - 0x2000 + 0x3c0 + (((virtualScanline / 8) / 4) * 8) + (currentTileColumn / 4)))];
+                    paletteHighBits = ciram[((((nameTableBase & (ciram.Length - 1)) + 0x3C0) + (((virtualScanline / 8) / 4) * 8) + (currentTileColumn / 4)))];
                     paletteHighBits = (byte)(paletteHighBits >> ((4 * (((virtualScanline / 8) % 4) / 2)) + (2 * ((currentTileColumn % 4) / 2))));
                     paletteHighBits = (byte)((paletteHighBits & 0x3) << 2);
 
@@ -540,7 +526,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
                             {
                                 int screenUsageOffset = ((8 * currentTileColumn) - scrollY + i);
 
-                                WriteColorToFramebuffer((byte)(nametables[0x1F00 + pixelColor] & palMask), ((line * 256) + (8 * currentTileColumn) - scrollY + i) * 4);
+                                WriteColorToFramebuffer((byte)(cgram[pixelColor] & grayscaleMask), ((line * 256) + (8 * currentTileColumn) - scrollY + i) * 4);
                                 screenUsage[screenUsageOffset] |= screenUsageBg;
 
                                 if ((screenUsage[screenUsageOffset] & screenUsageSprite0) == screenUsageSprite0)
@@ -550,7 +536,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
                             {
                                 int screenUsageOffset = ((8 * currentTileColumn) + (256 - scrollY) + i);
 
-                                WriteColorToFramebuffer((byte)(nametables[0x1F00 + pixelColor] & palMask), ((line * 256) + (8 * currentTileColumn) + (256 - scrollY) + i) * 4);
+                                WriteColorToFramebuffer((byte)(cgram[pixelColor] & grayscaleMask), ((line * 256) + (8 * currentTileColumn) + (256 - scrollY) + i) * 4);
                                 screenUsage[screenUsageOffset] |= screenUsageBg;
 
                                 if ((screenUsage[screenUsageOffset] & screenUsageSprite0) == screenUsageSprite0)
@@ -575,17 +561,17 @@ namespace MasterFudgeMk2.Devices.Nintendo
 
             for (int i = 252; i >= 0; i = i - 4)
             {
-                actualY = (byte)(spriteRam[i] + 1);
+                actualY = (byte)(oam[i] + 1);
 
-                if (((spriteRam[i + 2] & 0x20) == behind) && (actualY <= line) && ((actualY + spriteSize) > line))
+                if (((oam[i + 2] & 0x20) == behind) && (actualY <= line) && ((actualY + spriteSize) > line))
                 {
                     spriteOverflow++;
 
-                    spriteId = spriteRam[i + 1];
+                    spriteId = oam[i + 1];
 
                     if (spriteSize == 8)
                     {
-                        if ((spriteRam[i + 2] & 0x80) != 0x80)
+                        if ((oam[i + 2] & 0x80) != 0x80)
                             spriteLineToDraw = line - actualY;
                         else
                             spriteLineToDraw = actualY + 7 - line;
@@ -594,7 +580,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
                     }
                     else
                     {
-                        if ((spriteRam[i + 2] & 0x80) != 0x80)
+                        if ((oam[i + 2] & 0x80) != 0x80)
                             spriteLineToDraw = line - actualY;
                         else
                             spriteLineToDraw = actualY + 15 - line;
@@ -620,22 +606,22 @@ namespace MasterFudgeMk2.Devices.Nintendo
                     tiledata1 = readChrDelegate((uint)(offsetToSprite + spriteLineToDraw));
                     tiledata2 = readChrDelegate((uint)(offsetToSprite + spriteLineToDraw + 8));
 
-                    paletteHighBits = (byte)((spriteRam[i + 2] & 0x3) << 2);
+                    paletteHighBits = (byte)((oam[i + 2] & 0x3) << 2);
 
                     for (int j = 0; j < 8; j++)
                     {
-                        if ((spriteRam[i + 2] & 0x40) == 0x40)
+                        if ((oam[i + 2] & 0x40) == 0x40)
                             pixelColor = paletteHighBits + (((tiledata2 & (1 << (j))) >> (j)) << 1) + ((tiledata1 & (1 << (j))) >> (j));
                         else
                             pixelColor = paletteHighBits + (((tiledata2 & (1 << (7 - j))) >> (7 - j)) << 1) + ((tiledata1 & (1 << (7 - j))) >> (7 - j));
 
                         if ((pixelColor % 4) != 0)
                         {
-                            if ((spriteRam[i + 3] + j) < 256)
+                            if ((oam[i + 3] + j) < 256)
                             {
-                                WriteColorToFramebuffer((byte)(nametables[0x1F10 + pixelColor] & palMask), ((line * 256) + (spriteRam[i + 3]) + j) * 4);
+                                WriteColorToFramebuffer((byte)(cgram[0x10 + pixelColor] & grayscaleMask), ((line * 256) + (oam[i + 3]) + j) * 4);
 
-                                int screenUsageOffset = ((spriteRam[i + 3]) + j);
+                                int screenUsageOffset = ((oam[i + 3]) + j);
                                 if (i == 0)
                                     screenUsage[screenUsageOffset] |= screenUsageSprite0;
                                 else

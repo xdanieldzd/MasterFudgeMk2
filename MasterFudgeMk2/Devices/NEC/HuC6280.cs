@@ -102,9 +102,6 @@ namespace MasterFudgeMk2.Devices.NEC
 
         public override int Step()
         {
-            throw new NotImplementedException("");
-
-
             currentCycles = 0;
 
             /* Check interrupts */
@@ -397,6 +394,8 @@ namespace MasterFudgeMk2.Devices.NEC
                     timerCycles = 1024;
                 }
             }
+
+            throw new NotImplementedException("");
 
             return currentCycles;
         }
