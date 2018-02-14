@@ -122,6 +122,7 @@
     <Compile Include="Media\Nintendo\NES\BaseCartridge.cs" />
     <Compile Include="Media\Nintendo\NES\INesHeader.cs" />
     <Compile Include="Media\Nintendo\NES\Mapper0Cartridge.cs" />
+    <Compile Include="Media\Nintendo\NES\Mapper1Cartridge.cs" />
     <Compile Include="Media\Nintendo\NES\Mapper2Cartridge.cs" />
     <Compile Include="Media\Sega\CodemastersCartridge.cs" />
     <Compile Include="VideoBackends\BaseVideoBackend.cs" />

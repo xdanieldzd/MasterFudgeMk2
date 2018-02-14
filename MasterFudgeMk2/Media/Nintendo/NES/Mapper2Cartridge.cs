@@ -6,6 +6,11 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
     {
         byte bankSelect;
 
+        public override void Reset()
+        {
+            bankSelect = 0;
+        }
+
         public override byte Read(uint address)
         {
             switch (address & 0xF000)

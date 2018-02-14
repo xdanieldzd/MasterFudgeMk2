@@ -44,7 +44,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
         public override string DatFileName { get { return "Nintendo - Nintendo Entertainment System.dat"; } }
 
         public override double RefreshRate { get { return refreshRate; } }
-        public override float AspectRatio { get { return (576.0f / 486.0f); } }
+        public override float AspectRatio { get { return ((240.0f / 280.0f) * (4.0f / 3.0f)); } }   /* https://wiki.nesdev.com/w/index.php/Overscan */
         public override Rectangle ScreenViewport { get { return new Rectangle(0, 0, Ricoh2C02.NumActivePixelsPerScanline, Ricoh2C02.NumActiveScanlines); } }
 
         public override bool SupportsBootingWithoutMedia { get { return false; } }

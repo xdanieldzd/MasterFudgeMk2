@@ -164,7 +164,8 @@ namespace MasterFudgeMk2
 
                 //LoadMedia(@"D:\ROMs\NES\Super Mario Bros\Super Mario Bros. (JU) (PRG0) [!].nes");
                 //LoadMedia(@"D:\ROMs\NES\ROM files\Devil World (Europe).nes");
-                LoadMedia(@"D:\ROMs\NES\nestest.nes");
+                //LoadMedia(@"D:\ROMs\NES\nestest.nes");
+                LoadMedia(@"D:\ROMs\NES\ROM files\Mega Man 2 (USA).nes");
             }
         }
 
