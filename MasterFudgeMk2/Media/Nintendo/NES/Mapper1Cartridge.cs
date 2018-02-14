@@ -10,19 +10,17 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
         // Control reg
         byte mirroring, prgRomBankMode, prgRomBankSize, chrRomBankMode;
 
-        // CHR bank 0
-        byte chrBank0;
-
-        // CHR bank 1
-        byte chrBank1;
+        // CHR banks 0 & 1
+        byte[] chrBanks;
 
         // PRG bank
         byte prgBank;
-        bool prgRamEnable;
+        bool prgRamEnable;      // TODO: currently ignored; different MMC1s and/or board variants work differently
 
         public Mapper1Cartridge()
         {
             prgRam = new byte[0x2000];
+            chrBanks = new byte[2];
         }
 
         public override void Reset()
@@ -35,9 +33,8 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
             prgRomBankSize = 0x01;
             chrRomBankMode = 0x00;
 
-            chrBank0 = 0x00;
-
-            chrBank1 = 0x00;
+            chrBanks[0] = 0x00;
+            chrBanks[1] = 0x00;
 
             prgBank = 0x00;
             prgRamEnable = true;
@@ -53,7 +50,7 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
 
                 case 0x6000:
                 case 0x7000:
-                    if (prgRamEnable)
+                    if (true || prgRamEnable)
                         return prgRam[address & (prgRam.Length - 1)];
                     else
                         return 0x00;
@@ -63,18 +60,18 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
                 case 0xA000:
                 case 0xB000:
                     if (prgRomBankSize == 0x00)
-                        return prgData[(prgBank & ((prgData.Length - 1) & 0x1E)) + 0][address & prgDataMask];
+                        return prgData[(uint)(((prgBank + 0) & 0x1E) << 13) | (address & 0x3FFF)];
                     else
-                        return prgData[prgRomBankMode == 0x00 ? 0 : prgBank & ((prgData.Length - 1) & 0x1F)][address & prgDataMask];
+                        return prgData[(prgRomBankMode == 0x00 ? 0 : (uint)((prgBank & 0x1F) << 14)) | (address & 0x3FFF)];
 
                 case 0xC000:
                 case 0xD000:
                 case 0xE000:
                 case 0xF000:
                     if (prgRomBankSize == 0x00)
-                        return prgData[(prgBank & ((prgData.Length - 1) & 0x1E)) + 1][address & prgDataMask];
+                        return prgData[(uint)(((prgBank + 1) & 0x1E) << 13) | (address & 0x3FFF)];
                     else
-                        return prgData[prgRomBankMode != 0x00 ? (prgData.Length - 1) : prgBank & ((prgData.Length - 1) & 0x1F)][address & prgDataMask];
+                        return prgData[(prgRomBankMode != 0x00 ? (uint)(prgData.Length - 0x4000) : (uint)((prgBank & 0x1F) << 14)) | (address & 0x3FFF)];
 
                 default:
                     throw new Exception($"iNES Mapper 1: invalid read from 0x{address:X4}");
@@ -85,7 +82,7 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
         {
             if (address >= 0x6000 && address <= 0x7FFF)
             {
-                if (prgRamEnable)
+                if (true || prgRamEnable)
                     prgRam[address & (prgRam.Length) - 1] = value;
             }
             else if ((address & 0x8000) == 0x8000)
@@ -114,11 +111,11 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
                                 break;
 
                             case 0x01:
-                                chrBank0 = (byte)(shiftRegister & 0x1F);
+                                chrBanks[0] = (byte)(shiftRegister & 0x1F);
                                 break;
 
                             case 0x02:
-                                chrBank1 = (byte)(shiftRegister & 0x1F);
+                                chrBanks[1] = (byte)(shiftRegister & 0x1F);
                                 break;
 
                             case 0x03:
@@ -141,49 +138,23 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
             }
         }
 
-        public override byte ReadPrg(uint address)
+        private uint GetChrAddress(uint address)
         {
-            throw new NotImplementedException();
+            byte chunk4k = (byte)((address >> 12) & 0x01);
+            if (chrRomBankMode == 0x00)
+                return ((uint)(((chrBanks[0] + chunk4k) & 0x1E) << 13) | (address & 0x1FFF));
+            else
+                return ((uint)((chrBanks[chunk4k] & 0x1F) << 12) | (address & 0x0FFF));
         }
 
         public override byte ReadChr(uint address)
         {
-            switch (address & 0xF000)
-            {
-                case 0x0000:
-                    if (chrRomBankMode == 0x00)
-                        return chrData[(chrBank0 & ((chrData.Length - 1) & 0x1E)) + 0][address & chrDataMask];
-                    else
-                        return chrData[(chrBank0 & ((chrData.Length - 1) & 0x1F))][address & chrDataMask];
-
-                case 0x1000:
-                    if (chrRomBankMode == 0x00)
-                        return chrData[(chrBank0 & ((chrData.Length - 1) & 0x1E)) + 1][address & chrDataMask];
-                    else
-                        return chrData[(chrBank1 & ((chrData.Length - 1) & 0x1F))][address & chrDataMask];
-            }
-
-            return 0;
+            return chrData[GetChrAddress(address & 0x3FFF)];
         }
 
         public override void WriteChr(uint address, byte value)
         {
-            switch (address & 0xF000)
-            {
-                case 0x0000:
-                    if (chrRomBankMode == 0x00)
-                        chrData[(chrBank0 & ((chrData.Length - 1) & 0x1E)) + 0][address & chrDataMask] = value;
-                    else
-                        chrData[(chrBank0 & ((chrData.Length - 1) & 0x1F))][address & chrDataMask] = value;
-                    break;
-
-                case 0x1000:
-                    if (chrRomBankMode == 0x00)
-                        chrData[(chrBank0 & ((chrData.Length - 1) & 0x1E)) + 1][address & chrDataMask] = value;
-                    else
-                        chrData[(chrBank1 & ((chrData.Length - 1) & 0x1F))][address & chrDataMask] = value;
-                    break;
-            }
+            chrData[GetChrAddress(address & 0x3FFF)] = value;
         }
     }
 }

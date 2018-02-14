@@ -32,21 +32,16 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
                 case 0xD000:
                 case 0xE000:
                 case 0xF000:
-                    return ReadPrg(address);
+                    return prgData[address & 0x7FFF];
 
                 default:
                     throw new Exception($"iNES Mapper 0: invalid read from 0x{address:X4}");
             }
         }
 
-        public override byte ReadPrg(uint address)
-        {
-            return prgData[((address - 0x8000) / 0x4000) % prgData.Length][address & prgDataMask];
-        }
-
         public override byte ReadChr(uint address)
         {
-            return chrData[((address - 0x4000) / 0x2000) % chrData.Length][address & chrDataMask];
+            return chrData[address & 0x3FFF];
         }
     }
 }

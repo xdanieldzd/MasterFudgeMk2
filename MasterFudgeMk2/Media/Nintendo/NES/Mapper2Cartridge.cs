@@ -25,13 +25,13 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
                 case 0x9000:
                 case 0xA000:
                 case 0xB000:
-                    return prgData[bankSelect][address & prgDataMask];
+                    return prgData[((uint)(bankSelect << 14) | (address & 0x3FFF))];
 
                 case 0xC000:
                 case 0xD000:
                 case 0xE000:
                 case 0xF000:
-                    return prgData[prgData.Length - 1][address & prgDataMask];
+                    return prgData[((uint)(prgData.Length - 0x4000) | (address & 0x3FFF))];
 
                 default:
                     throw new Exception($"iNES Mapper 2: invalid read from 0x{address:X4}");
@@ -50,19 +50,14 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
             }
         }
 
-        public override byte ReadPrg(uint address)
-        {
-            throw new NotImplementedException();
-        }
-
         public override byte ReadChr(uint address)
         {
-            return chrData[((address - 0x4000) / 0x2000) % chrData.Length][address & chrDataMask];
+            return chrData[address & 0x3FFF];
         }
 
         public override void WriteChr(uint address, byte value)
         {
-            chrData[((address - 0x4000) / 0x2000) % chrData.Length][address & chrDataMask] = value;
+            chrData[address & 0x3FFF] = value;
         }
     }
 }

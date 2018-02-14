@@ -8,9 +8,7 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
         protected const ushort chrBankSize = 0x2000;
 
         protected INesHeader inesHeader;
-        protected byte[][] prgData, chrData;
-
-        protected ushort prgDataMask, chrDataMask;
+        protected byte[] prgData, chrData;
 
         public BaseCartridge() { }
 
@@ -23,35 +21,21 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
                 file.Read(header, 0, header.Length);
                 inesHeader = new INesHeader(header);
 
-                // Prepare PRG pages
-                prgData = new byte[inesHeader.PRGRomSize][];
-                for (int i = 0; i < prgData.Length; i++)
-                {
-                    prgData[i] = new byte[prgBankSize];
-                    file.Read(prgData[i], 0, prgData[i].Length);
-                }
+                // Prepare PRG data
+                prgData = new byte[inesHeader.PRGRomSize * prgBankSize];
+                file.Read(prgData, 0, prgData.Length);
 
-                // Prepare CHR pages
+                // Prepare CHR data
                 if (!inesHeader.HasCHRRam)
                 {
-                    chrData = new byte[inesHeader.CHRRomSize][];
-                    for (int i = 0; i < chrData.Length; i++)
-                    {
-                        chrData[i] = new byte[chrBankSize];
-                        file.Read(chrData[i], 0, chrData[i].Length);
-                    }
+                    chrData = new byte[inesHeader.CHRRomSize * chrBankSize];
+                    file.Read(chrData, 0, chrData.Length);
                 }
                 else
                 {
                     // TODO: verify me?
-                    chrData = new byte[inesHeader.PRGRomSize][];
-                    for (int i = 0; i < chrData.Length; i++)
-                        chrData[i] = new byte[0x2000];
+                    chrData = new byte[inesHeader.PRGRomSize * chrBankSize];
                 }
-
-                // Set masks
-                prgDataMask = (prgBankSize - 1);
-                chrDataMask = (chrBankSize - 1);
             }
         }
 
@@ -71,10 +55,9 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
         public virtual void Step() { }
 
         public abstract byte Read(uint address);
-        public abstract byte ReadPrg(uint address);
-        public abstract byte ReadChr(uint address);
-
         public virtual void Write(uint address, byte value) { }
+
+        public abstract byte ReadChr(uint address);
         public virtual void WriteChr(uint address, byte value) { }
     }
 }
