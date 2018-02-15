@@ -150,7 +150,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
 
             cpu = new Ricoh2A03(cpuClock, refreshRate, ReadMemory, WriteMemory);
             wram = new byte[ramSize];
-            ppu = new Ricoh2C02(ppuClock, refreshRate, false, ReadChrShim, WriteChrShim);
+            ppu = new Ricoh2C02(ppuClock, refreshRate, false, ReadChrShim, WriteChrShim, NametableMirrorShim);
             apu = new Ricoh2A03.APU(apuClock, refreshRate, 44100, 2, (s, e) => { OnAddSampleData(e); });
 
             controllers = new Controller[2];
@@ -177,9 +177,6 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
 
             for (int i = 0; i < controllers.Length; i++)
                 controllers[i].Reset();
-
-            if (cartridge != null)
-                ppu.SetMirroringMode(cartridge.GetMirroring());
 
             base.Reset();
         }
@@ -261,6 +258,11 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
         {
             if (cartridge != null)
                 cartridge.WriteChr(address, value);
+        }
+
+        private uint NametableMirrorShim(uint address)
+        {
+            return (cartridge != null ? cartridge.NametableMirror(address) : 0x00);
         }
 
         private byte ReadMemory(uint address)

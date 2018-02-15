@@ -13,18 +13,13 @@ namespace MasterFudgeMk2.Devices.Nintendo
 
     public class Ricoh2C02
     {
-        public enum Mirroring
-        {
-            Horizontal = 0,
-            Vertical = 1,
-            FourScreen = 2
-        }
-
         public delegate byte ReadChrDelegate(uint address);
         public delegate void WriteChrDelegate(uint address, byte value);
+        public delegate uint NametableMirrorDelegate(uint address);
 
         ReadChrDelegate readChrDelegate;
         WriteChrDelegate writeChrDelegate;
+        NametableMirrorDelegate nametableMirrorDelegate;    // TODO: extend to more generic "memory mapping delegate" for all PPU-accessible memory?
 
         // TODO: correct values?
         public const int NumTotalScanlinesPal = 313;
@@ -131,7 +126,6 @@ namespace MasterFudgeMk2.Devices.Nintendo
         bool sprite0Hit;
         int spriteOverflow;
 
-        Mirroring mirroringMode;
         bool isFrameInterruptPending;
         byte lastPPUWrite;
 
@@ -155,7 +149,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
 
         protected int clockCyclesPerLine;
 
-        public Ricoh2C02(double clockRate, double refreshRate, bool isPalChip, ReadChrDelegate readChr, WriteChrDelegate writeChr)
+        public Ricoh2C02(double clockRate, double refreshRate, bool isPalChip, ReadChrDelegate readChr, WriteChrDelegate writeChr, NametableMirrorDelegate nametableMirror)
         {
             this.clockRate = clockRate;
             this.refreshRate = refreshRate;
@@ -163,6 +157,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
 
             readChrDelegate = readChr;
             writeChrDelegate = writeChr;
+            nametableMirrorDelegate = nametableMirror;
 
             registers = new byte[0x08];
 
@@ -193,7 +188,6 @@ namespace MasterFudgeMk2.Devices.Nintendo
 
             nametableBaseAddress = 0x2000;
 
-            SetMirroringMode(Mirroring.Horizontal);
             isFrameInterruptPending = false;
 
             cycleCount = 0;
@@ -232,11 +226,6 @@ namespace MasterFudgeMk2.Devices.Nintendo
             }
 
             return drawScreen;
-        }
-
-        public void SetMirroringMode(Mirroring mirroring)
-        {
-            mirroringMode = mirroring;
         }
 
         protected virtual void RenderLine(int line)
@@ -316,11 +305,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
                         if (currentAddress < 0x2000)
                             readBuffer = readChrDelegate(currentAddress);
                         else
-                        {
-                            ushort ciramAddress = currentAddress;
-                            if (mirroringMode == Mirroring.Horizontal) ciramAddress = (ushort)(((ciramAddress & 0x0800) >> 1) | (ciramAddress & 0x03FF));
-                            readBuffer = ciram[ciramAddress & (ciram.Length - 1)];
-                        }
+                            readBuffer = ciram[nametableMirrorDelegate(currentAddress) & (ciram.Length - 1)];
                     }
                     else
                         retVal = cgram[currentAddress & (cgram.Length - 1)];
@@ -388,9 +373,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
                     }
                     else if (currentAddress >= 0x2000 && currentAddress < 0x3F00)
                     {
-                        ushort ciramAddress = currentAddress;
-                        if (mirroringMode == Mirroring.Horizontal) ciramAddress = (ushort)(((ciramAddress & 0x0800) >> 1) | (ciramAddress & 0x03FF));
-                        ciram[ciramAddress & (ciram.Length - 1)] = value;
+                        ciram[nametableMirrorDelegate(currentAddress) & (ciram.Length - 1)] = value;
                     }
                     else if (currentAddress >= 0x3F00)
                     {
@@ -403,6 +386,8 @@ namespace MasterFudgeMk2.Devices.Nintendo
                     break;
             }
         }
+
+        // TODO: rewrite render functions, scrolling in particular!
 
         public void RenderBackground(int line)
         {
@@ -460,26 +445,6 @@ namespace MasterFudgeMk2.Devices.Nintendo
                     startColumn = 0;
                     endColumn = (scrollY / 8) + 1;
                 }
-
-                if (mirroringMode == Mirroring.Horizontal)
-                {
-                    switch (nameTableBase)
-                    {
-                        case (0x2400): nameTableBase = 0x2000; break;
-                        case (0x2800): nameTableBase = 0x2400; break;
-                        case (0x2C00): nameTableBase = 0x2400; break;
-                    }
-                }
-                else if (mirroringMode == Mirroring.Vertical)
-                {
-                    switch (nameTableBase)
-                    {
-                        case (0x2800): nameTableBase = 0x2000; break;
-                        case (0x2C00): nameTableBase = 0x2400; break;
-                    }
-                }
-                else
-                    throw new NotImplementedException($"Unimplemented PPU nametable mirroring mode {mirroringMode}");
 
                 for (currentTileColumn = startColumn; currentTileColumn < endColumn; currentTileColumn++)
                 {

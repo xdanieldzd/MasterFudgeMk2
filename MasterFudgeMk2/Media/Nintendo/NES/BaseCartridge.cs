@@ -39,17 +39,6 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
             }
         }
 
-        public Devices.Nintendo.Ricoh2C02.Mirroring GetMirroring()
-        {
-            switch (inesHeader.Mirroring)
-            {
-                case INesMirroring.Horizontal: return Devices.Nintendo.Ricoh2C02.Mirroring.Horizontal;
-                case INesMirroring.Vertical: return Devices.Nintendo.Ricoh2C02.Mirroring.Vertical;
-                case INesMirroring.FourScreen: return Devices.Nintendo.Ricoh2C02.Mirroring.FourScreen;
-                default: throw new System.NotImplementedException($"Unsupported mirroring mode {inesHeader.Mirroring}");
-            }
-        }
-
         public virtual void Reset() { }
         public virtual void Unload() { }
         public virtual void Step() { }
@@ -59,5 +48,16 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
 
         public abstract byte ReadChr(uint address);
         public virtual void WriteChr(uint address, byte value) { }
+
+        public virtual uint NametableMirror(uint address)
+        {
+            switch (inesHeader.Mirroring)
+            {
+                case INesMirroring.Horizontal: return (((address & 0x0800) >> 1) | (address & 0x03FF));
+                case INesMirroring.Vertical: return (((address & 0x0400) >> 0) | (address & 0x03FF));
+                //case INesMirroring.FourScreen: return 0;
+                default: throw new System.NotImplementedException($"Unsupported mirroring mode {inesHeader.Mirroring}");
+            }
+        }
     }
 }

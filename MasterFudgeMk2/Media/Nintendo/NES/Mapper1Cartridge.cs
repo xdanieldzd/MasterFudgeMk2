@@ -156,5 +156,17 @@ namespace MasterFudgeMk2.Media.Nintendo.NES
         {
             chrData[GetChrAddress(address & 0x3FFF)] = value;
         }
+
+        public override uint NametableMirror(uint address)
+        {
+            switch (mirroring)
+            {
+                case 0x00: return (0x0000 | (address & 0x03FF));
+                case 0x01: return (0x0400 | (address & 0x03FF));
+                case 0x02: return (((address & 0x0400) >> 0) | (address & 0x03FF));
+                case 0x03: return (((address & 0x0800) >> 1) | (address & 0x03FF));
+                default: throw new Exception($"iNES Mapper 1: unsupported mirroring mode 0x{mirroring:X2}");
+            }
+        }
     }
 }
