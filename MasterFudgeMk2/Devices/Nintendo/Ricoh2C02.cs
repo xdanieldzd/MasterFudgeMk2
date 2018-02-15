@@ -105,8 +105,9 @@ namespace MasterFudgeMk2.Devices.Nintendo
         byte[] ciram, cgram, oam;
         byte readBuffer;
 
-        bool addressToggle;
-        ushort currentAddress, newAddress;
+        // TODO: https://wiki.nesdev.com/w/index.php/PPU_scrolling
+        bool writeToggle;
+        ushort currentAddress, temporaryAddress;
 
         bool isNmiOnVBlankEnabled { get { return ((registers[0] & 0x80) == 0x80); } }
         int spriteSize { get { return (((registers[0] & 0x20) == 0x20) ? 16 : 8); } }
@@ -121,7 +122,8 @@ namespace MasterFudgeMk2.Devices.Nintendo
         bool showBackgroundLeftClip { get { return ((registers[1] & 0x02) == 0x02); } }
         byte grayscaleMask { get { return (byte)(((registers[1] & 0x01) == 0x01) ? 0x30 : 0x3F); } }
 
-        byte spriteRamAddress, scrollX, scrollY;
+        byte oamAddress, scrollX;
+        short scrollY;
 
         bool sprite0Hit;
         int spriteOverflow;
@@ -180,10 +182,10 @@ namespace MasterFudgeMk2.Devices.Nintendo
         public virtual void Reset()
         {
             currentScanline = -1;
-            addressToggle = false;
+            writeToggle = false;
             readBuffer = 0;
-            scrollY = 0;
             scrollX = 0;
+            scrollY = 0;
             sprite0Hit = false;
 
             nametableBaseAddress = 0x2000;
@@ -230,10 +232,10 @@ namespace MasterFudgeMk2.Devices.Nintendo
 
         protected virtual void RenderLine(int line)
         {
-            if (!(showBackground || showSprites)) return;
-
             if (line >= 0 && line < NumActiveScanlines)
                 BlankLine(line, (byte)(cgram[0x00] & grayscaleMask));
+
+            if (!(showBackground || showSprites)) return;
 
             spriteOverflow = 0;
 
@@ -289,11 +291,11 @@ namespace MasterFudgeMk2.Devices.Nintendo
                     retVal |= (byte)(lastPPUWrite & 0x1F);
 
                     isFrameInterruptPending = false;
-                    addressToggle = false;
+                    writeToggle = false;
                     break;
 
                 case 0x04:
-                    retVal = oam[spriteRamAddress];
+                    retVal = oam[oamAddress];
                     break;
 
                 case 0x07:
@@ -333,37 +335,37 @@ namespace MasterFudgeMk2.Devices.Nintendo
                     break;
 
                 case 0x03:
-                    spriteRamAddress = value;
+                    oamAddress = value;
                     break;
 
                 case 0x04:
-                    oam[spriteRamAddress] = value;
-                    spriteRamAddress++;
+                    oam[oamAddress] = value;
+                    oamAddress++;
                     break;
 
                 case 0x05:
-                    if (!addressToggle)
-                        scrollY = value;
+                    if (!writeToggle)
+                        scrollX = value;
                     else
                     {
-                        scrollX = value;
-                        if (scrollX > 239) scrollX = 0;
+                        scrollY = value;
+                        if (scrollY >= 240) scrollY -= 256;
                     }
-                    addressToggle = !addressToggle;
+                    writeToggle = !writeToggle;
                     break;
 
                 case 0x06:
-                    if (!addressToggle)
+                    if (!writeToggle)
                     {
-                        newAddress = (ushort)(((value << 8) & 0x3F00) | (newAddress & 0xFF));
+                        temporaryAddress = (ushort)(((value << 8) & 0x3F00) | (temporaryAddress & 0xFF));
                     }
                     else
                     {
-                        newAddress = (ushort)(value | (newAddress & 0xFF00));
-                        currentAddress = newAddress;
+                        temporaryAddress = (ushort)(value | (temporaryAddress & 0xFF00));
+                        currentAddress = temporaryAddress;
                     }
 
-                    addressToggle = !addressToggle;
+                    writeToggle = !writeToggle;
                     break;
 
                 case 0x07:
@@ -397,7 +399,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
 
             for (vScrollSide = 0; vScrollSide < 2; vScrollSide++)
             {
-                virtualScanline = line + scrollX;
+                virtualScanline = line + scrollY;
                 nameTableBase = nametableBaseAddress;
                 if (vScrollSide == 0)
                 {
@@ -414,7 +416,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
                         virtualScanline = virtualScanline - 240;
                     }
 
-                    startColumn = scrollY / 8;
+                    startColumn = scrollX / 8;
                     endColumn = 32;
                 }
                 else
@@ -443,7 +445,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
                         }
                     }
                     startColumn = 0;
-                    endColumn = (scrollY / 8) + 1;
+                    endColumn = (scrollX / 8) + 1;
                 }
 
                 for (currentTileColumn = startColumn; currentTileColumn < endColumn; currentTileColumn++)
@@ -473,12 +475,12 @@ namespace MasterFudgeMk2.Devices.Nintendo
                     if (vScrollSide == 0)
                     {
                         if (currentTileColumn == startColumn)
-                            startTilePixel = scrollY % 8;
+                            startTilePixel = scrollX % 8;
                     }
                     else
                     {
                         if (currentTileColumn == endColumn)
-                            endTilePixel = scrollY % 8;
+                            endTilePixel = scrollX % 8;
                     }
 
                     for (int i = startTilePixel; i < endTilePixel; i++)
@@ -489,19 +491,19 @@ namespace MasterFudgeMk2.Devices.Nintendo
                         {
                             if (vScrollSide == 0)
                             {
-                                int screenUsageOffset = ((8 * currentTileColumn) - scrollY + i);
+                                int screenUsageOffset = ((8 * currentTileColumn) - scrollX + i);
 
-                                WriteColorToFramebuffer((byte)(cgram[pixelColor] & grayscaleMask), ((line * 256) + (8 * currentTileColumn) - scrollY + i) * 4);
+                                WriteColorToFramebuffer((byte)(cgram[pixelColor] & grayscaleMask), ((line * 256) + (8 * currentTileColumn) - scrollX + i) * 4);
                                 screenUsage[screenUsageOffset] |= screenUsageBg;
 
                                 if ((screenUsage[screenUsageOffset] & screenUsageSprite0) == screenUsageSprite0)
                                     sprite0Hit = true;
                             }
-                            else if (((8 * currentTileColumn) + (256 - scrollY) + i) < 256)
+                            else if (((8 * currentTileColumn) + (256 - scrollX) + i) < 256)
                             {
-                                int screenUsageOffset = ((8 * currentTileColumn) + (256 - scrollY) + i);
+                                int screenUsageOffset = ((8 * currentTileColumn) + (256 - scrollX) + i);
 
-                                WriteColorToFramebuffer((byte)(cgram[pixelColor] & grayscaleMask), ((line * 256) + (8 * currentTileColumn) + (256 - scrollY) + i) * 4);
+                                WriteColorToFramebuffer((byte)(cgram[pixelColor] & grayscaleMask), ((line * 256) + (8 * currentTileColumn) + (256 - scrollX) + i) * 4);
                                 screenUsage[screenUsageOffset] |= screenUsageBg;
 
                                 if ((screenUsage[screenUsageOffset] & screenUsageSprite0) == screenUsageSprite0)

@@ -123,6 +123,12 @@ namespace MasterFudgeMk2
 
             Application.Idle += (s, e) => { while (Common.NativeMethods.IsApplicationIdle()) { StepMachine(); } };
 
+            DebugBoot();
+        }
+
+        [Conditional("DEBUG")]
+        private void DebugBoot()
+        {
             // DEBUG SHORTCUTS HO
             if (Environment.MachineName == "NANAMI-X")
             {
