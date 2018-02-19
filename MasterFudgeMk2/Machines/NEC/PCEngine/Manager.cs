@@ -156,7 +156,7 @@ namespace MasterFudgeMk2.Machines.NEC.PCEngine
         public override bool CanLoadMedia(FileInfo mediaFile)
         {
             // TODO: detection
-            return true;
+            return false;
         }
 
         public override void LoadMedia(int slotNumber, IMedia media)

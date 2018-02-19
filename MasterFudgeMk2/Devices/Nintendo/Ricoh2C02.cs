@@ -22,9 +22,8 @@ namespace MasterFudgeMk2.Devices.Nintendo
         NametableMirrorDelegate nametableMirrorDelegate;    // TODO: extend to more generic "memory mapping delegate" for all PPU-accessible memory?
 
         // TODO: correct values?
-        public const int NumTotalScanlinesPal = 313;
-        public const int NumTotalScanlinesNtsc = 261;
-        public const int NumTotalPixelsPerScanline = 342;
+        public const int NumTotalScanlines = 261;
+        public const int NumTotalPixelsPerScanline = 341;
 
         public const int NumActiveScanlines = 240;
         public const int NumActivePixelsPerScanline = 256;
@@ -99,8 +98,6 @@ namespace MasterFudgeMk2.Devices.Nintendo
             new byte[] { 0x00, 0x00, 0x00, 0xFF }
         };
 
-        protected bool isPalChip;
-
         protected byte[] registers;
         byte[] ciram, cgram, oam;
         byte readBuffer;
@@ -132,10 +129,10 @@ namespace MasterFudgeMk2.Devices.Nintendo
         bool isFrameInterruptPending;
         byte lastPPUWrite;
 
-        public InterruptState InterruptLine { get; protected set; }
-        int currentScanline;
+        // Pixel-based stuff
+        byte lastNametableFetch, lastAttributeFetch, lastTileLowFetch, lastTileHighFetch;
 
-        public virtual int NumTotalScanlines { get { return (isPalChip ? NumTotalScanlinesPal : NumTotalScanlinesNtsc); } }
+        public InterruptState InterruptLine { get; protected set; }
 
         protected const byte screenUsageEmpty = 0;
         protected const byte screenUsageSprite0 = (1 << 0);
@@ -150,13 +147,12 @@ namespace MasterFudgeMk2.Devices.Nintendo
         protected int cycleCount;
         double clockRate, refreshRate;
 
-        protected int clockCyclesPerLine;
+        protected int clockCyclesPerFrame;
 
-        public Ricoh2C02(double clockRate, double refreshRate, bool isPalChip, ReadChrDelegate readChr, WriteChrDelegate writeChr, NametableMirrorDelegate nametableMirror)
+        public Ricoh2C02(double clockRate, double refreshRate, ReadChrDelegate readChr, WriteChrDelegate writeChr, NametableMirrorDelegate nametableMirror)
         {
             this.clockRate = clockRate;
             this.refreshRate = refreshRate;
-            this.isPalChip = isPalChip;
 
             readChrDelegate = readChr;
             writeChrDelegate = writeChr;
@@ -172,7 +168,7 @@ namespace MasterFudgeMk2.Devices.Nintendo
 
             outputFramebuffer = new byte[(NumActivePixelsPerScanline * NumTotalScanlines) * 4];
 
-            clockCyclesPerLine = (int)Math.Round((clockRate / refreshRate) / NumTotalScanlines);
+            clockCyclesPerFrame = (int)Math.Round(clockRate / refreshRate);
         }
 
         public virtual void Startup()
@@ -182,7 +178,6 @@ namespace MasterFudgeMk2.Devices.Nintendo
 
         public virtual void Reset()
         {
-            currentScanline = -1;
             writeToggle = false;
             readBuffer = 0;
             baseXScroll = 0;
@@ -196,38 +191,159 @@ namespace MasterFudgeMk2.Devices.Nintendo
 
         public virtual bool Step(int clockCyclesInStep)
         {
-            bool drawScreen = false;
-
-            InterruptLine = InterruptState.Clear;
-
-            cycleCount += clockCyclesInStep;
-
-            if (cycleCount >= clockCyclesPerLine)
+            // Process each cycle in step
+            for (int c = cycleCount; c < (cycleCount + clockCyclesInStep); c++)
             {
-                RenderLine(currentScanline);
-                currentScanline++;
+                // Figure out scanline and pixel based on cycle
+                int scanline = ((c / NumTotalPixelsPerScanline) - 1);
+                int cycle = (c % NumTotalPixelsPerScanline);
 
-                if (currentScanline == (NumActiveScanlines + 1))
+                // Check if cycle is visible or prefetch
+                bool isVisibleCycle = ((cycle >= 1) && (cycle < NumActivePixelsPerScanline + 1));
+                bool isPrefetchCycle = ((cycle >= 321) && (cycle < NumTotalPixelsPerScanline));
+
+                if (scanline == -1)
                 {
-                    isFrameInterruptPending = true;
-                    if (isNmiOnVBlankEnabled)
-                        InterruptLine = InterruptState.Assert;
+                    // Pre-render scanline
+                    ProcessPreRenderScanline(scanline, cycle);
                 }
-
-                if (currentScanline == NumTotalScanlines)
+                else if (scanline >= 0 && scanline < NumActiveScanlines)
                 {
-                    isFrameInterruptPending = false;
-                    sprite0Hit = false;
-
-                    currentScanline = -1;
-                    drawScreen = true;
+                    // Visible scanlines
+                    ProcessVisibleScanline(scanline, cycle);
                 }
-
-                cycleCount -= clockCyclesPerLine;
+                else if (scanline == NumActiveScanlines)
+                {
+                    // Post-render scanline
+                    ProcessPostRenderScanline(scanline, cycle);
+                }
+                else if (scanline >= (NumActiveScanlines + 1) && scanline < NumTotalScanlines)
+                {
+                    // Vertical blank scanlines
+                    ProcessVerticalBlankScanline(scanline, cycle);
+                }
             }
 
-            return drawScreen;
+            // Increment cycle count
+            cycleCount += clockCyclesInStep;
+
+            // DUMMY: if end of frame is reached, reset cycle count & signal drawing
+            if (cycleCount >= clockCyclesPerFrame)
+            {
+                cycleCount = 0;
+                return true;
+            }
+
+            // Don't draw yet
+            return false;
         }
+
+        private void ProcessPreRenderScanline(int scanline, int cycle)
+        {
+            if (scanline == -1 && cycle == 1)
+            {
+                isFrameInterruptPending = false;
+                sprite0Hit = false;
+                spriteOverflow = 0;
+
+                InterruptLine = InterruptState.Clear;
+            }
+        }
+
+        private void ProcessVisibleScanline(int scanline, int cycle)
+        {
+            if (cycle == 0)
+            {
+                // Idle cycle
+            }
+            else if ((cycle >= 1) && (cycle < NumActivePixelsPerScanline + 1))
+            {
+                // Visible pixel cycles
+
+                // https://wiki.nesdev.com/w/index.php/PPU_rendering#Visible_scanlines_.280-239.29
+                switch (cycle % 8)
+                {
+                    case 1: PerformNametableFetch(); break;
+                    case 3: PerformAttributeFetch(); break;
+                    case 5: PerformTileLowFetch(); break;
+                    case 7: PerformTileHighFetch(); break;
+                    case 0:
+                        // TODO: shift registers!
+                        break;
+                }
+
+                ProcessPixel(scanline, (cycle - 1));
+            }
+            else if ((cycle >= NumActivePixelsPerScanline + 1) && (cycle < 320))
+            {
+                // Idle cycles
+            }
+            else if ((cycle >= 321) && (cycle < 336))
+            {
+                // Prefetch cycles
+            }
+            else if ((cycle >= 337) && (cycle < NumTotalPixelsPerScanline))
+            {
+                // Unused NT fetches
+            }
+        }
+
+        private void ProcessPostRenderScanline(int scanline, int cycle)
+        {
+            //
+        }
+
+        private void ProcessVerticalBlankScanline(int scanline, int cycle)
+        {
+            if (scanline == 241 && cycle == 1)
+            {
+                isFrameInterruptPending = true;
+                if (isNmiOnVBlankEnabled)
+                    InterruptLine = InterruptState.Assert;
+            }
+        }
+
+        private void PerformNametableFetch()
+        {
+            lastNametableFetch = ciram[nametableMirrorDelegate(currentAddress) & (ciram.Length - 1)];
+        }
+
+        private void PerformAttributeFetch()
+        {
+            lastAttributeFetch = ciram[nametableMirrorDelegate((ushort)(currentAddress + 0x3C0)) & (ciram.Length - 1)]; // TODO: fixme
+        }
+
+        private void PerformTileLowFetch()
+        {
+            lastTileLowFetch = PerformTileFetch(false);
+        }
+
+        private void PerformTileHighFetch()
+        {
+            lastTileHighFetch = PerformTileFetch(true);
+        }
+
+        private byte PerformTileFetch(bool isHighByte)
+        {
+            int tileIndex = (lastNametableFetch << 4);
+            ushort address = (ushort)(bgPatternAddress + (tileIndex + 0) + (isHighByte ? 8 : 0));   // TODO: 0 == fine Y scroll
+            return readChrDelegate(address);
+        }
+
+        private void ProcessPixel(int scanline, int pixel)
+        {
+            int address = (((scanline * NumActivePixelsPerScanline) + (pixel % NumActivePixelsPerScanline)) * 4);
+            WriteColorToFramebuffer(lastNametableFetch, (byte)(pixel % NumTotalPixelsPerScanline), 0xFF, address);
+        }
+
+
+
+
+
+
+
+
+
 
         protected virtual void RenderLine(int line)
         {

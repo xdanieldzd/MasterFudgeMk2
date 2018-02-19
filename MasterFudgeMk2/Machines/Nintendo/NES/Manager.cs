@@ -150,7 +150,7 @@ namespace MasterFudgeMk2.Machines.Nintendo.NES
 
             cpu = new Ricoh2A03(cpuClock, refreshRate, ReadMemory, WriteMemory);
             wram = new byte[ramSize];
-            ppu = new Ricoh2C02(ppuClock, refreshRate, false, ReadChrShim, WriteChrShim, NametableMirrorShim);
+            ppu = new Ricoh2C02(ppuClock, refreshRate, ReadChrShim, WriteChrShim, NametableMirrorShim);
             apu = new Ricoh2A03.APU(apuClock, refreshRate, 44100, 2, (s, e) => { OnAddSampleData(e); });
 
             controllers = new Controller[2];

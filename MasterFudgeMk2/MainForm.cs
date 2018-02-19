@@ -12,6 +12,7 @@ using System.Threading;
 using System.IO;
 using System.Globalization;
 using System.Reflection;
+using System.IO.Compression;
 
 using MasterFudgeMk2.AudioBackends;
 using MasterFudgeMk2.VideoBackends;
@@ -48,6 +49,8 @@ namespace MasterFudgeMk2
         IMachineManager machineManager;
         IVideoBackend renderer;
         IAudioBackend soundOutput;
+
+        List<string> tempFiles;
 
         public bool LimitFps
         {
@@ -121,6 +124,8 @@ namespace MasterFudgeMk2
 
             soundOutput.Stop();
 
+            tempFiles = new List<string>();
+
             Application.Idle += (s, e) => { while (Common.NativeMethods.IsApplicationIdle()) { StepMachine(); } };
 
             DebugBoot();
@@ -172,7 +177,9 @@ namespace MasterFudgeMk2
                 //LoadMedia(@"D:\ROMs\NES\ROM files\Devil World (Europe).nes");
                 //LoadMedia(@"D:\ROMs\NES\nestest.nes");
                 //LoadMedia(@"D:\ROMs\NES\ROM files\Mega Man 2 (USA).nes");
-                LoadMedia(@"D:\ROMs\NES\Yo! Noid (U).nes");
+                //LoadMedia(@"D:\ROMs\NES\Yo! Noid (U).nes");
+
+                LoadMedia(@"D:\No-Intro\Nintendo - Nintendo Entertainment System (2017-06-18)\Super Mario Bros. (World).zip");
             }
         }
 
@@ -203,6 +210,9 @@ namespace MasterFudgeMk2
             machineManager?.Shutdown();
 
             emuConfig?.Save();
+
+            foreach (var tempFile in tempFiles)
+                File.Delete(tempFile);
         }
 
         private void PrepareDataBindings()
@@ -513,6 +523,29 @@ namespace MasterFudgeMk2
         {
             Type machineType = null;
             string mediaName = string.Empty;
+
+            /* Check if the file is a ZIP archive */
+            if (fileInfo.Extension == ".zip")
+            {
+                using (FileStream fileStream = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    using (ZipArchive zip = new ZipArchive(fileStream, ZipArchiveMode.Read))
+                    {
+                        var zippedFile = zip.Entries.FirstOrDefault();
+                        var tempDestination = Path.Combine(Path.GetTempPath(), zippedFile.Name);
+                        using (FileStream tempStream = new FileStream(tempDestination, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+                        {
+                            using (Stream zippedFileStream = zippedFile.Open())
+                            {
+                                zippedFileStream.CopyTo(tempStream);
+                            }
+                        }
+                        tempFiles.Add(tempDestination);
+                        LoadMedia(tempDestination);
+                        return;
+                    }
+                }
+            }
 
             /* Try to detect machine via No-Intro DATs */
             var datResult = DatHelper.FindGameInDats(fileInfo);
