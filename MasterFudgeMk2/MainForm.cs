@@ -514,6 +514,8 @@ namespace MasterFudgeMk2
             soundOutput?.Play();
         }
 
+        // TODO: rewrite b/c ZIP archive handling is bad
+
         public void LoadMedia(string filename)
         {
             LoadMedia(new FileInfo(filename));
@@ -542,6 +544,9 @@ namespace MasterFudgeMk2
                         }
                         tempFiles.Add(tempDestination);
                         LoadMedia(tempDestination);
+
+                        AddFileToRecentList(fileInfo.FullName);
+                        UpdateRecentFilesMenu();
                         return;
                     }
                 }
@@ -588,8 +593,11 @@ namespace MasterFudgeMk2
             romFileInfo = fileInfo;
             romFriendlyName = mediaName;
 
-            AddFileToRecentList(fileInfo.FullName);
-            UpdateRecentFilesMenu();
+            if (fileInfo.DirectoryName != Path.GetDirectoryName(Path.GetTempPath()))
+            {
+                AddFileToRecentList(fileInfo.FullName);
+                UpdateRecentFilesMenu();
+            }
 
             SetFormText();
             tsslStatus.Text = string.Format("'{0}' loaded", romFriendlyName);
